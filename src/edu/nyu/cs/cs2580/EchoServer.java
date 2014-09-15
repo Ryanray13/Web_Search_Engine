@@ -3,6 +3,8 @@ package edu.nyu.cs.cs2580;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Executors;
 
 import com.sun.net.httpserver.Headers;
@@ -38,9 +40,8 @@ public class EchoServer {
  * Instructors' simple version.
  */
 class EchoHandler implements HttpHandler {
-  private static String plainResponse =
-      "Request received, but I am not smart enough to echo yet!\n";
-  
+	private String WRONG_URI_ERROR = "Please send request to /search\n";
+	
   public void handle(HttpExchange exchange) throws IOException {
     String requestMethod = exchange.getRequestMethod();
     if (!requestMethod.equalsIgnoreCase("GET")) {  // GET requests only.
@@ -54,13 +55,52 @@ class EchoHandler implements HttpHandler {
       System.out.print(key + ":" + requestHeaders.get(key) + "; ");
     }
     System.out.println();
+    
+    String path = "";
+    String query = "";
+    
+    path = exchange.getRequestURI().getPath();
+    query = exchange.getRequestURI().getQuery();
 
+    if (!path.equals("/search") && !path.equals("/search/")){
+    	Headers responseHeaders = exchange.getResponseHeaders();
+    	responseHeaders.set("Content-Type", "text/plain");
+    	exchange.sendResponseHeaders(200, 0);
+    	OutputStream responseBody = exchange.getResponseBody();
+        responseBody.write(WRONG_URI_ERROR.getBytes());
+        responseBody.close();
+    }
     // Construct a simple response.
+    
+    Map<String, String> queryMap = queryToMap(query);
+    String[] queryStrs = queryMap.get("query").split("\\+");
+    String result = "";
+    for (int i = 0; i < queryStrs.length; i++) {
+    	if (i == queryStrs.length - 1) {
+    		result = result + queryStrs[i];
+    	} else {
+    		result = result + queryStrs[i] + " ";
+    	}
+    }
+    result = result + "\n";
     Headers responseHeaders = exchange.getResponseHeaders();
     responseHeaders.set("Content-Type", "text/plain");
     exchange.sendResponseHeaders(200, 0);  // arbitrary number of bytes
     OutputStream responseBody = exchange.getResponseBody();
-    responseBody.write(plainResponse.getBytes());
+    responseBody.write(result.getBytes());
     responseBody.close();
+  }
+  
+  public static Map<String, String> queryToMap(String query) {
+	  Map<String, String> result = new HashMap<String, String>();
+	  for (String param : query.split("&")) {
+		  String pair[] = param.split("=");
+		  if (pair.length > 1) {
+			  result.put(pair[0], pair[1]);
+		  } else {
+			  result.put(pair[0], "");
+		  }
+	  }
+	  return result;
   }
 }
