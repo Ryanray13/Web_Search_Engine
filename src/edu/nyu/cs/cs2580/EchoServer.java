@@ -21,7 +21,7 @@ public class EchoServer {
 
   // @CS2580: please use a port number 258XX, where XX corresponds
   // to your group number.
-  private static int port = 25825;
+  private static int port = 25801;
 
   public static void main(String[] args) throws IOException {
     // Create the server.
@@ -29,7 +29,7 @@ public class EchoServer {
     HttpServer server = HttpServer.create(addr, -1);
 
     // Attach specific paths to their handlers.
-    server.createContext("/", new EchoHandler());
+    server.createContext("/search", new EchoHandler());
     server.setExecutor(Executors.newCachedThreadPool());
     server.start();
     System.out.println("Listening on port: " + Integer.toString(port));
@@ -40,8 +40,8 @@ public class EchoServer {
  * Instructors' simple version.
  */
 class EchoHandler implements HttpHandler {
-	private String WRONG_URI_ERROR = "Please send request to /search\n";
-	
+  private String WRONG_URI_ERROR = "Please send request to /search\n";
+ 
   public void handle(HttpExchange exchange) throws IOException {
     String requestMethod = exchange.getRequestMethod();
     if (!requestMethod.equalsIgnoreCase("GET")) {  // GET requests only.
@@ -63,10 +63,10 @@ class EchoHandler implements HttpHandler {
     query = exchange.getRequestURI().getQuery();
 
     if (!path.equals("/search") && !path.equals("/search/")){
-    	Headers responseHeaders = exchange.getResponseHeaders();
-    	responseHeaders.set("Content-Type", "text/plain");
-    	exchange.sendResponseHeaders(200, 0);
-    	OutputStream responseBody = exchange.getResponseBody();
+      Headers responseHeaders = exchange.getResponseHeaders();
+      responseHeaders.set("Content-Type", "text/plain");
+      exchange.sendResponseHeaders(200, 0);
+      OutputStream responseBody = exchange.getResponseBody();
         responseBody.write(WRONG_URI_ERROR.getBytes());
         responseBody.close();
     }
@@ -76,11 +76,11 @@ class EchoHandler implements HttpHandler {
     String[] queryStrs = queryMap.get("query").split("\\+");
     String result = "";
     for (int i = 0; i < queryStrs.length; i++) {
-    	if (i == queryStrs.length - 1) {
-    		result = result + queryStrs[i];
-    	} else {
-    		result = result + queryStrs[i] + " ";
-    	}
+      if (i == queryStrs.length - 1) {
+        result = result + queryStrs[i];
+      } else {
+        result = result + queryStrs[i] + " ";
+      }
     }
     result = result + "\n";
     Headers responseHeaders = exchange.getResponseHeaders();
@@ -92,15 +92,15 @@ class EchoHandler implements HttpHandler {
   }
   
   public static Map<String, String> queryToMap(String query) {
-	  Map<String, String> result = new HashMap<String, String>();
-	  for (String param : query.split("&")) {
-		  String pair[] = param.split("=");
-		  if (pair.length > 1) {
-			  result.put(pair[0], pair[1]);
-		  } else {
-			  result.put(pair[0], "");
-		  }
-	  }
-	  return result;
+    Map<String, String> result = new HashMap<String, String>();
+    for (String param : query.split("&")) {
+      String pair[] = param.split("=");
+      if (pair.length > 1) {
+        result.put(pair[0], pair[1]);
+      } else {
+        result.put(pair[0], "");
+      }
+    }
+   return result;
   }
 }
