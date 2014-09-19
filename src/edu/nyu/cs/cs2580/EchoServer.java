@@ -21,7 +21,7 @@ public class EchoServer {
 
   // @CS2580: please use a port number 258XX, where XX corresponds
   // to your group number.
-  private static int port = 25825;
+  private static int port = 25801;
 
   public static void main(String[] args) throws IOException {
     // Create the server.
