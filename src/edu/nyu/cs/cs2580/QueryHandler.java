@@ -72,7 +72,7 @@ class QueryHandler implements HttpHandler {
           } else {
             // @CS2580: The following is instructor's simple ranker that does not
             // use the Ranker class.
-            Vector < ScoredDocument > sds = _ranker.runquery(query_map.get("query"));
+            Vector < ScoredDocument > sds = _ranker.runquery(query_map.get("query"),Ranker.RankerType.COSINE);
             Iterator < ScoredDocument > itr = sds.iterator();
             while (itr.hasNext()){
               ScoredDocument sd = itr.next();
