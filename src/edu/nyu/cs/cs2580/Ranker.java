@@ -17,42 +17,46 @@ class Ranker {
     totalDocNum= _index.numDocs();
   }
 
-  public Vector < ScoredDocument > runquery(String query, RankerType type){
-    Vector < ScoredDocument > retrieval_results = 
-        new Vector < ScoredDocument > ();
-    Vector < ScoredDocument > nonrelevant_results = 
-        new Vector < ScoredDocument > ();
-    ScoredDocument sd ;
-    Vector<String> qv = processQuery(query);
-    if (type == RankerType.COSINE){
-      HashMap<String, Double> qvm = buildVectorModel(qv);
-      for (int i = 0; i < totalDocNum; i++){
-        sd = runCosine(qvm, i);
-        addResults(sd, retrieval_results, nonrelevant_results);
-      }
-    }
-    else if (type == RankerType.QL ){
-      for (int i = 0; i < totalDocNum; ++i){
-        sd = runQL(qv, i);
-        addResults(sd, retrieval_results, nonrelevant_results);
-      }
-    }
-    else if (type == RankerType.PHRASE){
-      for (int i = 0; i < totalDocNum; ++i){
-        retrieval_results.add(runPhrase(query, i));
-      }
-    }
-    else{
-      for (int i = 0; i < totalDocNum; ++i){
-        retrieval_results.add(runLinear(query, i));
-      }
-    }
+  public Vector<ScoredDocument> runquery(String query, RankerType type) {
+	  // Documents with non-zero scores
+	  Vector<ScoredDocument> retrieval_results = new Vector <ScoredDocument> ();
+	  // Documents with zero scores
+	  Vector<ScoredDocument> nonrelevant_results = new Vector <ScoredDocument> ();
+	  // Parse query to vector
+	  Vector<String> qv = processQuery(query);
+	  if (type == RankerType.COSINE){
+		  //build QVM
+		  HashMap<String, Double> qvm = buildVectorModel(qv);
+		  for (int i = 0; i < totalDocNum; i++){
+			  	ScoredDocument sd ;
+			  	sd = runCosineRanker(qvm, i);
+			  	addResults(sd, retrieval_results, nonrelevant_results);
+		  }
+	  }
+	  else if (type == RankerType.QL ) {
+		  for (int i = 0; i < totalDocNum; ++i){
+			  ScoredDocument sd ;
+			  sd = runQLRanker(qv, i);
+			  addResults(sd, retrieval_results, nonrelevant_results);
+		  }
+	  }
+	  else if (type == RankerType.PHRASE) {
+		  for (int i = 0; i < totalDocNum; ++i) {
+			  retrieval_results.add(runPhraseRanker(query, i));
+		  }
+	  }
+	  else {
+		  for (int i = 0; i < totalDocNum; ++i) {
+			  retrieval_results.add(runLinearRanker(query, i));
+		  }
+	  }
     
-    rankingDocuments(retrieval_results, 0, retrieval_results.size()-1);
-    retrieval_results.addAll(nonrelevant_results);
-    return retrieval_results;
+	  sortDocuments(retrieval_results, 0, retrieval_results.size()-1);
+	  retrieval_results.addAll(nonrelevant_results);
+	  return retrieval_results;
   }
 
+  // put zero-score documents and non-zero-score documents in two vectors respectively
   private void addResults(ScoredDocument sd,
       Vector<ScoredDocument> retrieval_results,
       Vector<ScoredDocument> nonrelevant_results) {
@@ -70,10 +74,10 @@ class Ranker {
     ScoredDocument sd = null;
     if (type == RankerType.COSINE){
       HashMap<String, Double> qvm = buildVectorModel(qv);
-      sd = runCosine(qvm, did);
+      sd = runCosineRanker(qvm, did);
     }
     else if (type == RankerType.QL ){
-      sd = runQL(qv, did);
+      sd = runQLRanker(qv, did);
     }
     else if (type == RankerType.PHRASE){
     }
@@ -82,7 +86,7 @@ class Ranker {
     return sd;
   }
   
-  private ScoredDocument runCosine(HashMap<String, Double> qvm, int did) {   
+  private ScoredDocument runCosineRanker(HashMap<String, Double> qvm, int did) {   
     Document d = _index.getDoc(did);
     if(d == null){
       return null;
@@ -107,9 +111,11 @@ class Ranker {
     return qv;
   }
   
-  //Use HashMap to present vector model, and count term frequency.
+  //Use HashMap to present vector model
   private HashMap<String, Double> buildVectorModel(Vector<String> tv){
+	// count term frequency
     HashMap<String, Double> vectorModel = countTermFrequency(tv);
+    // calculate weight
     calculateWeightTFIDF(vectorModel);
     return vectorModel;
   }
@@ -129,25 +135,27 @@ class Ranker {
     return termFrequencyMap;
   }
   
-  //calculate the tf.idf weight for the vector model.
+  // calculate the tf.idf weight for the vector model.
+  // normalizeFactor is the denominator of normalization
   private void calculateWeightTFIDF(HashMap<String, Double> tvm){
-    double normalization = 0.0;
+    double normalizeFactor = 0.0;
     for(String term : tvm.keySet()){
       double tf = tvm.get(term);
       double weight = 0.0;
       int df = _index.documentFrequency(term);
+      // tf.idf
       if (df != 0){
         weight = (Math.log(tf)/LOG2_BASE + 1) * 
             Math.log( totalDocNum * 1.0 / df ) / LOG2_BASE;
       }     
-      normalization = normalization + weight * weight;
+      normalizeFactor = normalizeFactor + weight * weight;
       tvm.put(term, weight);
     }
     
-    normalization = Math.sqrt(normalization);
+    normalizeFactor = Math.sqrt(normalizeFactor);
     for(String term : tvm.keySet()){
       double old_weight = tvm.get(term);
-      tvm.put(term, old_weight/normalization);
+      tvm.put(term, old_weight/normalizeFactor);
     }
   }
   
@@ -163,7 +171,7 @@ class Ranker {
     return score;
   }
   
-  private ScoredDocument runQL(Vector<String> qv, int did) {
+  private ScoredDocument runQLRanker(Vector<String> qv, int did) {
     Document d = _index.getDoc(did);
     if(d == null){
       return null;
@@ -211,23 +219,23 @@ class Ranker {
     return score;
   }
 
-  private ScoredDocument runPhrase(String query, int did) {
+  private ScoredDocument runPhraseRanker(String query, int did) {
 
     return null;
   }
 
-  private ScoredDocument runLinear(String query, int did) {
+  private ScoredDocument runLinearRanker(String query, int did) {
 
     return null;
   }
   
   //Use merge sort which is stable to rank the documents
-  private void rankingDocuments( Vector<ScoredDocument> retrieval_results,
+  private void sortDocuments( Vector<ScoredDocument> retrieval_results,
       int begin, int end){
     if(begin < end){
       int pivot = (begin + end) / 2;
-      rankingDocuments(retrieval_results, begin, pivot);
-      rankingDocuments(retrieval_results, pivot + 1, end);
+      sortDocuments(retrieval_results, begin, pivot);
+      sortDocuments(retrieval_results, pivot + 1, end);
       Merge(retrieval_results, begin, pivot, end);
     }
   }
