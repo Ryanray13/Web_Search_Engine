@@ -53,15 +53,16 @@ class QueryHandler implements HttpHandler {
       if (uriPath.equals("/search")){
         Map<String,String> query_map = getQueryMap(uriQuery);
         Set<String> keys = query_map.keySet();
+        Vector < ScoredDocument > sds = new Vector < ScoredDocument >();
         if (keys.contains("query")){
           if (keys.contains("ranker")){
             String ranker_type = query_map.get("ranker");
             // @CS2580: Invoke different ranking functions inside your
             // implementation of the Ranker class.
             if (ranker_type.equals("cosine")){
-              queryResponse = (ranker_type + " not implemented.");
+              sds = _ranker.runquery(query_map.get("query"), Ranker.RankerType.COSINE);
             } else if (ranker_type.equals("QL")){
-              queryResponse = (ranker_type + " not implemented.");
+              sds = _ranker.runquery(query_map.get("query"), Ranker.RankerType.QL);
             } else if (ranker_type.equals("phrase")){
               queryResponse = (ranker_type + " not implemented.");
             } else if (ranker_type.equals("linear")){
@@ -72,19 +73,19 @@ class QueryHandler implements HttpHandler {
           } else {
             // @CS2580: The following is instructor's simple ranker that does not
             // use the Ranker class.
-            Vector < ScoredDocument > sds = _ranker.runquery(query_map.get("query"),Ranker.RankerType.COSINE);
-            Iterator < ScoredDocument > itr = sds.iterator();
-            while (itr.hasNext()){
-              ScoredDocument sd = itr.next();
-              if (queryResponse.length() > 0){
-                queryResponse = queryResponse + "\n";
-              }
-              queryResponse = queryResponse + query_map.get("query") + "\t" + sd.asString();
-            }
-            if (queryResponse.length() > 0){
-              queryResponse = queryResponse + "\n";
-            }
+            sds = _ranker.runquery(query_map.get("query"),Ranker.RankerType.COSINE);
           }
+        }
+        Iterator < ScoredDocument > itr = sds.iterator();
+        while (itr.hasNext()){
+          ScoredDocument sd = itr.next();
+          if (queryResponse.length() > 0){
+            queryResponse = queryResponse + "\n";
+          }
+          queryResponse = queryResponse + query_map.get("query") + "\t" + sd.asString();
+        }
+        if (queryResponse.length() > 0){
+          queryResponse = queryResponse + "\n";
         }
       }
     }

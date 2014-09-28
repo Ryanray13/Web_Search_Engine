@@ -6,8 +6,10 @@ import java.util.Vector;
 
 class Ranker {
   private Index _index;
-  
   private final int totalDocNum;
+  private static final double LOG2_BASE = Math.log(2.0);
+  private static final double LAMBDA = 0.5;
+  
   public static enum RankerType { COSINE, QL, PHRASE, LINEAR};
   
   public Ranker(String index_source){
@@ -20,25 +22,19 @@ class Ranker {
         new Vector < ScoredDocument > ();
     Vector < ScoredDocument > nonrelevant_results = 
         new Vector < ScoredDocument > ();
-    ScoredDocument sd;
+    ScoredDocument sd ;
+    Vector<String> qv = processQuery(query);
     if (type == RankerType.COSINE){
-      Vector<String> qv = processQuery(query);
       HashMap<String, Double> qvm = buildVectorModel(qv);
       for (int i = 0; i < totalDocNum; i++){
         sd = runCosine(qvm, i);
-        if (sd._score == 0.0){
-          nonrelevant_results.add(sd);
-        }
-        else{
-          retrieval_results.add(sd);
-        }
+        addResults(sd, retrieval_results, nonrelevant_results);
       }
-      rankingDocuments(retrieval_results, 0, retrieval_results.size()-1);
-      retrieval_results.addAll(nonrelevant_results);
     }
     else if (type == RankerType.QL ){
       for (int i = 0; i < totalDocNum; ++i){
-        retrieval_results.add(runQL(query, i));
+        sd = runQL(qv, i);
+        addResults(sd, retrieval_results, nonrelevant_results);
       }
     }
     else if (type == RankerType.PHRASE){
@@ -51,14 +47,39 @@ class Ranker {
         retrieval_results.add(runLinear(query, i));
       }
     }
+    
+    rankingDocuments(retrieval_results, 0, retrieval_results.size()-1);
+    retrieval_results.addAll(nonrelevant_results);
     return retrieval_results;
   }
 
+  private void addResults(ScoredDocument sd,
+      Vector<ScoredDocument> retrieval_results,
+      Vector<ScoredDocument> nonrelevant_results) {
+    if (sd._score == 0.0){
+      nonrelevant_results.add(sd);
+    }
+    else{
+      retrieval_results.add(sd);
+    }   
+  }
+
   //Keep the public run query method
-  public ScoredDocument runCosine(String query, int did){
+  public ScoredDocument runquery(String query, int did, RankerType type ){
     Vector<String> qv = processQuery(query);
-    HashMap<String, Double> qvm = buildVectorModel(qv);
-    return runCosine(qvm, did);
+    ScoredDocument sd = null;
+    if (type == RankerType.COSINE){
+      HashMap<String, Double> qvm = buildVectorModel(qv);
+      sd = runCosine(qvm, did);
+    }
+    else if (type == RankerType.QL ){
+      sd = runQL(qv, did);
+    }
+    else if (type == RankerType.PHRASE){
+    }
+    else{
+    }
+    return sd;
   }
   
   private ScoredDocument runCosine(HashMap<String, Double> qvm, int did) {   
@@ -66,8 +87,8 @@ class Ranker {
     if(d == null){
       return null;
     }
-    Vector<String> dv = d.get_body_vector();
     
+    Vector<String> dv = d.get_body_vector(); 
     HashMap<String, Double> dvm = buildVectorModel(dv);
     double score = calculateCosineScore(qvm,dvm);
    
@@ -88,34 +109,36 @@ class Ranker {
   
   //Use HashMap to present vector model, and count term frequency.
   private HashMap<String, Double> buildVectorModel(Vector<String> tv){
-    HashMap<String, Double> vectorModel = new HashMap<String, Double>();
-    for (String term : tv){ 
-      if (vectorModel.containsKey(term)){
-        double old_count = vectorModel.get(term);
-        vectorModel.put(term,old_count + 1);      
-      }
-      else{
-        vectorModel.put(term, 1.0);
-      }
-    }
-    calculateWeight(vectorModel);
+    HashMap<String, Double> vectorModel = countTermFrequency(tv);
+    calculateWeightTFIDF(vectorModel);
     return vectorModel;
   }
   
+  //Count the term frequency in the document
+  private HashMap<String, Double> countTermFrequency(Vector<String> tv){
+    HashMap<String, Double> termFrequencyMap= new HashMap<String, Double>();
+    for (String term : tv){ 
+      if (termFrequencyMap.containsKey(term)){
+        double old_count = termFrequencyMap.get(term);
+        termFrequencyMap.put(term,old_count + 1);      
+      }
+      else{
+        termFrequencyMap.put(term, 1.0);
+      }
+    }
+    return termFrequencyMap;
+  }
+  
   //calculate the tf.idf weight for the vector model.
-  private void calculateWeight(HashMap<String, Double> tvm){
-    double log2base = Math.log(2.0);
+  private void calculateWeightTFIDF(HashMap<String, Double> tvm){
     double normalization = 0.0;
     for(String term : tvm.keySet()){
       double tf = tvm.get(term);
-      double weight;
+      double weight = 0.0;
       int df = _index.documentFrequency(term);
-      if (df == 0){
-        weight = 0.0;
-      }
-      else{
-        weight = (Math.log(tf)/log2base + 1) * 
-            Math.log( totalDocNum * 1.0 / df ) / log2base;
+      if (df != 0){
+        weight = (Math.log(tf)/LOG2_BASE + 1) * 
+            Math.log( totalDocNum * 1.0 / df ) / LOG2_BASE;
       }     
       normalization = normalization + weight * weight;
       tvm.put(term, weight);
@@ -140,10 +163,54 @@ class Ranker {
     return score;
   }
   
-  private ScoredDocument runQL(String query, int did) {
-
-    return null;
+  private ScoredDocument runQL(Vector<String> qv, int did) {
+    Document d = _index.getDoc(did);
+    if(d == null){
+      return null;
+    }
+    
+    Vector<String> dv = d.get_body_vector();
+    HashMap<String, Double> dlm = buildLanguageModel(dv);   
+    double score = calculateQLScore(qv,dlm);
+    
+    return new ScoredDocument(did, d.get_title_string(), score);
   }
+  
+  private HashMap<String, Double> buildLanguageModel(Vector<String> dv) {
+    HashMap<String, Double> languageModel = countTermFrequency(dv);
+    calculateprobability(languageModel, dv.size());
+    return languageModel;
+  }
+
+  //Calculate the term probability in the document
+  private void calculateprobability(HashMap<String, Double> dlm, int totalTerms) { 
+    for(String term : dlm.keySet()){
+      double tf = dlm.get(term);
+      double probability = (1 - LAMBDA)* tf / totalTerms + 
+          LAMBDA * _index.termFrequency(term) / _index.termFrequency();
+      probability = Math.log(probability) / LOG2_BASE;
+      dlm.put(term, probability);
+     }
+  }
+  
+  private double calculateQLScore(Vector<String> qv, HashMap<String, Double> dlm) {
+    double score = 0.0;
+    for(String term : qv){
+      if (dlm.containsKey(term)){
+        score = score + dlm.get(term);
+      }
+      else{
+        double termEstimate = LAMBDA * _index.termFrequency(term) 
+            / _index.termFrequency();
+        if(termEstimate != 0){
+          termEstimate = Math.log(termEstimate) / LOG2_BASE;
+          score = score + termEstimate;
+        }       
+      }
+    }
+    return score;
+  }
+
   private ScoredDocument runPhrase(String query, int did) {
 
     return null;
