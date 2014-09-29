@@ -67,8 +67,12 @@ class QueryHandler implements HttpHandler {
             } else if (ranker_type.equals("phrase")) {
               sds = _ranker.runquery(query_map.get("query"),
                   Ranker.RankerType.PHRASE);
+            } else if (ranker_type.equals("numviews")) {
+              sds = _ranker.runquery(query_map.get("query"),
+                  Ranker.RankerType.NUMVIEWS);
             } else if (ranker_type.equals("linear")) {
-              queryResponse = (ranker_type + " not implemented.");
+              sds = _ranker.runquery(query_map.get("query"),
+                  Ranker.RankerType.LINEAR);
             } else {
               queryResponse = (ranker_type + " not implemented.");
             }

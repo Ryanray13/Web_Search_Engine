@@ -9,6 +9,10 @@ class Ranker {
   private final int totalDocNum;
   private static final double LOG2_BASE = Math.log(2.0);
   private static final double LAMBDA = 0.5;
+  private static final double COSINE_BETA = 0.25;
+  private static final double QL_BETA = 0.25;
+  private static final double PHRASE_BETA = 0.25;
+  private static final double NUMVIEWS_BETA = 0.25;
 
   public static enum RankerType {
     COSINE, QL, PHRASE, LINEAR, NUMVIEWS
@@ -51,11 +55,15 @@ class Ranker {
       }
     } else if (type == RankerType.NUMVIEWS) {
       for (int i = 0; i < totalDocNum; ++i) {
-        retrieval_results.add(runNumviewsRanker(query, i));
+        ScoredDocument sd = runNumviewsRanker(qv, i);
+        addResults(sd, retrieval_results, nonrelevant_results);
       }
     } else {
+      Vector<String> qbv = generateBigramVector(qv);
+      HashMap<String, Double> qvm = buildVectorModel(qv);
       for (int i = 0; i < totalDocNum; ++i) {
-        retrieval_results.add(runLinearRanker(query, i));
+        ScoredDocument sd = runLinearRanker(qv, qbv, qvm, i);
+        addResults(sd, retrieval_results, nonrelevant_results);
       }
     }
 
@@ -63,6 +71,18 @@ class Ranker {
         new ScoredDocument[retrieval_results.size()]);
     retrieval_results.addAll(nonrelevant_results);
     return retrieval_results;
+  }
+
+  private Vector<String> processQuery(String query) {
+    // Build query vector
+    Scanner s = new Scanner(query);
+    Vector<String> qv = new Vector<String>();
+    while (s.hasNext()) {
+      String term = s.next();
+      qv.add(term);
+    }
+    s.close();
+    return qv;
   }
 
   // put zero-score documents and non-zero-score documents in two vectors
@@ -80,7 +100,7 @@ class Ranker {
   // Keep the public run query method
   public ScoredDocument runquery(String query, int did, RankerType type) {
     Vector<String> qv = processQuery(query);
-    ScoredDocument sd = null;
+    ScoredDocument sd;
     if (type == RankerType.COSINE) {
       HashMap<String, Double> qvm = buildVectorModel(qv);
       sd = runCosineRanker(qvm, did);
@@ -90,21 +110,13 @@ class Ranker {
       Vector<String> qbv = generateBigramVector(qv);
       sd = runPhraseRanker(qbv, did, qv.size());
     } else if (type == RankerType.NUMVIEWS) {
+      sd = runNumviewsRanker(qv, did);
     } else {
+      Vector<String> qbv = generateBigramVector(qv);
+      HashMap<String, Double> qvm = buildVectorModel(qv);
+      sd = runLinearRanker(qv, qbv, qvm, did);
     }
     return sd;
-  }
-
-  private Vector<String> processQuery(String query) {
-    // Build query vector
-    Scanner s = new Scanner(query);
-    Vector<String> qv = new Vector<String>();
-    while (s.hasNext()) {
-      String term = s.next();
-      qv.add(term);
-    }
-    s.close();
-    return qv;
   }
 
   // qvm is the already built query vector model
@@ -228,7 +240,7 @@ class Ranker {
     return score;
   }
 
-  // qbv is the alreay built query bigram vector, qs is the query size
+  // qbv is the already built query bigram vector, qs is the query size
   private ScoredDocument runPhraseRanker(Vector<String> qbv, int did, int qs) {
     Document d = _index.getDoc(did);
     if (d == null) {
@@ -288,22 +300,26 @@ class Ranker {
     return score;
   }
 
-  private ScoredDocument runNumviewsRanker(String query, int did) {
+  private ScoredDocument runNumviewsRanker(Vector<String> qv, int did) {
     Document d = _index.getDoc(did);
     if (d == null) {
       return null;
     }
-    return null;
+    double score = Math.log(d.get_numviews()) / LOG2_BASE;
+    return new ScoredDocument(did, d.get_title_string(), score);
   }
 
-  private ScoredDocument runLinearRanker(String query, int did) {
+  private ScoredDocument runLinearRanker(Vector<String> qv,
+      Vector<String> qbv, HashMap<String, Double> qvm, int did) {
     Document d = _index.getDoc(did);
     if (d == null) {
       return null;
     }
-    Vector<String> dv = d.get_body_vector();
-    return null;
-
+    double score = COSINE_BETA * runCosineRanker(qvm, did)._score + QL_BETA
+        * runQLRanker(qv, did)._score + PHRASE_BETA
+        * runPhraseRanker(qbv, did, qv.size())._score + NUMVIEWS_BETA
+        * runNumviewsRanker(qv, did)._score;
+    return new ScoredDocument(did, d.get_title_string(), score);
   }
 
   // Use merge sort which is stable to rank the documents
