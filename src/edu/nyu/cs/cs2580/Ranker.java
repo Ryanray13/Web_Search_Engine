@@ -312,7 +312,7 @@ class Ranker {
     double score = 0.0;
     int numviews = d.get_numviews();
     if (numviews != 0) {
-      score = Math.log(d.get_numviews()) / LOG2_BASE + 1;
+      score = Math.log(numviews) / LOG2_BASE + 1;
     }
     
     return new ScoredDocument(did, d.get_title_string(), score);
