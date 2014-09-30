@@ -297,6 +297,9 @@ class Ranker {
         score += pf.get(phrase);
       }
     }
+    if(score != 0.0){
+      score = Math.log(score) / LOG2_BASE + 1;
+    }
     return score;
   }
 
@@ -305,7 +308,13 @@ class Ranker {
     if (d == null) {
       return null;
     }
-    double score = Math.log(d.get_numviews()) / LOG2_BASE;
+    
+    double score = 0.0;
+    int numviews = d.get_numviews();
+    if (numviews != 0) {
+      score = Math.log(d.get_numviews()) / LOG2_BASE + 1;
+    }
+    
     return new ScoredDocument(did, d.get_title_string(), score);
   }
 
@@ -315,10 +324,12 @@ class Ranker {
     if (d == null) {
       return null;
     }
+    
     double score = COSINE_BETA * runCosineRanker(qvm, did)._score + QL_BETA
         * runQLRanker(qv, did)._score + PHRASE_BETA
         * runPhraseRanker(qbv, did, qv.size())._score + NUMVIEWS_BETA
         * runNumviewsRanker(qv, did)._score;
+    
     return new ScoredDocument(did, d.get_title_string(), score);
   }
 
