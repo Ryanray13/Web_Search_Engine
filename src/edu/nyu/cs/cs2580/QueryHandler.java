@@ -77,24 +77,20 @@ class QueryHandler implements HttpHandler {
               queryResponse = (ranker_type + " not implemented.");
             }
           } else {
-            // @CS2580: The following is instructor's simple ranker that does
-            // not
-            // use the Ranker class.
             sds = _ranker.runquery(query_map.get("query"),
                 Ranker.RankerType.COSINE);
           }
-        }
-        Iterator<ScoredDocument> itr = sds.iterator();
-        while (itr.hasNext()) {
-          ScoredDocument sd = itr.next();
+
+          // If format is html, construct response as JSON format.
           if (queryResponse.length() > 0) {
-            queryResponse = queryResponse + "\n";
+            queryResponse += "\n";
           }
-          queryResponse = queryResponse + query_map.get("query") + "\t"
-              + sd.asString();
-        }
-        if (queryResponse.length() > 0) {
-          queryResponse = queryResponse + "\n";
+          if (keys.contains("format")
+              && query_map.get("format").equals("html")) {
+            queryResponse += constructHTMLResponse(sds, query_map.get("query"));
+          } else {
+            queryResponse += constructTextResponse(sds, query_map.get("query"));
+          }
         }
       }
     }
@@ -106,5 +102,35 @@ class QueryHandler implements HttpHandler {
     OutputStream responseBody = exchange.getResponseBody();
     responseBody.write(queryResponse.getBytes());
     responseBody.close();
+  }
+
+  // Construct text format response.
+  private String constructTextResponse(Vector<ScoredDocument> sds, String query) {
+    Iterator<ScoredDocument> itr = sds.iterator();
+    StringBuilder responseBuilder = new StringBuilder();
+    while (itr.hasNext()) {
+      ScoredDocument sd = itr.next();
+      responseBuilder.append(query).append('\t').append(sd.asString())
+          .append('\n');
+    }
+    return responseBuilder.toString();
+  }
+
+  // Construct HTML(JSON) format response
+  private String constructHTMLResponse(Vector<ScoredDocument> sds, String query) {
+    Iterator<ScoredDocument> itr = sds.iterator();
+    StringBuilder responseBuilder = new StringBuilder();
+    responseBuilder.append("[\n");
+    while (itr.hasNext()) {
+      ScoredDocument sd = itr.next();
+      responseBuilder.append("{\"query\": \"").append(query)
+          .append("\", \"id\": ").append(String.valueOf(sd._did))
+          .append(", \"title\": \"").append(sd._title)
+          .append("\", \"score\": ").append(String.valueOf(sd._score))
+          .append("},\n");
+    }
+    responseBuilder.deleteCharAt(responseBuilder.length() - 2);
+    responseBuilder.append("]\n");
+    return responseBuilder.toString();
   }
 }

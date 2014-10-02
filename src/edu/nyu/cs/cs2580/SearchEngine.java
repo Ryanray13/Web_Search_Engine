@@ -14,12 +14,12 @@ public class SearchEngine {
   // to your group number.
   public static void main(String[] args) throws IOException {
     // Create the server.
-    if (args.length < 2){
+    if (args.length < 1){
       System.out.println("arguments for this program are: [PORT] [PATH-TO-CORPUS]");
       return;
     }
-    int port = Integer.parseInt(args[0]);
-    String index_path = args[1];
+    int port = 25801;
+    String index_path = args[0];
     InetSocketAddress addr = new InetSocketAddress(port);
     HttpServer server = HttpServer.create(addr, -1);
 
