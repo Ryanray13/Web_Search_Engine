@@ -85,7 +85,7 @@ class Ranker {
     return qv;
   }
 
-  // put zero-score documents and non-zero-score documents in two vectors
+  // Put zero-score documents and non-zero-score documents in two vectors
   // respectively
   private void addResults(ScoredDocument sd,
       Vector<ScoredDocument> retrieval_results,
