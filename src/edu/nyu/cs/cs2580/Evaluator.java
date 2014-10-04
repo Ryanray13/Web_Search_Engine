@@ -184,13 +184,14 @@ class Evaluator {
         metrics.put("F0.50@1", F(dids, qr_binary, 1, 0.5));
         metrics.put("F0.50@5", F(dids, qr_binary, 5, 0.5));
         metrics.put("F0.50@10", F(dids, qr_binary, 10, 0.5));
-        // metrics.put("Precision@Recall", precisionAtRecall(dids, qr_binary)); 
+
+        precisionAtRecall(dids, qr_binary, metrics);
+
         metrics.put("AVGPrecision", avgPrecision(dids, qr_binary)); 
         metrics.put("NDCG@1", NDCG(dids, qr_graded, 1)); 
         metrics.put("NDCG@5", NDCG(dids, qr_graded, 5)); 
         metrics.put("NDCG@10", NDCG(dids, qr_graded, 10)); 
         metrics.put("ReciprocalRank", reciprocalRank(dids, qr_binary)); 
-        
         qry_metrics.put(query, metrics);
       }
     } catch (Exception e){
@@ -226,6 +227,7 @@ class Evaluator {
    */
   private static void outputMetrics(
       HashMap< String, HashMap<String, Double> > metrics) {
+    Vector<String> metric_name = new Vector<String>();
     for (String query : metrics.keySet()) {
       String result = toString(query, metrics.get(query));
       System.out.println(result);
@@ -239,6 +241,10 @@ class Evaluator {
    */
   private static String toString(String query, HashMap<String, Double> metric) {
     String result = query + "\t";
+    for (String name : metric.keySet()) {
+      // System.out.println("name: " + name);
+      result += metric.get(name) + "\t";
+    }
     result += metric.get("Precision@1") + "\t";
     result += metric.get("Precision@5") + "\t"; 
     result += metric.get("Precision@10") + "\t";
@@ -248,6 +254,17 @@ class Evaluator {
     result += metric.get("F0.50@1") + "\t";
     result += metric.get("F0.50@5") + "\t";
     result += metric.get("F0.50@10") + "\t";
+    result += metric.get("PAtR0") + "\t";
+    result += metric.get("PAtR1") + "\t";
+    result += metric.get("PAtR2") + "\t";
+    result += metric.get("PAtR3") + "\t";
+    result += metric.get("PAtR4") + "\t";
+    result += metric.get("PAtR5") + "\t";
+    result += metric.get("PAtR6") + "\t";
+    result += metric.get("PAtR7") + "\t";
+    result += metric.get("PAtR8") + "\t";
+    result += metric.get("PAtR9") + "\t";
+    result += metric.get("PAtR10") + "\t";
     result += metric.get("AVGPrecision") + "\t";
     result += metric.get("NDCG@1") + "\t";
     result += metric.get("NDCG@5") + "\t";
@@ -257,8 +274,6 @@ class Evaluator {
     return result; 
   }
 
-
-  // Refer to P34 from lecture 1 of GA2580
   private static double precision (
       Vector<Integer> dids, HashMap<Integer, Double> qr, int K) {
     double RR = 0.0;
@@ -271,7 +286,6 @@ class Evaluator {
     // return Double.toString(RR/K);
     return RR/K;
   }
-
 
   private static double recall (
       Vector<Integer> dids, HashMap<Integer, Double> qr, int K) {
@@ -293,8 +307,6 @@ class Evaluator {
     return (R == 0.0 ? R : RR/R);
   }
 
-
-
   private static double F (
       Vector<Integer> dids, HashMap<Integer, Double> qr, int K, double alpha) {
     double P = precision(dids, qr, K);
@@ -305,15 +317,36 @@ class Evaluator {
     return result;
   }
 
-  //TODO: unfinished
-  private static double precisionAtRecall(
-      Vector<Integer> dids, HashMap<Integer, Double> qr) {
+  //TODO: When Recall = 0.0, Precision = ? 
+  private static double precisionAtRecall( Vector<Integer> dids, 
+      HashMap<Integer, Double> qr,HashMap<String, Double> metrics) {
     double P = 0.0;
     double R = 0.0;
-    for (int i = 1; i < dids.size(); i++) {
-      P = precision(dids, qr, i);
-      R = recall(dids, qr, i);
-      // System.out.println("R: " + R);
+    // count relevant docs in retrieved results
+    int nReleDoc = 0;
+    HashMap<Integer, Integer> pos = new HashMap<Integer, Integer>();
+    for (int i = 0; i < dids.size(); i++) {
+      if (qr.containsKey(dids.get(i)) != false) {
+        if (qr.get(dids.get(i)) != 0) {
+          nReleDoc += 1;
+          // System.out.println("add: " + nReleDoc + ", " + (i + 1));
+          pos.put(nReleDoc, i + 1);
+        }
+      }
+    }
+    
+    // System.out.println("N rel: " + nReleDoc);
+    int i = 0;
+    int k = 0;
+    while ( i <= 10 ) {
+      k = (int) (nReleDoc * 0.1 * i);
+      if (k != 0) {
+        //System.out.println("k: " + k);
+        P = precision(dids, qr, pos.get(k));
+        //System.out.println("i: " + 0.1 * i + " k: " + pos.get(k) + " P: " + P);
+      }
+      metrics.put(("PAtR"+i), P);
+      i += 1;
     }
     return 0.0;
   }
@@ -375,5 +408,6 @@ class Evaluator {
     }
     return 0.0;
   }
+  
 
 }
