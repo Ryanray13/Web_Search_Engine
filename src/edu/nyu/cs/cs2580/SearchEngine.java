@@ -30,7 +30,7 @@ public class SearchEngine {
     Ranker ranker = new Ranker(index_path);
     
     WebServer server = new WebServer("127.0.0.1", 25801, 
-    		new File("/Users/feiguan/Documents/workspace/WSE_HW/public").getAbsoluteFile(),
+    		new File("./public").getAbsoluteFile(),
     		new QueryHandler(ranker));   
     
     ServerRunner.executeInstance(server);
