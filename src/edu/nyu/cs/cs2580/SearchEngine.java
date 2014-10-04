@@ -29,15 +29,17 @@ public class SearchEngine {
 
     Ranker ranker = new Ranker(index_path);
     
-    WebServer server = new WebServer("127.0.0.1", 25801, new File("/Users/feiguan/Documents/workspace/WSE_HW/public").getAbsoluteFile());
+    WebServer server = new WebServer("127.0.0.1", 25801, 
+    		new File("/Users/feiguan/Documents/workspace/WSE_HW/public").getAbsoluteFile(),
+    		new QueryHandler(ranker));   
     
     ServerRunner.executeInstance(server);
     
     // Attach specific paths to their handlers.
-//    HttpServer server = HttpServer.create(addr, -1);
-//    server.createContext("/", new QueryHandler(ranker));
-//    server.setExecutor(Executors.newCachedThreadPool());
-//    server.start();
+//    HttpServer server1 = HttpServer.create(addr, -1);
+//    server1.createContext("/", new QueryHandler(ranker));
+//    server1.setExecutor(Executors.newCachedThreadPool());
+//    server1.start();
 //    System.out.println("Listening on port: " + Integer.toString(port));
   }
 }

@@ -11,7 +11,7 @@ import java.util.Set;
 import java.util.Iterator;
 import java.util.Vector;
 
-class QueryHandler implements HttpHandler {
+public class QueryHandler implements HttpHandler {
   private static String plainResponse = "Request received, but I am not smart enough to echo yet!\n";
 
   private Ranker _ranker;

@@ -1,11 +1,13 @@
 package edu.nyu.cs.cs2580.http;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,8 +18,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.StringTokenizer;
+import java.io.ByteArrayOutputStream;
+
+import com.sun.net.httpserver.*;
+
+import edu.nyu.cs.cs2580.QueryHandler;
 
 public class WebServer extends NanoHTTPD {
+	
+	private QueryHandler handler;
     /**
      * Common mime type for dynamic content: binary
      */
@@ -63,10 +72,11 @@ public class WebServer extends NanoHTTPD {
     
     private final List<File> rootDirs;
 
-    public WebServer(String host, int port, File wwwroot) {
+    public WebServer(String host, int port, File wwwroot, QueryHandler handler) {
         super(host, port);
         this.rootDirs = new ArrayList<File>();
         this.rootDirs.add(wwwroot);
+        this.handler = handler;
         this.init();
     }
 
@@ -160,7 +170,27 @@ public class WebServer extends NanoHTTPD {
             htmlUri = canServeUri(uri, homeDir);
         }
         if (!htmlUri) {
-            return getNotFoundResponse();
+        	Map<String, List<String>> headerLis = new HashMap<String, List<String>>();
+            for (String key : headers.keySet()) {
+                List<String> slst = new ArrayList<String>();
+                slst.add(headers.get(key));
+                headerLis.put(key, slst);
+            }
+            String queryStr = session.getParms().get("query");
+            String rankerStr = session.getParms().get("ranker");
+            uri = "http://" + headers.get("host") + uri + "?query=" + queryStr
+            		+ "&ranker=" + rankerStr;
+            
+        	HttpExchange exchange = new QueryHttpExchange(uri, headerLis);
+            try {
+                handler.handle(exchange);
+            } catch (IOException e) {
+            }
+            return createResponse(
+                    Response.Status.OK,
+                    NanoHTTPD.MIME_PLAINTEXT,
+                    new ByteArrayInputStream(((ByteArrayOutputStream) exchange.getResponseBody())
+                            .toByteArray()));
         }
 
         // Browsers get confused without '/' after the directory, send a redirect.
