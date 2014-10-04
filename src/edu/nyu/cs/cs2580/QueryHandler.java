@@ -88,10 +88,17 @@ public class QueryHandler implements HttpHandler {
           if (keys.contains("format")
               && query_map.get("format").equals("html")) {
             queryResponse += constructHTMLResponse(sds, query_map.get("query"));
+            Headers responseHeaders = exchange.getResponseHeaders();
+            responseHeaders.set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, 0); // arbitrary number of bytes
+            OutputStream responseBody = exchange.getResponseBody();
+            responseBody.write(queryResponse.getBytes());
+            responseBody.close();
+            return;
           } else {
             queryResponse += constructTextResponse(sds, query_map.get("query"));
           }
-        }
+        } 
       }
     }
 

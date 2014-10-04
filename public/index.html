@@ -4,12 +4,29 @@
 		<title>Hello AngularJS</title>
 		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.8/angular.min.js"></script>
 		<script src="hello.js"></script>
+        <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
 	</head>
 
 	<body>
 		<div ng-controller="Hello">
-			<p>The ID is {{greeting.id}} </p>
-			<p>The content is {{greeting.content}} </p>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Record</th>
+                        <th>Title</th>
+                        <th>Score</th>
+                        <th>ID</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="doc in documents">
+                        <td>{{$index + 1}}</td>
+                        <td>{{doc.title}}</td>
+                        <td>{{doc.score}}</td>
+                        <td>#{{doc.id}}</td>
+                    </tr>
+                </tbody>
+            </table>
 		</div>
 	</body>
 </html>

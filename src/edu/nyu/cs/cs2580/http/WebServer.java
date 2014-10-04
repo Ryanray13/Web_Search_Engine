@@ -178,8 +178,9 @@ public class WebServer extends NanoHTTPD {
             }
             String queryStr = session.getParms().get("query");
             String rankerStr = session.getParms().get("ranker");
+            String formatStr = session.getParms().get("format");
             uri = "http://" + headers.get("host") + uri + "?query=" + queryStr
-            		+ "&ranker=" + rankerStr;
+            		+ "&ranker=" + rankerStr + "&format=" + formatStr;
             
         	HttpExchange exchange = new QueryHttpExchange(uri, headerLis);
             try {

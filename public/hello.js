@@ -1,6 +1,6 @@
 function Hello($scope, $http) {
-	$http.get('http://rest-service.guides.spring.io/greeting').
+	$http.get('http://localhost:25801/search?query=a&ranker=cosine&format=html').
 	success(function(data) {
-		$scope.greeting = data;
+		$scope.documents = data;
 	});
 }
