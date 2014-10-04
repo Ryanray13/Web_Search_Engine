@@ -67,7 +67,6 @@ public class WebServer extends NanoHTTPD {
         super(host, port);
         this.rootDirs = new ArrayList<File>();
         this.rootDirs.add(wwwroot);
-
         this.init();
     }
 
@@ -82,38 +81,6 @@ public class WebServer extends NanoHTTPD {
 	 * Used to initialize and customize the server.
 	 */
     public void init() {
-    }
-
-    /**
-     * Starts as a standalone file server and waits for Enter.
-     */
-    public static void main(String[] args) {
-        // Defaults
-        int port = 8080;
-
-        String host = "127.0.0.1";
-        List<File> rootDirs = new ArrayList<File>();
-        rootDirs.add(new File("./public/."));
-        
-        Map<String, String> options = new HashMap<String, String>();
-        if (rootDirs.isEmpty()) {
-            rootDirs.add(new File(".").getAbsoluteFile());
-        }
-
-        options.put("host", host);
-        options.put("port", ""+port);
-        StringBuilder sb = new StringBuilder();
-        for (File dir : rootDirs) {
-            if (sb.length() > 0) {
-                sb.append(":");
-            }
-            try {
-                sb.append(dir.getCanonicalPath());
-            } catch (IOException ignored) {}
-        }
-        options.put("home", sb.toString());
-
-        ServerRunner.executeInstance(new WebServer(host, port, rootDirs));
     }
 
     protected static void registerPluginForMimeType(String[] indexFiles, String mimeType, Map<String, String> commandLineOptions) {
@@ -133,16 +100,8 @@ public class WebServer extends NanoHTTPD {
         }
     }
 
-    private File getRootDir() {
-        return rootDirs.get(0);
-    }
-
     private List<File> getRootDirs() {
         return rootDirs;
-    }
-
-    private void addWwwRootDir(File wwwroot) {
-        rootDirs.add(wwwroot);
     }
 
     /**
@@ -193,14 +152,14 @@ public class WebServer extends NanoHTTPD {
             return getForbiddenResponse("Won't serve ../ for security reasons.");
         }
 
-        boolean canServeUri = false;
+        boolean htmlUri = false;
         File homeDir = null;
         List<File> roots = getRootDirs();
-        for (int i = 0; !canServeUri && i < roots.size(); i++) {
+        for (int i = 0; !htmlUri && i < roots.size(); i++) {
             homeDir = roots.get(i);
-            canServeUri = canServeUri(uri, homeDir);
+            htmlUri = canServeUri(uri, homeDir);
         }
-        if (!canServeUri) {
+        if (!htmlUri) {
             return getNotFoundResponse();
         }
 
@@ -213,7 +172,7 @@ public class WebServer extends NanoHTTPD {
             res.addHeader("Location", uri);
             return res;
         }
-
+System.out.println(f.getAbsolutePath());
         if (f.isDirectory()) {
             // First look for index files (index.html, index.htm, etc) and if none found, list the directory if readable.
             String indexFile = findIndexFileInDirectory(f);
@@ -231,6 +190,7 @@ public class WebServer extends NanoHTTPD {
 
         String mimeTypeForFile = getMimeTypeForFile(uri);
         Response response = null;
+        response = serveFile(uri, headers, f, mimeTypeForFile);
         return response != null ? response : getNotFoundResponse();
     }
 
