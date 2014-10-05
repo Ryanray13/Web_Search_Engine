@@ -179,12 +179,12 @@ public class WebServer extends NanoHTTPD {
             Map<String, String> params = session.getParms();
             String queryStr = "";
             for (String keyStr : params.keySet()) {
-            	queryStr += ("&" + keyStr + "=" + encodeUri(params.get(keyStr)));
+            	queryStr += ("&" + keyStr + "=" + params.get(keyStr));
             }
             if (queryStr.equals(""))
             	uri = "http://" + headers.get("host") + uri;
             else
-            	uri = "http://" + headers.get("host") + uri + "?" + queryStr.substring(1);
+            	uri = "http://" + headers.get("host") + uri + "?" + encodeUri(queryStr.substring(1));
             
         	HttpExchange exchange = new QueryHttpExchange(uri, headerLis);
             try {
