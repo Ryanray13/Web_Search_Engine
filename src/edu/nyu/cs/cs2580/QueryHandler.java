@@ -1,10 +1,20 @@
 package edu.nyu.cs.cs2580;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintWriter;
+
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -99,6 +109,30 @@ public class QueryHandler implements HttpHandler {
             queryResponse += constructTextResponse(sds, query_map.get("query"));
           }
         } 
+      }
+      else if (uriPath.equals("/click")) {
+    	  String filePath = "./results/hw1.4-results.tsv";
+    	  File f = new File(filePath);
+    	  Map<String, String> query_map = getQueryMap(uriQuery);
+    	  String didStr = query_map.get("id");
+    	  String queryStr = query_map.get("query");
+    	  String actionStr = query_map.get("action");
+    	  DateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+    	  Date now = Calendar.getInstance().getTime();
+    	  String timeStr = df.format(now);
+    	  String sessionIdStr = "";//exchange.getRequestHeaders().get;
+    	  String newLog = sessionIdStr + "\t" + queryStr + "\t" + didStr + "\t" + actionStr + "\t" + timeStr;
+    	  if (f.exists()) {
+    		  PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(filePath, true)));
+    		  out.println(newLog);
+    		  out.close();
+    		  return;
+    	  } else {
+    		  PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(filePath, false)));
+    		  out.println(newLog);
+    		  out.close();
+    		  return;
+    	  }
       }
     }
 

@@ -1,7 +1,7 @@
 <!doctype html>
 <html ng-app>
 	<head>
-		<title>Hello AngularJS</title>
+		<title>Search Engine 25801</title>
 		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.8/angular.min.js"></script>
 		<script src="hello.js"></script>
         <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
@@ -19,7 +19,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr ng-repeat="doc in documents">
+                    <tr ng-repeat="doc in documents" ng-click="addlog(doc)">
                         <td>{{$index + 1}}</td>
                         <td>{{doc.title}}</td>
                         <td>{{doc.score}}</td>

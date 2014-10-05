@@ -176,16 +176,21 @@ public class WebServer extends NanoHTTPD {
                 slst.add(headers.get(key));
                 headerLis.put(key, slst);
             }
-            String queryStr = session.getParms().get("query");
-            String rankerStr = session.getParms().get("ranker");
-            String formatStr = session.getParms().get("format");
-            uri = "http://" + headers.get("host") + uri + "?query=" + queryStr
-            		+ "&ranker=" + rankerStr + "&format=" + formatStr;
+            Map<String, String> params = session.getParms();
+            String queryStr = "";
+            for (String keyStr : params.keySet()) {
+            	queryStr += ("&" + keyStr + "=" + params.get(keyStr));
+            }
+            if (queryStr.equals(""))
+            	uri = "http://" + headers.get("host") + uri;
+            else
+            	uri = "http://" + headers.get("host") + uri + "?" + queryStr.substring(1);
             
         	HttpExchange exchange = new QueryHttpExchange(uri, headerLis);
             try {
                 handler.handle(exchange);
             } catch (IOException e) {
+            	System.out.println();
             }
             return createResponse(
                     Response.Status.OK,
