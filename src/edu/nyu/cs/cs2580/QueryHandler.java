@@ -70,25 +70,31 @@ public class QueryHandler implements HttpHandler {
             // implementation of the Ranker class.
             if (ranker_type.equals("cosine")) {
               sds = _ranker.runquery(query_map.get("query"),
-                  Ranker.RankerType.COSINE);
+                  Ranker.RankerType.COSINE, query_map.get("pageSize"), 
+                  query_map.get("pageStart"));
             } else if (ranker_type.equals("QL")) {
               sds = _ranker.runquery(query_map.get("query"),
-                  Ranker.RankerType.QL);
+                  Ranker.RankerType.QL, query_map.get("pageSize"), 
+                  query_map.get("pageStart"));
             } else if (ranker_type.equals("phrase")) {
               sds = _ranker.runquery(query_map.get("query"),
-                  Ranker.RankerType.PHRASE);
+                  Ranker.RankerType.PHRASE, query_map.get("pageSize"), 
+                  query_map.get("pageStart"));
             } else if (ranker_type.equals("numviews")) {
               sds = _ranker.runquery(query_map.get("query"),
-                  Ranker.RankerType.NUMVIEWS);
+                  Ranker.RankerType.NUMVIEWS, query_map.get("pageSize"), 
+                  query_map.get("pageStart"));
             } else if (ranker_type.equals("linear")) {
               sds = _ranker.runquery(query_map.get("query"),
-                  Ranker.RankerType.LINEAR);
+                  Ranker.RankerType.LINEAR, query_map.get("pageSize"), 
+                  query_map.get("pageStart"));
             } else {
               queryResponse = (ranker_type + " not implemented.");
             }
           } else {
             sds = _ranker.runquery(query_map.get("query"),
-                Ranker.RankerType.COSINE);
+                Ranker.RankerType.COSINE, query_map.get("pageSize"), 
+                query_map.get("pageStart"));
           }
 
           // If format is html, construct response as JSON format.

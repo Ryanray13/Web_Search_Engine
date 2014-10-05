@@ -23,7 +23,7 @@ class Ranker {
     totalDocNum = _index.numDocs();
   }
 
-  public Vector<ScoredDocument> runquery(String query, RankerType type) {
+  public Vector<ScoredDocument> runquery(String query, RankerType type, String pageSize, String pageStart) {
     // Documents with non-zero scores
     Vector<ScoredDocument> retrieval_results = new Vector<ScoredDocument>();
 
@@ -70,7 +70,17 @@ class Ranker {
     sortDocuments(retrieval_results, 0, retrieval_results.size() - 1,
         new ScoredDocument[retrieval_results.size()]);
     retrieval_results.addAll(nonrelevant_results);
-    return retrieval_results;
+    if (pageSize == null || pageStart == null)
+    	return retrieval_results;
+    else {
+    	int size = Integer.parseInt(pageSize);
+    	int start = Integer.parseInt(pageStart);
+    	Vector<ScoredDocument> paged_results = new Vector<ScoredDocument>();
+    	for (int i = 0; i < size; i++) {
+    		paged_results.add(retrieval_results.get(start + i));
+    	}
+    	return paged_results;
+    }
   }
 
   private Vector<String> processQuery(String query) {
@@ -98,7 +108,7 @@ class Ranker {
   }
 
   // Keep the public run query method
-  public ScoredDocument runquery(String query, int did, RankerType type) {
+  public ScoredDocument runquery(String query, int did, RankerType type, Integer pageSize, Integer pageStart) {
     Vector<String> qv = processQuery(query);
     ScoredDocument sd;
     if (type == RankerType.COSINE) {

@@ -17,7 +17,7 @@
                 <div class="input-group group-margin" style="margin: 50px 200px 20px 200px">
                     <input type="text" class="form-control" ng-model="queryWord" placeholder="Search for">
                     <span class="input-group-btn">
-                        <button class="btn btn-default" type="button" ng-click="go()">Go!</button>
+                        <button class="btn btn-default" type="button" ng-click="go()" ng-disabled="queryWord.length<1">Go!</button>
                     </span>
                 </div>
             </div>
@@ -42,7 +42,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr ng-repeat="doc in documents" ng-click="addlog(doc)">
+                        <tr ng-repeat="doc in documents" ng-click="clicklog(doc)">
                             <td>{{$index + 1}}</td>
                             <td>{{doc.title}}</td>
                             <td>{{doc.score}}</td>
@@ -50,7 +50,12 @@
                         </tr>
                     </tbody>
                 </table>
+                <div style="margin: 20px 100px; text-align: center">
+                    Number of records per page: <input type="number" ng-model="size">
+                    Show records from: <input type="number" ng-model="start">
+                </div>
             </div>
+
 		</div>
 	</body>
 </html>
