@@ -1,8 +1,15 @@
 function Hello($scope, $http) {
-	$http.get('/search?query=a&ranker=cosine&format=html').
-	success(function(data) {
-		$scope.documents = data;
-	});
+    $scope.queryWord = "";
+    $scope.ranker = "cosine";
+    $scope.display = false;
+
+    $scope.go = function() {
+        $http.get('/search?query=' + $scope.queryWord + '&ranker=' + $scope.ranker + '&format=html').
+            success(function(data) {
+                $scope.documents = data;
+                $scope.display = true;
+            });
+    };
 
     $scope.addlog = function(doc) {
         console.log(doc.id);
