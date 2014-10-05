@@ -117,7 +117,7 @@ public class QueryHandler implements HttpHandler {
         } 
       }
       else if (uriPath.equals("/click")) {
-    	  String filePath = "./results/hw1.4-results.tsv";
+    	  String filePath = "./results/hw1.4-log.tsv";
     	  File f = new File(filePath);
     	  Map<String, String> query_map = getQueryMap(uriQuery);
     	  String didStr = query_map.get("id");

@@ -18,18 +18,18 @@ public class SearchEngine {
   // to your group number.
   public static void main(String[] args) throws IOException {
     // Create the server.
-    if (args.length < 1){
+    if (args.length < 2){
       System.out.println("arguments for this program are: [PORT] [PATH-TO-CORPUS]");
       return;
     }
-    int port = 25801;
-    String index_path = args[0];
+    int port = Integer.parseInt(args[0]);
+    String index_path = args[1];
     InetSocketAddress addr = new InetSocketAddress(port);
     
 
     Ranker ranker = new Ranker(index_path);
     
-    WebServer server = new WebServer("127.0.0.1", 25801, 
+    WebServer server = new WebServer("127.0.0.1", port, 
     		new File("./public").getAbsoluteFile(),
     		new QueryHandler(ranker));   
     

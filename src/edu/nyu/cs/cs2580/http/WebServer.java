@@ -179,7 +179,7 @@ public class WebServer extends NanoHTTPD {
             Map<String, String> params = session.getParms();
             String queryStr = "";
             for (String keyStr : params.keySet()) {
-            	queryStr += ("&" + keyStr + "=" + params.get(keyStr));
+            	queryStr += ("&" + keyStr + "=" + encodeUri(params.get(keyStr)));
             }
             if (queryStr.equals(""))
             	uri = "http://" + headers.get("host") + uri;
