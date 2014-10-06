@@ -1,5 +1,15 @@
 package edu.nyu.cs.cs2580;
 
+/** File: Evaluator.java
+ *  ----------------------
+ *  Use example:
+ *  After server is setup
+ *  
+ *    curl "http://<HOST>:<PORT>/search?query=<QUERY>&ranker=<RANKER-TYPE>&format=text" | \
+java edu.nyu.cs.cs2580.Evaluator <PATH-TO-JUDGMENTS>
+ * ------------------------
+ */
+
 import java.io.IOException;
 import java.io.File;
 import java.io.FileReader;
@@ -23,7 +33,6 @@ class Evaluator {
     // first read the relevance judgments into the HashMap
     readRelevanceJudgments(p, relevance_judgments);
     // now evaluate the results from stdin
-    // evaluateStdin(relevance_judgments);
     evaluateStdInput(relevance_judgments);
   }
 
@@ -73,7 +82,6 @@ class Evaluator {
     }
   }
 
-  //TODO: Replace this method
   public static void evaluateStdin(
       HashMap < String , HashMap < Integer , Double > > relevance_judgments){
     // only consider one query per call    
@@ -227,13 +235,11 @@ class Evaluator {
    */
   private static void outputMetrics(
       HashMap< String, HashMap<String, Double> > metrics) {
-    Vector<String> metric_name = new Vector<String>();
     for (String query : metrics.keySet()) {
       String result = toString(query, metrics.get(query));
       System.out.println(result);
     }
   }
-
 
   /** Converts query's metrics to string, in the form of 
    * <Query><Tab><Metric_0><Tab><Metric_1><Tab>...<Metric_N> 
@@ -241,10 +247,6 @@ class Evaluator {
    */
   private static String toString(String query, HashMap<String, Double> metric) {
     String result = query + "\t";
-    for (String name : metric.keySet()) {
-      // System.out.println("name: " + name);
-      result += metric.get(name) + "\t";
-    }
     result += metric.get("Precision@1") + "\t";
     result += metric.get("Precision@5") + "\t"; 
     result += metric.get("Precision@10") + "\t";
@@ -270,7 +272,6 @@ class Evaluator {
     result += metric.get("NDCG@5") + "\t";
     result += metric.get("NDCG@10") + "\t";
     result += metric.get("ReciprocalRank");
-    //TODO: Other metrics
     return result; 
   }
 
@@ -282,9 +283,8 @@ class Evaluator {
         RR += qr.get(dids.get(i));          
       }
     }
-    //System.out.println("@" + K + ": " + RR/K);
-    // return Double.toString(RR/K);
-    return RR/K;
+    // return 0.0 for 0 denominator
+    return (K != 0) ? RR/K : K;
   }
 
   private static double recall (
@@ -302,8 +302,7 @@ class Evaluator {
         RR += qr.get(dids.get(i));          
       }
     }
-    //TODO: What if R = 0.0, i.e. no relevant doc in total, e.g. salsa
-//    System.out.println("@" + K + ": " + (R == 0 ? R : RR/R));
+    //System.out.println("@" + K + " R: " + R + " RR: " + RR + ": " + (R == 0 ? R : RR/R));
     return (R == 0.0 ? R : RR/R);
   }
 
@@ -311,7 +310,7 @@ class Evaluator {
       Vector<Integer> dids, HashMap<Integer, Double> qr, int K, double alpha) {
     double P = precision(dids, qr, K);
     double R = recall(dids, qr, K);
-    //TODO: what if P/Q = 0.0:
+    //TODO: what if P || Q = 0.0:
     double result = Math.pow((alpha * (1 / P) + (1 - alpha) * (1 / R)), -1);
     // System.out.println("@" + K + ": " + result);
     return result;
@@ -321,7 +320,6 @@ class Evaluator {
   private static double precisionAtRecall( Vector<Integer> dids, 
       HashMap<Integer, Double> qr,HashMap<String, Double> metrics) {
     double P = 0.0;
-    double R = 0.0;
     // count relevant docs in retrieved results
     int nReleDoc = 0;
     HashMap<Integer, Integer> pos = new HashMap<Integer, Integer>();
@@ -329,24 +327,17 @@ class Evaluator {
       if (qr.containsKey(dids.get(i)) != false) {
         if (qr.get(dids.get(i)) != 0) {
           nReleDoc += 1;
-          // System.out.println("add: " + nReleDoc + ", " + (i + 1));
           pos.put(nReleDoc, i + 1);
         }
       }
     }
-    
-    // System.out.println("N rel: " + nReleDoc);
-    int i = 0;
     int k = 0;
-    while ( i <= 10 ) {
+    for (int i = 0; i <= 10; i++) {
       k = (int) (nReleDoc * 0.1 * i);
       if (k != 0) {
-        //System.out.println("k: " + k);
         P = precision(dids, qr, pos.get(k));
-        //System.out.println("i: " + 0.1 * i + " k: " + pos.get(k) + " P: " + P);
       }
       metrics.put(("PAtR"+i), P);
-      i += 1;
     }
     return 0.0;
   }
@@ -365,7 +356,6 @@ class Evaluator {
         }
       }
     }
-    double result = (RR == 0.0 ? RR : AP/RR);
     // System.out.println("RR: " + RR + " result: " + result);
     return (RR == 0.0 ? RR : AP/RR);
   }
@@ -387,13 +377,13 @@ class Evaluator {
     }
     // calculate Ideal DCG (IDCG)
     Collections.sort(rels, Collections.reverseOrder());
-    // System.out.println("rels: " + rels);
     for (int i = 0; i < rels.size(); i++) {
       if (rels.get(i) == 0.0) {
         break;
       }
       IDCG += rels.get(i) * Math.log(2) / Math.log((i + 1) + 1);
     }
+    //System.out.println("DCG: " + DCG + " IDCG: " + IDCG);
     NDCG = (IDCG == 0.0) ? 0 : DCG / IDCG;
     return NDCG;
   }
@@ -406,8 +396,8 @@ class Evaluator {
         return (1.0 / (i + 1));
       }
     }
+    // if no relevant doc found, return 0
     return 0.0;
   }
-  
 
 }
