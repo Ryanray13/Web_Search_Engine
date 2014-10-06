@@ -1,3 +1,14 @@
+For numviews ranker, the query string would be "ranker=numviews"
+The beta values used in linear ranker are all 0.25.
+The tf.idf weight is calculated as described in the book.
+Also In numviews and phrase ranker, I use logarithm on the counts. Say we have N count the score would be log(N) + 1 if N is not zero.
+
+For compilation, javac edu/nyu/cs/cs2580/*.java should do the job, but if anything wrong occurs, manually compile all the java file in 
+directory edu/nyu/cs/cs2580/http/. I.e. javac edu/nyu/cs/cs2580/http/*.java.
+
+For html format, simply open a browser and hit http://localhost:25801. Different browser will have different seesion id and default render
+ten documents.
+
 Evaluator:
 
 1. How: 
