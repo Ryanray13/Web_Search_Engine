@@ -198,8 +198,8 @@ public class WebServer extends NanoHTTPD {
             } catch (IOException e) {
             }
             
-            String value = (String) exchange.getAttribute("sessionIdStr");
-            session.getCookies().set("sessionIdStr", value, 1);
+            String value = (String) exchange.getAttribute("sessionId");
+            session.getCookies().set("sessionId", value, 1);
             return createResponse(
                     Response.Status.OK,
                     NanoHTTPD.MIME_PLAINTEXT,
@@ -216,7 +216,7 @@ public class WebServer extends NanoHTTPD {
             res.addHeader("Location", uri);
             return res;
         }
-System.out.println(f.getAbsolutePath());
+
         if (f.isDirectory()) {
             // First look for index files (index.html, index.htm, etc) and if none found, list the directory if readable.
             String indexFile = findIndexFileInDirectory(f);

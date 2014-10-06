@@ -47,6 +47,10 @@ public class QueryHandler implements HttpHandler {
       return;
     }
 
+    if (exchange.getAttribute("sessionId") == null){
+      exchange.setAttribute("sessionId", Integer.toString(new Date().hashCode()));
+    }
+    
     // Print the user request header.
     Headers requestHeaders = exchange.getRequestHeaders();
     System.out.print("Incoming request: ");
@@ -116,9 +120,7 @@ public class QueryHandler implements HttpHandler {
           }
         }
       } else if (uriPath.equals("/click")) {
-    	if (exchange.getAttribute("sessionIdStr") == null)
-    		exchange.setAttribute("sessionIdStr", Integer.toString(new Date().hashCode()));
-    	String sessionIdStr = exchange.getAttribute("sessionIdStr").toString();
+    	String sessionId = exchange.getAttribute("sessionId").toString();
         String resultsPath = "../results";
         File testResultsPath = new File("../results/");
         if (!testResultsPath.exists()) {
@@ -136,7 +138,7 @@ public class QueryHandler implements HttpHandler {
         DateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
         Date now = Calendar.getInstance().getTime();
         String timeStr = df.format(now);
-        String newLog = sessionIdStr + "\t" + queryStr + "\t" + didStr + "\t"
+        String newLog = sessionId + "\t" + queryStr + "\t" + didStr + "\t"
             + actionStr + "\t" + timeStr;
         if (f.exists()) {
           PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(
