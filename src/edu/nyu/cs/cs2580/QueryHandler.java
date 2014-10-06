@@ -47,10 +47,11 @@ public class QueryHandler implements HttpHandler {
       return;
     }
 
-    if (exchange.getAttribute("sessionId") == null){
-      exchange.setAttribute("sessionId", Integer.toString(new Date().hashCode()));
+    if (exchange.getAttribute("sessionId") == null) {
+      exchange.setAttribute("sessionId",
+          Integer.toString(Math.abs(new Date().hashCode())));
     }
-    
+
     // Print the user request header.
     Headers requestHeaders = exchange.getRequestHeaders();
     System.out.print("Incoming request: ");
@@ -120,7 +121,7 @@ public class QueryHandler implements HttpHandler {
           }
         }
       } else if (uriPath.equals("/click")) {
-    	String sessionId = exchange.getAttribute("sessionId").toString();
+        String sessionId = exchange.getAttribute("sessionId").toString();
         String resultsPath = "../results";
         File testResultsPath = new File("../results/");
         if (!testResultsPath.exists()) {

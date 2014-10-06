@@ -6,7 +6,7 @@ package edu.nyu.cs.cs2580;
  *  After server is setup
  *  
  *    curl "http://<HOST>:<PORT>/search?query=<QUERY>&ranker=<RANKER-TYPE>&format=text" | \
-java edu.nyu.cs.cs2580.Evaluator <PATH-TO-JUDGMENTS>
+ java edu.nyu.cs.cs2580.Evaluator <PATH-TO-JUDGMENTS>
  * ------------------------
  */
 
@@ -23,9 +23,8 @@ import java.util.Scanner;
 class Evaluator {
 
   public static void main(String[] args) throws IOException {
-    HashMap < String , HashMap < Integer , Double > > relevance_judgments =
-        new HashMap < String , HashMap < Integer , Double > >();
-    if (args.length < 1){
+    HashMap<String, HashMap<Integer, Double>> relevance_judgments = new HashMap<String, HashMap<Integer, Double>>();
+    if (args.length < 1) {
       System.out.println("need to provide relevance_judgments");
       return;
     }
@@ -36,19 +35,23 @@ class Evaluator {
     evaluateStdInput(relevance_judgments);
   }
 
-  /** Reads in file containing relevance judgments for a set of queries 
-   * and parses it into a hash map in the form of 
-   * HashMap< Query, HashMap< document_id, graded_relevance > >.
-   * @param p path to qref.tsv file, the relevance judgments for queries.
-   * @param relevance_judgments hashmap used to store results after parsing.
+  /**
+   * Reads in file containing relevance judgments for a set of queries and
+   * parses it into a hash map in the form of HashMap< Query, HashMap<
+   * document_id, graded_relevance > >.
+   * 
+   * @param p
+   *          path to qref.tsv file, the relevance judgments for queries.
+   * @param relevance_judgments
+   *          hashmap used to store results after parsing.
    */
-  public static void readRelevanceJudgments(
-      String p,HashMap < String , HashMap < Integer , Double > > relevance_judgments){
+  public static void readRelevanceJudgments(String p,
+      HashMap<String, HashMap<Integer, Double>> relevance_judgments) {
     try {
       BufferedReader reader = new BufferedReader(new FileReader(p));
       try {
         String line = null;
-        while ((line = reader.readLine()) != null){
+        while ((line = reader.readLine()) != null) {
           // parse the query,did,relevance line
           Scanner s = new Scanner(line).useDelimiter("\t");
           String query = s.next();
@@ -67,87 +70,92 @@ class Evaluator {
           } else if (grade.equals("Bad")) {
             rel = 0.0;
           }
-          if (relevance_judgments.containsKey(query) == false){
-            HashMap < Integer , Double > qr = new HashMap < Integer , Double >();
-            relevance_judgments.put(query,qr);
+          if (relevance_judgments.containsKey(query) == false) {
+            HashMap<Integer, Double> qr = new HashMap<Integer, Double>();
+            relevance_judgments.put(query, qr);
           }
-          HashMap < Integer , Double > qr = relevance_judgments.get(query);
-          qr.put(did,rel);
+          HashMap<Integer, Double> qr = relevance_judgments.get(query);
+          qr.put(did, rel);
         }
       } finally {
         reader.close();
       }
-    } catch (IOException ioe){
+    } catch (IOException ioe) {
       System.err.println("Oops " + ioe.getMessage());
     }
   }
 
   public static void evaluateStdin(
-      HashMap < String , HashMap < Integer , Double > > relevance_judgments){
-    // only consider one query per call    
+      HashMap<String, HashMap<Integer, Double>> relevance_judgments) {
+    // only consider one query per call
     try {
-      BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+      BufferedReader reader = new BufferedReader(new InputStreamReader(
+          System.in));
       String line = null;
       double RR = 0.0;
       double N = 0.0;
-      while ((line = reader.readLine()) != null){
+      while ((line = reader.readLine()) != null) {
         Scanner s = new Scanner(line).useDelimiter("\t");
         String query = s.next();
         int did = Integer.parseInt(s.next());
         String title = s.next();
         double rel = Double.parseDouble(s.next());
-        if (relevance_judgments.containsKey(query) == false){
+        if (relevance_judgments.containsKey(query) == false) {
           throw new IOException("query not found");
         }
-        HashMap < Integer , Double > qr = relevance_judgments.get(query);
-        if (qr.containsKey(did) != false){
-          RR += qr.get(did);          
+        HashMap<Integer, Double> qr = relevance_judgments.get(query);
+        if (qr.containsKey(did) != false) {
+          RR += qr.get(did);
         }
         ++N;
       }
       // System.out.println(Double.toString(RR/N));
-    } catch (Exception e){
+    } catch (Exception e) {
       System.err.println("Error:" + e.getMessage());
     }
   }
 
   /**
    * Read from standard input, calculate metrics and output results
+   * 
    * @param relevance_judgments
    */
-  public static void evaluateStdInput( 
-      HashMap < String , HashMap < Integer , Double > > relevance_judgments){
-    HashMap< String, Vector<String> > retrieved_results = 
-        new HashMap< String, Vector<String> > ();
+  public static void evaluateStdInput(
+      HashMap<String, HashMap<Integer, Double>> relevance_judgments) {
+    HashMap<String, Vector<String>> retrieved_results = new HashMap<String, Vector<String>>();
 
     // read in standard input and parse it into a hash map
     readStdInput(retrieved_results);
 
     // calculate metrics
-    HashMap< String, HashMap<String, Double> > metrics = 
-        calculateMetrics(relevance_judgments, retrieved_results);
-    
+    HashMap<String, HashMap<String, Double>> metrics = calculateMetrics(
+        relevance_judgments, retrieved_results);
+
     // output results
     outputMetrics(metrics);
-    
+
   }
-  
-  /** Reads retrieved results for queries from standard input and parse results
+
+  /**
+   * Reads retrieved results for queries from standard input and parse results
    * into retrieved_results.
-   * @param retrieved_results HashMap to store the input.
+   * 
+   * @param retrieved_results
+   *          HashMap to store the input.
    */
   private static void readStdInput(
-      HashMap< String, Vector<String> > retrieved_results) {
+      HashMap<String, Vector<String>> retrieved_results) {
     try {
-      BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+      BufferedReader reader = new BufferedReader(new InputStreamReader(
+          System.in));
       String line = null;
-      while ((line = reader.readLine()) != null){
+      while ((line = reader.readLine()) != null) {
         Scanner s = new Scanner(line).useDelimiter("\t");
         String query = s.next();
         String did = s.next();
         String title = s.next();
-        String rel = s.next(); 
-        if (retrieved_results.containsKey(query) ==  false) {
+        String rel = s.next();
+        if (retrieved_results.containsKey(query) == false) {
           retrieved_results.put(query, new Vector<String>());
         }
         Vector<String> vec = retrieved_results.get(query);
@@ -155,27 +163,28 @@ class Evaluator {
         vec.add(title);
         vec.add(rel);
       }
-    } catch (Exception e){
+    } catch (Exception e) {
       System.err.println("Error:" + e.getMessage());
-    } 
+    }
   }
 
-  /** Calculates metrics for each query from the retrieved results
-   * @return HashMap<Query, HashMap<Metric_name, Metric_result> > 
+  /**
+   * Calculates metrics for each query from the retrieved results
+   * 
+   * @return HashMap<Query, HashMap<Metric_name, Metric_result> >
    */
-  private static HashMap<String, HashMap<String, Double> > calculateMetrics(
-      HashMap < String , HashMap < Integer , Double > > relevance_judgments, 
-      HashMap< String, Vector<String> > retrieved_results ) {
-  
-    HashMap< String, HashMap<String, Double> > qry_metrics = 
-        new HashMap< String, HashMap< String, Double> >();
-    try{
-      for (String query: retrieved_results.keySet()) {
-        if (relevance_judgments.containsKey(query) == false){
+  private static HashMap<String, HashMap<String, Double>> calculateMetrics(
+      HashMap<String, HashMap<Integer, Double>> relevance_judgments,
+      HashMap<String, Vector<String>> retrieved_results) {
+
+    HashMap<String, HashMap<String, Double>> qry_metrics = new HashMap<String, HashMap<String, Double>>();
+    try {
+      for (String query : retrieved_results.keySet()) {
+        if (relevance_judgments.containsKey(query) == false) {
           throw new IOException("query not found");
         }
-        HashMap<String, Double> metrics = new HashMap<String, Double>(); 
-        
+        HashMap<String, Double> metrics = new HashMap<String, Double>();
+
         // get document ids in the retrieved results for this query
         Vector<Integer> dids = getDids(retrieved_results.get(query));
         // graded relevance
@@ -195,14 +204,14 @@ class Evaluator {
 
         precisionAtRecall(dids, qr_binary, metrics);
 
-        metrics.put("AVGPrecision", avgPrecision(dids, qr_binary)); 
-        metrics.put("NDCG@1", NDCG(dids, qr_graded, 1)); 
-        metrics.put("NDCG@5", NDCG(dids, qr_graded, 5)); 
-        metrics.put("NDCG@10", NDCG(dids, qr_graded, 10)); 
-        metrics.put("ReciprocalRank", reciprocalRank(dids, qr_binary)); 
+        metrics.put("AVGPrecision", avgPrecision(dids, qr_binary));
+        metrics.put("NDCG@1", NDCG(dids, qr_graded, 1));
+        metrics.put("NDCG@5", NDCG(dids, qr_graded, 5));
+        metrics.put("NDCG@10", NDCG(dids, qr_graded, 10));
+        metrics.put("ReciprocalRank", reciprocalRank(dids, qr_binary));
         qry_metrics.put(query, metrics);
       }
-    } catch (Exception e){
+    } catch (Exception e) {
       System.err.println("Error:" + e.getMessage());
     }
     return qry_metrics;
@@ -222,33 +231,38 @@ class Evaluator {
     double rel = 0.0;
     for (Integer did : qr_graded.keySet()) {
       // <Perfect, 10>, <Excellent, 7>, <Good, 5>, <Fair, 1>, <Bad, 0>
-      // Perfect, Excellent, and Good are treated as relevance, 
+      // Perfect, Excellent, and Good are treated as relevance,
       // rest is non-relevance.
       rel = (qr_graded.get(did) > 1.0) ? 1.0 : 0.0;
       qr_binary.put(did, rel);
     }
     return qr_binary;
   }
-  
-  /** Output results.
-   * @param metrics metrics results for all queries.
+
+  /**
+   * Output results.
+   * 
+   * @param metrics
+   *          metrics results for all queries.
    */
   private static void outputMetrics(
-      HashMap< String, HashMap<String, Double> > metrics) {
+      HashMap<String, HashMap<String, Double>> metrics) {
     for (String query : metrics.keySet()) {
       String result = toString(query, metrics.get(query));
       System.out.println(result);
     }
   }
 
-  /** Converts query's metrics to string, in the form of 
-   * <Query><Tab><Metric_0><Tab><Metric_1><Tab>...<Metric_N> 
+  /**
+   * Converts query's metrics to string, in the form of
+   * <Query><Tab><Metric_0><Tab><Metric_1><Tab>...<Metric_N>
+   * 
    * @return
    */
   private static String toString(String query, HashMap<String, Double> metric) {
     String result = query + "\t";
     result += metric.get("Precision@1") + "\t";
-    result += metric.get("Precision@5") + "\t"; 
+    result += metric.get("Precision@5") + "\t";
     result += metric.get("Precision@10") + "\t";
     result += metric.get("Recall@1") + "\t";
     result += metric.get("Recall@5") + "\t";
@@ -272,23 +286,23 @@ class Evaluator {
     result += metric.get("NDCG@5") + "\t";
     result += metric.get("NDCG@10") + "\t";
     result += metric.get("ReciprocalRank");
-    return result; 
+    return result;
   }
 
-  private static double precision (
-      Vector<Integer> dids, HashMap<Integer, Double> qr, int K) {
+  private static double precision(Vector<Integer> dids,
+      HashMap<Integer, Double> qr, int K) {
     double RR = 0.0;
     for (int i = 0; i < K; i++) {
-      if (qr.containsKey(dids.get(i)) != false){
-        RR += qr.get(dids.get(i));          
+      if (qr.containsKey(dids.get(i)) != false) {
+        RR += qr.get(dids.get(i));
       }
     }
     // return 0.0 for 0 denominator
-    return (K != 0) ? RR/K : K;
+    return (K != 0) ? RR / K : K;
   }
 
-  private static double recall (
-      Vector<Integer> dids, HashMap<Integer, Double> qr, int K) {
+  private static double recall(Vector<Integer> dids,
+      HashMap<Integer, Double> qr, int K) {
     double R = 0.0;
     double RR = 0.0;
     // count relevant docs in retrieved results
@@ -299,26 +313,27 @@ class Evaluator {
     }
     for (int i = 0; i < K; i++) {
       if (qr.containsKey(dids.get(i)) != false) {
-        RR += qr.get(dids.get(i));          
+        RR += qr.get(dids.get(i));
       }
     }
-    //System.out.println("@" + K + " R: " + R + " RR: " + RR + ": " + (R == 0 ? R : RR/R));
-    return (R == 0.0 ? R : RR/R);
+    // System.out.println("@" + K + " R: " + R + " RR: " + RR + ": " + (R == 0 ?
+    // R : RR/R));
+    return (R == 0.0 ? R : RR / R);
   }
 
-  private static double F (
-      Vector<Integer> dids, HashMap<Integer, Double> qr, int K, double alpha) {
+  private static double F(Vector<Integer> dids, HashMap<Integer, Double> qr,
+      int K, double alpha) {
     double P = precision(dids, qr, K);
     double R = recall(dids, qr, K);
-    //TODO: what if P || Q = 0.0:
+    // TODO: what if P || Q = 0.0:
     double result = Math.pow((alpha * (1 / P) + (1 - alpha) * (1 / R)), -1);
     // System.out.println("@" + K + ": " + result);
     return result;
   }
 
-  //TODO: When Recall = 0.0, Precision = ? 
-  private static double precisionAtRecall( Vector<Integer> dids, 
-      HashMap<Integer, Double> qr,HashMap<String, Double> metrics) {
+  // TODO: When Recall = 0.0, Precision = ?
+  private static double precisionAtRecall(Vector<Integer> dids,
+      HashMap<Integer, Double> qr, HashMap<String, Double> metrics) {
     double P = 0.0;
     // count relevant docs in retrieved results
     int nReleDoc = 0;
@@ -337,13 +352,13 @@ class Evaluator {
       if (k != 0) {
         P = precision(dids, qr, pos.get(k));
       }
-      metrics.put(("PAtR"+i), P);
+      metrics.put(("PAtR" + i), P);
     }
     return 0.0;
   }
-  
-  private static double avgPrecision (
-      Vector<Integer> dids, HashMap<Integer, Double> qr) {
+
+  private static double avgPrecision(Vector<Integer> dids,
+      HashMap<Integer, Double> qr) {
     double AP = 0.0;
     double RR = 0.0;
     for (int i = 0; i < dids.size(); i++) {
@@ -357,11 +372,11 @@ class Evaluator {
       }
     }
     // System.out.println("RR: " + RR + " result: " + result);
-    return (RR == 0.0 ? RR : AP/RR);
+    return (RR == 0.0 ? RR : AP / RR);
   }
 
-  private static double NDCG (
-      Vector<Integer> dids, HashMap<Integer, Double> qr, int K) {
+  private static double NDCG(Vector<Integer> dids,
+      HashMap<Integer, Double> qr, int K) {
     double DCG = 0.0;
     double IDCG = 0.0;
     double NDCG = 0.0;
@@ -383,16 +398,15 @@ class Evaluator {
       }
       IDCG += rels.get(i) * Math.log(2) / Math.log((i + 1) + 1);
     }
-    //System.out.println("DCG: " + DCG + " IDCG: " + IDCG);
+    // System.out.println("DCG: " + DCG + " IDCG: " + IDCG);
     NDCG = (IDCG == 0.0) ? 0 : DCG / IDCG;
     return NDCG;
   }
 
-  private static double reciprocalRank (
-      Vector<Integer> dids, HashMap<Integer, Double> qr) {
+  private static double reciprocalRank(Vector<Integer> dids,
+      HashMap<Integer, Double> qr) {
     for (int i = 0; i < dids.size(); i++) {
-      if (qr.containsKey(dids.get(i)) != false
-          && qr.get(dids.get(i)) != 0.0) {
+      if (qr.containsKey(dids.get(i)) != false && qr.get(dids.get(i)) != 0.0) {
         return (1.0 / (i + 1));
       }
     }

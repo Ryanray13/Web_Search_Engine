@@ -6,14 +6,14 @@ class ScoredDocument {
   public String _title;
   public double _score;
 
-  ScoredDocument(int did, String title, double score){
+  ScoredDocument(int did, String title, double score) {
     _did = did;
     _title = title;
     _score = score;
   }
 
-  String asString(){
-    return new String(
-      Integer.toString(_did) + "\t" + _title + "\t" + Double.toString(_score));
+  String asString() {
+    return new String(Integer.toString(_did) + "\t" + _title + "\t"
+        + Double.toString(_score));
   }
 }
