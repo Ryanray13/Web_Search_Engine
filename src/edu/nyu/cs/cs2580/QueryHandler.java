@@ -116,7 +116,7 @@ public class QueryHandler implements HttpHandler {
           }
         }
       } else if (uriPath.equals("/click")) {
-        String resultsPath = "../results/";
+        String resultsPath = "../results";
         File testResultsPath = new File("../results/");
         if (!testResultsPath.exists()) {
           testResultsPath = new File("./results/");
@@ -125,7 +125,6 @@ public class QueryHandler implements HttpHandler {
           }
         }
         String filePath = resultsPath + "/hw1.4-log.tsv";
-        System.out.println(filePath);
         File f = new File(filePath);
         Map<String, String> query_map = getQueryMap(uriQuery);
         String didStr = query_map.get("id");
