@@ -1,0 +1,35 @@
+Evaluator:
+
+1. How: 
+
+  $ curl "http://<HOST>:<PORT>/search?query=<QUERY>&ranker=<RANKER-TYPE>&format=text" | java edu.nyu.cs.cs2580.Evaluator <PATH-TO-JUDGMENTS>
+  
+2. Example:
+When server is running, change directory to search_engine/src, then type in terminal:
+
+  curl "http://localhost:25801/search?query=bing&ranker=QL&format=text" | java edu.nyu.cs.cs2580.Evaluator ../data/qrels.tsv
+  
+This will show result for query = "bing", ranker = "QL" in standard output. 
+For other ouputs,
+  
+  curl "http://localhost:25801/search?query=bing&ranker=cosine&format=text" | java edu.nyu.cs.cs2580.Evaluator ../data/qrels.tsv
+  curl "http://localhost:25801/search?query=bing&ranker=phrase&format=text" | java edu.nyu.cs.cs2580.Evaluator ../data/qrels.tsv
+  curl "http://localhost:25801/search?query=bing&ranker=numviews&format=text" | java edu.nyu.cs.cs2580.Evaluator ../data/qrels.tsv
+  curl "http://localhost:25801/search?query=bing&ranker=linear&format=text" | java edu.nyu.cs.cs2580.Evaluator ../data/qrels.tsv
+  
+  curl "http://localhost:25801/search?query=web%20search&ranker=QL&format=text" | java edu.nyu.cs.cs2580.Evaluator ../data/qrels.tsv
+  ......
+  curl "http://localhost:25801/search?query=google&ranker=QL&format=text" | java edu.nyu.cs.cs2580.Evaluator ../data/qrels.tsv
+  ......
+  curl "http://localhost:25801/search?query=data%20mining&ranker=QL&format=text" | java edu.nyu.cs.cs2580.Evaluator ../data/qrels.tsv
+  ......
+  curl "http://localhost:25801/search?query=salsa&ranker=QL&format=text" | java edu.nyu.cs.cs2580.Evaluator ../data/qrels.tsv
+  ......
+
+3. Generate required files, (when in src directory):
+
+  cat ../results/hw1.1-numviews.tsv | java edu.nyu.cs.cs2580.Evaluator ../data/qrels.tsv > ../results/hw1.3-numviews.tsv
+  cat ../results/hw1.1-phrase.tsv | java edu.nyu.cs.cs2580.Evaluator ../data/qrels.tsv > ../results/hw1.3-phrase.tsv
+  cat ../results/hw1.1-ql.tsv | java edu.nyu.cs.cs2580.Evaluator ../data/qrels.tsv > ../results/hw1.3-ql.tsv
+  cat ../results/hw1.1-vsm.tsv | java edu.nyu.cs.cs2580.Evaluator ../data/qrels.tsv > ../results/hw1.3-vsm.tsv
+  cat ../results/hw1.2-linear.tsv | java edu.nyu.cs.cs2580.Evaluator ../data/qrels.tsv > ../results/hw1.3-linear.tsv
