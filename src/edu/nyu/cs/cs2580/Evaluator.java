@@ -40,10 +40,8 @@ class Evaluator {
    * parses it into a hash map in the form of HashMap< Query, HashMap<
    * document_id, graded_relevance > >.
    * 
-   * @param p
-   *          path to qref.tsv file, the relevance judgments for queries.
-   * @param relevance_judgments
-   *          hashmap used to store results after parsing.
+   * @param p path to qref.tsv file, the relevance judgments for queries.
+   * @param relevance_judgments hashmap used to store results after parsing.
    */
   public static void readRelevanceJudgments(String p,
       HashMap<String, HashMap<Integer, Double>> relevance_judgments) {
@@ -85,36 +83,6 @@ class Evaluator {
     }
   }
 
-  public static void evaluateStdin(
-      HashMap<String, HashMap<Integer, Double>> relevance_judgments) {
-    // only consider one query per call
-    try {
-      BufferedReader reader = new BufferedReader(new InputStreamReader(
-          System.in));
-      String line = null;
-      double RR = 0.0;
-      double N = 0.0;
-      while ((line = reader.readLine()) != null) {
-        Scanner s = new Scanner(line).useDelimiter("\t");
-        String query = s.next();
-        int did = Integer.parseInt(s.next());
-        String title = s.next();
-        double rel = Double.parseDouble(s.next());
-        if (relevance_judgments.containsKey(query) == false) {
-          throw new IOException("query not found");
-        }
-        HashMap<Integer, Double> qr = relevance_judgments.get(query);
-        if (qr.containsKey(did) != false) {
-          RR += qr.get(did);
-        }
-        ++N;
-      }
-      // System.out.println(Double.toString(RR/N));
-    } catch (Exception e) {
-      System.err.println("Error:" + e.getMessage());
-    }
-  }
-
   /**
    * Read from standard input, calculate metrics and output results
    * 
@@ -140,8 +108,7 @@ class Evaluator {
    * Reads retrieved results for queries from standard input and parse results
    * into retrieved_results.
    * 
-   * @param retrieved_results
-   *          HashMap to store the input.
+   * @param retrieved_results HashMap to store the input.
    */
   private static void readStdInput(
       HashMap<String, Vector<String>> retrieved_results) {
@@ -247,10 +214,18 @@ class Evaluator {
    */
   private static void outputMetrics(
       HashMap<String, HashMap<String, Double>> metrics) {
+    /* 
+    // When output order is not supposed consistent with order in queries.tsv
     for (String query : metrics.keySet()) {
       String result = toString(query, metrics.get(query));
       System.out.println(result);
     }
+    */
+    System.out.println(toString("bing", metrics.get("bing")));
+    System.out.println(toString("data mining", metrics.get("data mining")));
+    System.out.println(toString("google", metrics.get("google")));
+    System.out.println(toString("salsa", metrics.get("salsa")));
+    System.out.println(toString("web search", metrics.get("web search")));
   }
 
   /**
