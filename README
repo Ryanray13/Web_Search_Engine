@@ -1,46 +1,28 @@
+Compile:
+
+Normally, if current directory is src/,  javac edu/nyu/cs/cs2580/*.java should do the job, but if anything wrong occurs, manually compile all the java file in 
+directory edu/nyu/cs/cs2580/http/. I.e.:
+
+  javac edu/nyu/cs/cs2580/*.java
+  javac edu/nyu/cs/cs2580/http/*.java.
+
+
+Ranker: 
 For numviews ranker, the query string would be "ranker=numviews"
 The beta values used in linear ranker are all 0.25.
 The tf.idf weight is calculated as described in the book.
-Also In numviews and phrase ranker, I use logarithm on the counts. Say we have N count the score would be log(N) + 1 if N is not zero.
+Also In numviews and phrase ranker, I use logarithm on the counts. Say we have N counts the score would be log(N) + 1 if N is not zero.
 
-For compilation, javac edu/nyu/cs/cs2580/*.java should do the job, but if anything wrong occurs, manually compile all the java file in 
-directory edu/nyu/cs/cs2580/http/. I.e. javac edu/nyu/cs/cs2580/http/*.java.
-
-For html format, simply open a browser and hit http://localhost:25801. Different browser will have different seesion id and default render
-ten documents.
 
 Evaluator:
 
-1. How: 
-
-  $ curl "http://<HOST>:<PORT>/search?query=<QUERY>&ranker=<RANKER-TYPE>&format=text" | java edu.nyu.cs.cs2580.Evaluator <PATH-TO-JUDGMENTS>
-  
-2. Example:
-When server is running, change directory to search_engine/src, then type in terminal:
+When server is running, if current directory is src/, then type in terminal:
 
   curl "http://localhost:25801/search?query=bing&ranker=QL&format=text" | java edu.nyu.cs.cs2580.Evaluator ../data/qrels.tsv
   
 This will show result for query = "bing", ranker = "QL" in standard output. 
-For other ouputs,
-  
-  curl "http://localhost:25801/search?query=bing&ranker=cosine&format=text" | java edu.nyu.cs.cs2580.Evaluator ../data/qrels.tsv
-  curl "http://localhost:25801/search?query=bing&ranker=phrase&format=text" | java edu.nyu.cs.cs2580.Evaluator ../data/qrels.tsv
-  curl "http://localhost:25801/search?query=bing&ranker=numviews&format=text" | java edu.nyu.cs.cs2580.Evaluator ../data/qrels.tsv
-  curl "http://localhost:25801/search?query=bing&ranker=linear&format=text" | java edu.nyu.cs.cs2580.Evaluator ../data/qrels.tsv
-  
-  curl "http://localhost:25801/search?query=web%20search&ranker=QL&format=text" | java edu.nyu.cs.cs2580.Evaluator ../data/qrels.tsv
-  ......
-  curl "http://localhost:25801/search?query=google&ranker=QL&format=text" | java edu.nyu.cs.cs2580.Evaluator ../data/qrels.tsv
-  ......
-  curl "http://localhost:25801/search?query=data%20mining&ranker=QL&format=text" | java edu.nyu.cs.cs2580.Evaluator ../data/qrels.tsv
-  ......
-  curl "http://localhost:25801/search?query=salsa&ranker=QL&format=text" | java edu.nyu.cs.cs2580.Evaluator ../data/qrels.tsv
-  ......
 
-3. Generate required files, (when in src directory):
 
-  cat ../results/hw1.1-numviews.tsv | java edu.nyu.cs.cs2580.Evaluator ../data/qrels.tsv > ../results/hw1.3-numviews.tsv
-  cat ../results/hw1.1-phrase.tsv | java edu.nyu.cs.cs2580.Evaluator ../data/qrels.tsv > ../results/hw1.3-phrase.tsv
-  cat ../results/hw1.1-ql.tsv | java edu.nyu.cs.cs2580.Evaluator ../data/qrels.tsv > ../results/hw1.3-ql.tsv
-  cat ../results/hw1.1-vsm.tsv | java edu.nyu.cs.cs2580.Evaluator ../data/qrels.tsv > ../results/hw1.3-vsm.tsv
-  cat ../results/hw1.2-linear.tsv | java edu.nyu.cs.cs2580.Evaluator ../data/qrels.tsv > ../results/hw1.3-linear.tsv
+Logging:
+For html format, simply open a browser and hit http://localhost:25801. Different browser will have different seesion id and default render
+ten documents. User could change how many documents retrieved in browser. Render and click would be logged in hw1.4-log.tsv.

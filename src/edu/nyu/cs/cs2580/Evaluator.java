@@ -214,18 +214,18 @@ class Evaluator {
    */
   private static void outputMetrics(
       HashMap<String, HashMap<String, Double>> metrics) {
-    /* 
     // When output order is not supposed consistent with order in queries.tsv
     for (String query : metrics.keySet()) {
       String result = toString(query, metrics.get(query));
       System.out.println(result);
     }
-    */
+    /*
     System.out.println(toString("bing", metrics.get("bing")));
     System.out.println(toString("data mining", metrics.get("data mining")));
     System.out.println(toString("google", metrics.get("google")));
     System.out.println(toString("salsa", metrics.get("salsa")));
     System.out.println(toString("web search", metrics.get("web search")));
+    */
   }
 
   /**
