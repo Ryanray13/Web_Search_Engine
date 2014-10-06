@@ -23,7 +23,8 @@ class Ranker {
     totalDocNum = _index.numDocs();
   }
 
-  public Vector<ScoredDocument> runquery(String query, RankerType type, String pageSize, String pageStart) {
+  public Vector<ScoredDocument> runquery(String query, RankerType type,
+      String pageSize, String pageStart) {
     // Documents with non-zero scores
     Vector<ScoredDocument> retrieval_results = new Vector<ScoredDocument>();
 
@@ -71,15 +72,15 @@ class Ranker {
         new ScoredDocument[retrieval_results.size()]);
     retrieval_results.addAll(nonrelevant_results);
     if (pageSize == null || pageStart == null)
-    	return retrieval_results;
+      return retrieval_results;
     else {
-    	int size = Integer.parseInt(pageSize);
-    	int start = Integer.parseInt(pageStart);
-    	Vector<ScoredDocument> paged_results = new Vector<ScoredDocument>();
-    	for (int i = 0; i < size; i++) {
-    		paged_results.add(retrieval_results.get(start + i));
-    	}
-    	return paged_results;
+      int size = Integer.parseInt(pageSize);
+      int start = Integer.parseInt(pageStart);
+      Vector<ScoredDocument> paged_results = new Vector<ScoredDocument>();
+      for (int i = 0; i < size; i++) {
+        paged_results.add(retrieval_results.get(start + i));
+      }
+      return paged_results;
     }
   }
 
@@ -108,7 +109,8 @@ class Ranker {
   }
 
   // Keep the public run query method
-  public ScoredDocument runquery(String query, int did, RankerType type, Integer pageSize, Integer pageStart) {
+  public ScoredDocument runquery(String query, int did, RankerType type,
+      Integer pageSize, Integer pageStart) {
     Vector<String> qv = processQuery(query);
     ScoredDocument sd;
     if (type == RankerType.COSINE) {
@@ -307,7 +309,7 @@ class Ranker {
         score += pf.get(phrase);
       }
     }
-    if(score != 0.0){
+    if (score != 0.0) {
       score = Math.log(score) / LOG2_BASE + 1;
     }
     return score;
@@ -318,13 +320,13 @@ class Ranker {
     if (d == null) {
       return null;
     }
-    
+
     double score = 0.0;
     int numviews = d.get_numviews();
     if (numviews != 0) {
       score = Math.log(numviews) / LOG2_BASE + 1;
     }
-    
+
     return new ScoredDocument(did, d.get_title_string(), score);
   }
 
@@ -334,12 +336,12 @@ class Ranker {
     if (d == null) {
       return null;
     }
-    
+
     double score = COSINE_BETA * runCosineRanker(qvm, did)._score + QL_BETA
         * runQLRanker(qv, did)._score + PHRASE_BETA
         * runPhraseRanker(qbv, did, qv.size())._score + NUMVIEWS_BETA
         * runNumviewsRanker(qv, did)._score;
-    
+
     return new ScoredDocument(did, d.get_title_string(), score);
   }
 

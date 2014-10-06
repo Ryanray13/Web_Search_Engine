@@ -18,28 +18,36 @@ public class SearchEngine {
   // to your group number.
   public static void main(String[] args) throws IOException {
     // Create the server.
-    if (args.length < 2){
-      System.out.println("arguments for this program are: [PORT] [PATH-TO-CORPUS]");
+    if (args.length < 2) {
+      System.out
+          .println("arguments for this program are: [PORT] [PATH-TO-CORPUS]");
       return;
     }
     int port = Integer.parseInt(args[0]);
     String index_path = args[1];
     InetSocketAddress addr = new InetSocketAddress(port);
-    
 
     Ranker ranker = new Ranker(index_path);
-    
-    WebServer server = new WebServer("127.0.0.1", port, 
-    		new File("./public").getAbsoluteFile(),
-    		new QueryHandler(ranker));   
-    
+
+    String publicPath = "../public";
+    File testPublicPath = new File("../public/");
+    if (!testPublicPath.exists()) {
+      testPublicPath = new File("./public/");
+      if (testPublicPath.exists()) {
+        publicPath = testPublicPath.getAbsolutePath();
+      }
+    }
+
+    WebServer server = new WebServer("127.0.0.1", port,
+        new File(publicPath).getAbsoluteFile(), new QueryHandler(ranker));
+
     ServerRunner.executeInstance(server);
-    
+
     // Attach specific paths to their handlers.
-//    HttpServer server1 = HttpServer.create(addr, -1);
-//    server1.createContext("/", new QueryHandler(ranker));
-//    server1.setExecutor(Executors.newCachedThreadPool());
-//    server1.start();
-//    System.out.println("Listening on port: " + Integer.toString(port));
+    // HttpServer server1 = HttpServer.create(addr, -1);
+    // server1.createContext("/", new QueryHandler(ranker));
+    // server1.setExecutor(Executors.newCachedThreadPool());
+    // server1.start();
+    // System.out.println("Listening on port: " + Integer.toString(port));
   }
 }

@@ -70,30 +70,30 @@ public class QueryHandler implements HttpHandler {
             // implementation of the Ranker class.
             if (ranker_type.equals("cosine")) {
               sds = _ranker.runquery(query_map.get("query"),
-                  Ranker.RankerType.COSINE, query_map.get("pageSize"), 
+                  Ranker.RankerType.COSINE, query_map.get("pageSize"),
                   query_map.get("pageStart"));
             } else if (ranker_type.equals("QL")) {
               sds = _ranker.runquery(query_map.get("query"),
-                  Ranker.RankerType.QL, query_map.get("pageSize"), 
+                  Ranker.RankerType.QL, query_map.get("pageSize"),
                   query_map.get("pageStart"));
             } else if (ranker_type.equals("phrase")) {
               sds = _ranker.runquery(query_map.get("query"),
-                  Ranker.RankerType.PHRASE, query_map.get("pageSize"), 
+                  Ranker.RankerType.PHRASE, query_map.get("pageSize"),
                   query_map.get("pageStart"));
             } else if (ranker_type.equals("numviews")) {
               sds = _ranker.runquery(query_map.get("query"),
-                  Ranker.RankerType.NUMVIEWS, query_map.get("pageSize"), 
+                  Ranker.RankerType.NUMVIEWS, query_map.get("pageSize"),
                   query_map.get("pageStart"));
             } else if (ranker_type.equals("linear")) {
               sds = _ranker.runquery(query_map.get("query"),
-                  Ranker.RankerType.LINEAR, query_map.get("pageSize"), 
+                  Ranker.RankerType.LINEAR, query_map.get("pageSize"),
                   query_map.get("pageStart"));
             } else {
               queryResponse = (ranker_type + " not implemented.");
             }
           } else {
             sds = _ranker.runquery(query_map.get("query"),
-                Ranker.RankerType.COSINE, query_map.get("pageSize"), 
+                Ranker.RankerType.COSINE, query_map.get("pageSize"),
                 query_map.get("pageStart"));
           }
 
@@ -114,31 +114,42 @@ public class QueryHandler implements HttpHandler {
           } else {
             queryResponse += constructTextResponse(sds, query_map.get("query"));
           }
-        } 
-      }
-      else if (uriPath.equals("/click")) {
-    	  String filePath = "./results/hw1.4-log.tsv";
-    	  File f = new File(filePath);
-    	  Map<String, String> query_map = getQueryMap(uriQuery);
-    	  String didStr = query_map.get("id");
-    	  String queryStr = query_map.get("query");
-    	  String actionStr = query_map.get("action");
-    	  DateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
-    	  Date now = Calendar.getInstance().getTime();
-    	  String timeStr = df.format(now);
-    	  String sessionIdStr = "";//exchange.getRequestHeaders().get;
-    	  String newLog = sessionIdStr + "\t" + queryStr + "\t" + didStr + "\t" + actionStr + "\t" + timeStr;
-    	  if (f.exists()) {
-    		  PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(filePath, true)));
-    		  out.println(newLog);
-    		  out.close();
-    		  return;
-    	  } else {
-    		  PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(filePath, false)));
-    		  out.println(newLog);
-    		  out.close();
-    		  return;
-    	  }
+        }
+      } else if (uriPath.equals("/click")) {
+        String resultsPath = "../results/";
+        File testResultsPath = new File("../results/");
+        if (!testResultsPath.exists()) {
+          testResultsPath = new File("./results/");
+          if (testResultsPath.exists()) {
+            resultsPath = testResultsPath.getAbsolutePath();
+          }
+        }
+        String filePath = resultsPath + "/hw1.4-log.tsv";
+        System.out.println(filePath);
+        File f = new File(filePath);
+        Map<String, String> query_map = getQueryMap(uriQuery);
+        String didStr = query_map.get("id");
+        String queryStr = query_map.get("query");
+        String actionStr = query_map.get("action");
+        DateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+        Date now = Calendar.getInstance().getTime();
+        String timeStr = df.format(now);
+        String sessionIdStr = "";// exchange.getRequestHeaders().get;
+        String newLog = sessionIdStr + "\t" + queryStr + "\t" + didStr + "\t"
+            + actionStr + "\t" + timeStr;
+        if (f.exists()) {
+          PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(
+              filePath, true)));
+          out.println(newLog);
+          out.close();
+          return;
+        } else {
+          PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(
+              filePath, false)));
+          out.println(newLog);
+          out.close();
+          return;
+        }
       }
     }
 
