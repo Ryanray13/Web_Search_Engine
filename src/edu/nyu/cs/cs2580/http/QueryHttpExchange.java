@@ -22,11 +22,14 @@ public class QueryHttpExchange extends HttpExchange{
 	
 	OutputStream stream;
 	
+	Map<String, Object> headers;
+	
 	public QueryHttpExchange(String uri, Map<String, List<String>> headers) {
 		reqHeaders = new Headers();
 		this.uriStr = uri;
 		this.stream = new ByteArrayOutputStream();
 		reqHeaders.putAll(headers);
+		this.headers = new HashMap<String, Object>();
 	}
 	
 	@Override
@@ -38,7 +41,7 @@ public class QueryHttpExchange extends HttpExchange{
 	@Override
 	public Object getAttribute(String arg0) {
 		// TODO Auto-generated method stub
-		return null;
+		return headers.get(arg0);
 	}
 
 	@Override
@@ -128,7 +131,7 @@ public class QueryHttpExchange extends HttpExchange{
 	@Override
 	public void setAttribute(String arg0, Object arg1) {
 		// TODO Auto-generated method stub
-		
+		headers.put(arg0, arg1);
 	}
 
 	@Override

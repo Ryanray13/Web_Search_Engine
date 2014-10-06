@@ -187,11 +187,19 @@ public class WebServer extends NanoHTTPD {
             	uri = "http://" + headers.get("host") + uri + "?" + encodeUri(queryStr.substring(1));
             
         	HttpExchange exchange = new QueryHttpExchange(uri, headerLis);
+        	Iterator<String> it = session.getCookies().iterator();
+        	while(it.hasNext()) {
+        		String key = it.next();
+        		Object value = session.getCookies().read(key);
+        		exchange.setAttribute(key, value);
+        	}
             try {
                 handler.handle(exchange);
             } catch (IOException e) {
-            	System.out.println();
             }
+            
+            String value = (String) exchange.getAttribute("sessionIdStr");
+            session.getCookies().set("sessionIdStr", value, 1);
             return createResponse(
                     Response.Status.OK,
                     NanoHTTPD.MIME_PLAINTEXT,

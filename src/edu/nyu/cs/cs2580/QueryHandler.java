@@ -116,6 +116,9 @@ public class QueryHandler implements HttpHandler {
           }
         }
       } else if (uriPath.equals("/click")) {
+    	if (exchange.getAttribute("sessionIdStr") == null)
+    		exchange.setAttribute("sessionIdStr", Integer.toString(new Date().hashCode()));
+    	String sessionIdStr = exchange.getAttribute("sessionIdStr").toString();
         String resultsPath = "../results";
         File testResultsPath = new File("../results/");
         if (!testResultsPath.exists()) {
@@ -133,7 +136,6 @@ public class QueryHandler implements HttpHandler {
         DateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
         Date now = Calendar.getInstance().getTime();
         String timeStr = df.format(now);
-        String sessionIdStr = "";// exchange.getRequestHeaders().get;
         String newLog = sessionIdStr + "\t" + queryStr + "\t" + didStr + "\t"
             + actionStr + "\t" + timeStr;
         if (f.exists()) {
