@@ -1,13 +1,25 @@
 package edu.nyu.cs.cs2580;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Vector;
 
+import javafx.util.Pair;
 import edu.nyu.cs.cs2580.SearchEngine.Options;
+
+import org.jsoup.Jsoup;
 
 /**
  * @CS2580: Implement this class for HW2.
  */
-public class IndexerInvertedDoconly extends Indexer {
+public class IndexerInvertedDoconly extends Indexer implements Serializable {
+
+  private HashMap<String, List<Pair<Integer, Integer>>> _postingLists = new HashMap<String, List<Pair<Integer, Integer>>>();
+
+  private Vector<Document> _documents = new Vector<Document>();
 
   public IndexerInvertedDoconly(Options options) {
     super(options);
@@ -16,6 +28,31 @@ public class IndexerInvertedDoconly extends Indexer {
 
   @Override
   public void constructIndex() throws IOException {
+    File corpusDirectory = new File(_options._corpusPrefix);
+    if (corpusDirectory.isDirectory()) {
+      System.out.println("Construct index from: " + corpusDirectory);
+      File[] allFiles = corpusDirectory.listFiles();
+      if (allFiles.length == 1 && allFiles[0].getName() == "corpus.tsv") {
+
+      } else {
+        for (File file : allFiles) {
+          org.jsoup.nodes.Document parsedDocument = Jsoup.parse(file, "UTF-8");
+          String documentText = parsedDocument.text();
+          DocumentIndexed document = new DocumentIndexed(_documents.size(),
+              this);
+          document.setUrl(file.getAbsolutePath());
+          document.setTitle(parsedDocument.title());
+          document.setLength(documentText.length());
+          _documents.add(document);
+          Stemmer s = new Stemmer();
+          s.add(documentText.toCharArray(), documentText.length());
+          s.stem();
+          String StemedDocument = s.toString();
+        }
+      }
+    } else {
+      throw new IOException("Corpus prefix is not a direcroty");
+    }
   }
 
   @Override
@@ -24,7 +61,8 @@ public class IndexerInvertedDoconly extends Indexer {
 
   @Override
   public Document getDoc(int docid) {
-    return null;
+    return (docid >= _documents.size() || docid < 0) ? null : _documents
+        .get(docid);
   }
 
   /**
