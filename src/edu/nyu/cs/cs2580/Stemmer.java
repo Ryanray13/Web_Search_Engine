@@ -85,7 +85,7 @@ class Stemmer {
     for (int c = 0; c < wLen; c++)
       b[i++] = w[c];
   }
-
+  
   /**
    * After a word has been stemmed, it can be retrieved by toString(), or a
    * reference to the internal buffer can be retrieved by getResultBuffer and

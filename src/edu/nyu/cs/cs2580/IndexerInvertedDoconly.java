@@ -1,17 +1,23 @@
 package edu.nyu.cs.cs2580;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.Vector;
 
 import edu.nyu.cs.cs2580.SearchEngine.Options;
@@ -24,14 +30,17 @@ import org.jsoup.Jsoup;
 public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
   // Using hashMap to present postinglists, each term has a list of Integers.
-  private HashMap<String, List<Integer>> _postingLists = new HashMap<String, List<Integer>>();
+  private transient HashMap<String, List<Integer>> _postingLists = new HashMap<String, List<Integer>>();
 
   private Vector<Document> _documents = new Vector<Document>();
 
-  private static final long MEMORY_SIZE = 52428800;
-
-  //Store how many partial index(posting lists) are there
-  private int totalParts = 0;
+  private static final long MEMORY_SIZE = 20971520;
+  
+  private long termFrequency = 0;
+  
+  private long termCount = 0;
+  
+  private long loadingindex = 0;
 
   public IndexerInvertedDoconly(Options options) {
     super(options);
@@ -42,6 +51,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   public void constructIndex() throws IOException {
     File corpusDirectory = new File(_options._corpusPrefix);
     Runtime runtime = Runtime.getRuntime();
+    int count=0;
     if (corpusDirectory.isDirectory()) {
       System.out.println("Construct index from: " + corpusDirectory);
       File[] allFiles = corpusDirectory.listFiles();
@@ -57,29 +67,43 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
           reader.close();
         }
       } else {
+        long start = System.currentTimeMillis();
+        System.out.println("start indexing"); 
         for (File file : allFiles) {
-         /* if (runtime.freeMemory() < MEMORY_SIZE) {
-            writePartialIndexToDisk();
-            totalParts++;
-            this._postingLists.clear();
-          }*/
           processDocument(file);
+          count++;
         }
+        System.out.println("finish indexing :" + (System.currentTimeMillis()-start)/1000);
       }
     } else {
       throw new IOException("Corpus prefix is not a direcroty");
     }
-    writePartialIndexToDisk();
+    long start = System.currentTimeMillis();
+    System.out.println("start writing");
+    writeIndexToDisk();
+    System.out.println("finish writing :" + (System.currentTimeMillis()-start)/1000);
+    System.out.println(_postingLists.get("new").get(3));
+    _totalTermFrequency = termFrequency;
     System.out.println(
         "Indexed " + Integer.toString(_numDocs) + " docs with " +
         Long.toString(_totalTermFrequency) + " terms.");
+
   }
 
-  private void writePartialIndexToDisk() throws FileNotFoundException, IOException {
-    String indexFile = _options._indexPrefix + "/part" + totalParts + ".idx";
+  private void writeIndexToDisk() throws FileNotFoundException, IOException {
+    String indexFile = _options._indexPrefix + "/wiki.idx";
     ObjectOutputStream writer =
-        new ObjectOutputStream(new FileOutputStream(indexFile));
-    writer.writeObject(this._postingLists);
+        new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(indexFile)));
+    SortedSet<String> sortedSet = new TreeSet<String>(_postingLists.keySet());
+    writer.writeObject(this);
+    for(String term : sortedSet){
+      writer.writeUTF(term);
+      List<Integer> list = _postingLists.get(term);
+      writer.writeInt(list.size());
+      for(Integer i: list){
+        writer.writeInt(i);
+      }
+    }
     writer.close();
   }
   
@@ -95,7 +119,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     
     int docid = _documents.size(); 
     indexDocument(stemedDocument, docid);
-    DocumentIndexed document = new DocumentIndexed(docid, this);
+    DocumentIndexed document = new DocumentIndexed(docid);
     document.setTitle(title);
     document.setLength(stemedDocument.length());
     _documents.add(document);
@@ -113,7 +137,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
     int docid = _documents.size(); 
     indexDocument(stemedDocument, docid);
-    DocumentIndexed document = new DocumentIndexed(docid, this);
+    DocumentIndexed document = new DocumentIndexed(docid);
     document.setUrl(file.getAbsolutePath());
     document.setTitle(parsedDocument.title());
     document.setLength(stemedDocument.length());
@@ -144,14 +168,40 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
         list.add(docid);
         list.add(1);
         _postingLists.put(term, list);
-        _totalTermFrequency++;
+        termCount++;
       }
+      termFrequency++;
     }
     s.close();
   }
   
   @Override
   public void loadIndex() throws IOException, ClassNotFoundException {
+    String indexFile = _options._indexPrefix + "/wiki.idx";
+    System.out.println("Load index from: " + indexFile);
+    ObjectInputStream reader =
+        new ObjectInputStream(new BufferedInputStream(new FileInputStream(indexFile)));
+    IndexerInvertedDoconly newIndexer = (IndexerInvertedDoconly)reader.readObject();
+    
+    this.termCount = newIndexer.termCount;
+    this.termFrequency = newIndexer.termFrequency;
+    this._totalTermFrequency = this.termFrequency;
+    this._documents = newIndexer._documents;
+    this._numDocs = _documents.size();
+    
+    List<Integer> list  = null;
+    for(long i = 0; i<termCount;i++){
+      String term = reader.readUTF();
+      int size = reader.readInt();
+      list = new ArrayList<Integer>();
+      for(int j = 0; j<size; j++){
+        list.add(reader.readInt());
+      }
+      this._postingLists.put(term, list);
+    }
+    reader.close();
+    System.out.println(Integer.toString(_numDocs) + " documents loaded " +
+        "with " + Long.toString(_totalTermFrequency) + " terms!");        
   }
 
   @Override
