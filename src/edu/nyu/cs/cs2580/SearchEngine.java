@@ -156,14 +156,16 @@ public class SearchEngine {
         "Indexer " + SearchEngine.OPTIONS._indexerType + " not found!");
     
     indexer.loadIndex();
-    Query query = new Query("new");
+    Query query = new Query("new york");
     query.processQuery();
     ((IndexerInvertedDoconly)indexer).loadQueryList(query);
     long start = System.currentTimeMillis();
     System.out.println("start writing");
     System.out.println(indexer.corpusDocFrequencyByTerm("new"));
     System.out.println(indexer.corpusTermFrequency("new"));
+    System.out.println(indexer.corpusDocFrequencyByTerm("york"));
     System.out.println(indexer.documentTermFrequency("new", "D:\\Study\\Github\\search_engine\\data\\wiki\\%22Weird_Al%22_Yankovic"));
+    System.out.println(indexer.documentTermFrequency("york", "D:\\Study\\Github\\search_engine\\data\\wiki\\%22Weird_Al%22_Yankovic"));
     System.out.println("finish writing :"
         + (System.currentTimeMillis() - start));
     QueryHandler handler = new QueryHandler(SearchEngine.OPTIONS, indexer);

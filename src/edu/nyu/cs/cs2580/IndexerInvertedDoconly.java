@@ -17,6 +17,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,7 @@ import java.util.Scanner;
 import java.util.Vector;
 
 import edu.nyu.cs.cs2580.SearchEngine.Options;
+
 import org.jsoup.Jsoup;
 
 /**
@@ -190,10 +192,12 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     bos.close();
     DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
         new FileOutputStream(indexFile)));
+
+    writer.writeInt(_termListSize.size());
     for (Integer value : _termListSize) {
       writer.writeInt(value);
     }
-    for (int i = 0; i < _dictionary.size(); i++) {
+    for (int i = 0; i < _termListSize.size(); i++) {
       for (Integer value : _postingLists.get(i)) {
         writer.writeInt(value);
       }
@@ -213,16 +217,16 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
     DataInputStream reader = new DataInputStream(new BufferedInputStream(
         new FileInputStream(indexFile)));
-    for (int i = 0; i < _dictionary.size(); i++) {
-      _termListSize.add(reader.readInt());
+    int termListSize = reader.readInt();
+    int sum = 0;
+    for (int i = 0; i < termListSize; i++) {
+      int temp = reader.readInt();
+      sum += temp;
+      _termListSize.add(temp);
     }
-    
-    int sum=0;
-    for(int i = 0; i<_termListSize.size(); i++){
-      sum += _termListSize.get(i);
-    }
-    reader.skipBytes(sum);
-    
+    reader.skipBytes(sum * 8);
+
+    // load object
     int objectSize = reader.readInt();
     byte[] thisObject = new byte[objectSize];
     reader.read(thisObject, 0, objectSize);
@@ -241,32 +245,32 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     this._numDocs = _documents.size();
     this._postingLists = null;
     this._docCount = null;
-    
+
     reader.close();
     System.out.println(Integer.toString(_numDocs) + " documents loaded "
         + "with " + Long.toString(_totalTermFrequency) + " terms!");
   }
 
-  // Calculate how many bytes to skip in file given the begin index(inclusive) 
+  // Calculate how many bytes to skip in file given the begin index(inclusive)
   // and end index (exclusive) of the list.
   private int skipSize(int beginIndex, int endIndex) {
     int size = 0;
     for (int i = beginIndex; i < endIndex; i++) {
-      size += _termListSize.get(i) * 8;
+      size += _termListSize.get(i);
     }
-    return size;
+    return size * 8;
   }
-  
-  //Calculate how many bytes to skip just given the end index(exclusive)
-  //Will also skip the head
+
+  // Calculate how many bytes to skip just given the end index(exclusive)
+  // Will also skip the head
   private int skipSize(int endIndex) {
     int size = 0;
     for (int i = 0; i < endIndex; i++) {
-      size += _termListSize.get(i) * 8;
+      size += _termListSize.get(i);
     }
-    return size + _dictionary.size() * 4;
+    return size * 8 + (_termListSize.size() + 1) * 4;
   }
-  
+
   @Override
   public Document getDoc(int docid) {
     return (docid >= _documents.size() || docid < 0) ? null : _documents
@@ -325,28 +329,44 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   }
 
   public void loadQueryList(Query query) {
-    Vector<String> phrases = query._tokens;
     String indexFile = indexPath + "/wiki.idx";
     _queryList.clear();
-
+    Vector<String> phrases = query._tokens;
+    List<Integer> termIndices = new ArrayList<Integer>();
+    for (String phrase : phrases) {
+      String[] terms = phrase.trim().split(" +");
+      for (String term : terms) {
+        if (_dictionary.containsKey(term))
+          termIndices.add(_dictionary.get(term));
+      }
+    }
+    if (termIndices.size() == 0) {
+      return;
+    }
+    termIndices.sort(null);
     try {
       // For all the terms appeared in query load its postin list to queryList
       DataInputStream reader = new DataInputStream(new BufferedInputStream(
           new FileInputStream(indexFile)));
-      for (String phrase : phrases) {
-        String[] terms = phrase.trim().split(" +");
-        for (String term : terms) {
-          if (_dictionary.containsKey(term)) {
-            int termIndex = _dictionary.get(term);
-            int size = _termListSize.get(termIndex);
-            reader.skipBytes(skipSize(termIndex));
-            List<Integer> li = new ArrayList<Integer>();
-            for (int i = 0; i < size * 2; i++) {
-              li.add(reader.readInt());
-            }
-            _queryList.put(termIndex, li);
-          }
+
+      int termIndex = termIndices.get(0);
+      int size = _termListSize.get(termIndex);
+      reader.skipBytes(skipSize(termIndex));
+      List<Integer> li = new ArrayList<Integer>();
+      for (int j = 0; j < size * 2; j++) {
+        li.add(reader.readInt());
+      }
+      _queryList.put(termIndex, li);
+
+      for (int i = 1; i < termIndices.size(); i++) {
+        termIndex = termIndices.get(i);
+        size = _termListSize.get(termIndex);
+        reader.skipBytes(skipSize(termIndices.get(i - 1) + 1, termIndex));
+        li = new ArrayList<Integer>();
+        for (int j = 0; j < size * 2; j++) {
+          li.add(reader.readInt());
         }
+        _queryList.put(termIndex, li);
       }
       reader.close();
     } catch (Exception e) {
@@ -361,19 +381,20 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     int termIndex = _dictionary.get(term);
     List<Integer> li = _queryList.get(termIndex);
     int size = _termListSize.get(termIndex);
-    if(li.get(size-1) <= docid){
+    if (li.get(size - 1) <= docid) {
       return -1;
     }
-    return li.get(binarySearchForNext(li,1,size-1,docid));
+    return li.get(binarySearchForNext(li, 1, size - 1, docid));
   }
 
-  private int binarySearchForNext(List<Integer> li, int low, int high, int docid) {
-    int mid=0;
-    while(high - low > 1){
-      mid = (low + high)/2;
-      if(li.get(mid)<= docid){
+  private int binarySearchForNext(List<Integer> li, int low, int high,
+      int docid) {
+    int mid = 0;
+    while (high - low > 1) {
+      mid = (low + high) / 2;
+      if (li.get(mid) <= docid) {
         low = mid;
-      }else{
+      } else {
         high = mid;
       }
     }
@@ -473,8 +494,8 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     return 0;
   }
 
-  private int binarySearchForDoc(List<Integer> list, int low,
-      int high, int docid) {
+  private int binarySearchForDoc(List<Integer> list, int low, int high,
+      int docid) {
     int mid;
     while (low <= high) {
       mid = (low + high) / 2;
