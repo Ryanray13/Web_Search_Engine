@@ -347,7 +347,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
       return;
     }
     //sort the index, one reading can load all the terms.
-    termIndices.sort(null);
+    Collections.sort(termIndices);
     try {
       // For all the terms appeared in query load its posting list to queryList
       DataInputStream reader = new DataInputStream(new BufferedInputStream(
