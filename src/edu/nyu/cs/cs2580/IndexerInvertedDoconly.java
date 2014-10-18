@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -25,7 +24,6 @@ import java.util.Scanner;
 import java.util.Vector;
 
 import edu.nyu.cs.cs2580.SearchEngine.Options;
-
 import org.jsoup.Jsoup;
 
 /**
@@ -48,17 +46,13 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
   private transient String indexPath = "";
 
-  private transient int skipHeadSize = 0;
-
   private Map<String, Integer> _documentUrls = new HashMap<String, Integer>();
 
   private Map<String, Integer> _dictionary = new HashMap<String, Integer>();
 
-  private Vector<Document> _documents = new Vector<Document>();
+  private List<Document> _documents = new ArrayList<Document>();
 
   private long totalTermFrequency = 0;
-
-  private static final long MEMORY_SIZE = 20971520;
 
   public IndexerInvertedDoconly(Options options) {
     super(options);
@@ -196,8 +190,6 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     bos.close();
     DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
         new FileOutputStream(indexFile)));
-    writer.writeInt(thisObject.length);
-    writer.write(thisObject);
     for (Integer value : _termListSize) {
       writer.writeInt(value);
     }
@@ -209,6 +201,8 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
         writer.writeInt(value);
       }
     }
+    writer.writeInt(thisObject.length);
+    writer.write(thisObject);
     writer.close();
   }
 
@@ -219,9 +213,19 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
     DataInputStream reader = new DataInputStream(new BufferedInputStream(
         new FileInputStream(indexFile)));
-    this.skipHeadSize = reader.readInt();
-    byte[] thisObject = new byte[skipHeadSize];
-    reader.read(thisObject, 0, skipHeadSize);
+    for (int i = 0; i < _dictionary.size(); i++) {
+      _termListSize.add(reader.readInt());
+    }
+    
+    int sum=0;
+    for(int i = 0; i<_termListSize.size(); i++){
+      sum += _termListSize.get(i);
+    }
+    reader.skipBytes(sum);
+    
+    int objectSize = reader.readInt();
+    byte[] thisObject = new byte[objectSize];
+    reader.read(thisObject, 0, objectSize);
     ByteArrayInputStream bis = new ByteArrayInputStream(thisObject);
     ObjectInputStream in = new ObjectInputStream(bis);
     IndexerInvertedDoconly newIndexer = (IndexerInvertedDoconly) in
@@ -235,28 +239,34 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     this._documents = newIndexer._documents;
     this._documentUrls = newIndexer._documentUrls;
     this._numDocs = _documents.size();
-    this.skipHeadSize += _dictionary.size() * 4 + 4;
     this._postingLists = null;
     this._docCount = null;
-
-    for (int i = 0; i < _dictionary.size(); i++) {
-      _termListSize.add(reader.readInt());
-    }
-
+    
     reader.close();
     System.out.println(Integer.toString(_numDocs) + " documents loaded "
         + "with " + Long.toString(_totalTermFrequency) + " terms!");
   }
 
-  // Calculate how many bytes to skip in file given the index of the list.
-  private int skipSize(int index) {
+  // Calculate how many bytes to skip in file given the begin index(inclusive) 
+  // and end index (exclusive) of the list.
+  private int skipSize(int beginIndex, int endIndex) {
     int size = 0;
-    for (int i = 0; i < index; i++) {
+    for (int i = beginIndex; i < endIndex; i++) {
       size += _termListSize.get(i) * 8;
     }
-    return skipHeadSize + size;
+    return size;
   }
-
+  
+  //Calculate how many bytes to skip just given the end index(exclusive)
+  //Will also skip the head
+  private int skipSize(int endIndex) {
+    int size = 0;
+    for (int i = 0; i < endIndex; i++) {
+      size += _termListSize.get(i) * 8;
+    }
+    return size + _dictionary.size() * 4;
+  }
+  
   @Override
   public Document getDoc(int docid) {
     return (docid >= _documents.size() || docid < 0) ? null : _documents
