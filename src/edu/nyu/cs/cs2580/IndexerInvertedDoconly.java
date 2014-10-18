@@ -46,7 +46,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
   private transient String currentQuery = "";
 
-  private transient String indexPath = "";
+  private transient String indexPrefix = "";
 
   private Map<String, Integer> _documentUrls = new HashMap<String, Integer>();
 
@@ -58,7 +58,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
   public IndexerInvertedDoconly(Options options) {
     super(options);
-    indexPath = options._indexPrefix;
+    indexPrefix = options._indexPrefix;
     System.out.println("Using Indexer: " + this.getClass().getSimpleName());
   }
 
@@ -183,7 +183,8 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   }
 
   private void writeIndexToDisk() throws FileNotFoundException, IOException {
-    String indexFile = indexPath + "/wiki.idx";
+    String indexFile = indexPrefix + "/wiki.idx";
+    String postingListFile = indexPrefix + "/wiki.list";
     ByteArrayOutputStream bos = new ByteArrayOutputStream();
     ObjectOutputStream out = new ObjectOutputStream(bos);
     out.writeObject(this);
@@ -192,11 +193,15 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     bos.close();
     DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
         new FileOutputStream(indexFile)));
-
-    writer.writeInt(_termListSize.size());
+    writer.writeInt(thisObject.length);
+    writer.write(thisObject);
     for (Integer value : _termListSize) {
       writer.writeInt(value);
     }
+    writer.close();
+
+    writer = new DataOutputStream(new BufferedOutputStream(
+        new FileOutputStream(postingListFile)));
     for (int i = 0; i < _termListSize.size(); i++) {
       for (Integer value : _postingLists.get(i)) {
         writer.writeInt(value);
@@ -205,26 +210,16 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
         writer.writeInt(value);
       }
     }
-    writer.writeInt(thisObject.length);
-    writer.write(thisObject);
     writer.close();
   }
 
   @Override
   public void loadIndex() throws IOException, ClassNotFoundException {
-    String indexFile = indexPath + "/wiki.idx";
+    String indexFile = indexPrefix + "/wiki.idx";
     System.out.println("Load index from: " + indexFile);
 
     DataInputStream reader = new DataInputStream(new BufferedInputStream(
         new FileInputStream(indexFile)));
-    int termListSize = reader.readInt();
-    int sum = 0;
-    for (int i = 0; i < termListSize; i++) {
-      int temp = reader.readInt();
-      sum += temp;
-      _termListSize.add(temp);
-    }
-    reader.skipBytes(sum * 8);
 
     // load object
     int objectSize = reader.readInt();
@@ -246,6 +241,10 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     this._postingLists = null;
     this._docCount = null;
 
+    for (int i = 0; i < _dictionary.size(); i++) {
+      _termListSize.add(reader.readInt());
+    }
+
     reader.close();
     System.out.println(Integer.toString(_numDocs) + " documents loaded "
         + "with " + Long.toString(_totalTermFrequency) + " terms!");
@@ -259,16 +258,6 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
       size += _termListSize.get(i);
     }
     return size * 8;
-  }
-
-  // Calculate how many bytes to skip just given the end index(exclusive)
-  // Will also skip the head
-  private int skipSize(int endIndex) {
-    int size = 0;
-    for (int i = 0; i < endIndex; i++) {
-      size += _termListSize.get(i);
-    }
-    return size * 8 + (_termListSize.size() + 1) * 4;
   }
 
   @Override
@@ -329,7 +318,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   }
 
   public void loadQueryList(Query query) {
-    String indexFile = indexPath + "/wiki.idx";
+    String postingListFile = indexPrefix + "/wiki.list";
     _queryList.clear();
     Vector<String> phrases = query._tokens;
     List<Integer> termIndices = new ArrayList<Integer>();
@@ -347,11 +336,11 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     try {
       // For all the terms appeared in query load its postin list to queryList
       DataInputStream reader = new DataInputStream(new BufferedInputStream(
-          new FileInputStream(indexFile)));
+          new FileInputStream(postingListFile)));
 
       int termIndex = termIndices.get(0);
       int size = _termListSize.get(termIndex);
-      reader.skipBytes(skipSize(termIndex));
+      reader.skipBytes(skipSize(0, termIndex));
       List<Integer> li = new ArrayList<Integer>();
       for (int j = 0; j < size * 2; j++) {
         li.add(reader.readInt());
@@ -423,12 +412,12 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
         }
         return results;
       } else {
-        String indexFile = indexPath + "/wiki.idx";
+        String postingListFile = indexPrefix + "/wiki.list";
         try {
           DataInputStream reader = new DataInputStream(
-              new BufferedInputStream(new FileInputStream(indexFile)));
+              new BufferedInputStream(new FileInputStream(postingListFile)));
           int size = _termListSize.get(termIndex);
-          reader.skipBytes(skipSize(termIndex) + size * 4 + 4);
+          reader.skipBytes(skipSize(0, termIndex) + size * 4 + 4);
           int results = 0;
           for (int i = 1; i < size; i++) {
             results += reader.readInt();
@@ -463,12 +452,12 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
             return li.get(result + size);
           }
         } else {
-          String indexFile = indexPath + "/wiki.idx";
+          String postingListFile = indexPrefix + "/wiki.list";
           try {
             DataInputStream reader = new DataInputStream(
-                new BufferedInputStream(new FileInputStream(indexFile)));
+                new BufferedInputStream(new FileInputStream(postingListFile)));
             int size = _termListSize.get(termIndex);
-            reader.skipBytes(skipSize(termIndex) + 4);
+            reader.skipBytes(skipSize(0, termIndex) + 4);
             int i = 1;
             for (; i < size; i++) {
               if (docid == reader.readInt()) {
