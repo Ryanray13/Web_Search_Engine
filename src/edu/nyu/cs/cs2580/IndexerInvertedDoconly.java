@@ -38,20 +38,26 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   // Using hashMap to present postinglists, each term has a list of Integers.
   private transient List<List<Integer>> _postingLists = new ArrayList<List<Integer>>();
 
+  //Store each term count in each document
   private transient List<List<Integer>> _docCount = new ArrayList<List<Integer>>();
 
+  //Cache posting lists for runing query
   private transient Map<Integer, List<Integer>> _queryList = new HashMap<Integer, List<Integer>>();
 
+  //Store the size of each term posting list, for writing the list and loading the list
   private transient List<Integer> _termListSize = new ArrayList<Integer>();
 
+  //Cache current running query
   private transient String currentQuery = "";
-
   private transient String indexPrefix = "";
 
+  //Map document url to docid
   private Map<String, Integer> _documentUrls = new HashMap<String, Integer>();
 
+  //Map all the terms to an Integer which is the index in posting lists.
   private Map<String, Integer> _dictionary = new HashMap<String, Integer>();
 
+  //Store all the documents
   private List<Document> _documents = new ArrayList<Document>();
 
   private long totalTermFrequency = 0;
@@ -107,6 +113,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
   }
 
+  //process document in Corpus.tsv
   private void processDocument(String content) {
     Scanner s = new Scanner(content).useDelimiter("\t");
     String title = s.next();
@@ -120,6 +127,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
     int docid = _documents.size();
     DocumentIndexed document = new DocumentIndexed(docid);
+  //Indexing.
     indexDocument(stemedDocument, docid);
     document.setTitle(title);
     document.setLength(stemedDocument.length());
@@ -127,6 +135,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     ++_numDocs;
   }
 
+  //process document in wiki where each document is a file
   private void processDocument(File file) throws IOException {
     // Use jsoup to parse html
     org.jsoup.nodes.Document parsedDocument = Jsoup.parse(file, "UTF-8");
@@ -138,6 +147,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
     int docid = _documents.size();
     DocumentIndexed document = new DocumentIndexed(docid);
+    //Indexing.
     indexDocument(stemedDocument, docid);
     document.setUrl(file.getAbsolutePath());
     document.setTitle(parsedDocument.title());
@@ -167,6 +177,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
           countList.add(1);
         }
       } else {
+        //Encounter a new term, add to postin lists
         list = new ArrayList<Integer>();
         countList = new ArrayList<Integer>();
         list.add(_dictionary.size());
@@ -193,6 +204,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     bos.close();
     DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
         new FileOutputStream(indexFile)));
+    //Write length of the object, object itself(as byte[]) and size of each term posting list.
     writer.writeInt(thisObject.length);
     writer.write(thisObject);
     for (Integer value : _termListSize) {
@@ -200,6 +212,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     }
     writer.close();
 
+    //Write all the posting lists to another file
     writer = new DataOutputStream(new BufferedOutputStream(
         new FileOutputStream(postingListFile)));
     for (int i = 0; i < _termListSize.size(); i++) {
@@ -241,6 +254,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     this._postingLists = null;
     this._docCount = null;
 
+    //Loading each size of the term posting list.
     for (int i = 0; i < _dictionary.size(); i++) {
       _termListSize.add(reader.readInt());
     }
@@ -251,7 +265,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   }
 
   // Calculate how many bytes to skip in file given the begin index(inclusive)
-  // and end index (exclusive) of the list.
+  // and end index (exclusive) of the term in postingLists.
   private int skipSize(int beginIndex, int endIndex) {
     int size = 0;
     for (int i = beginIndex; i < endIndex; i++) {
@@ -275,8 +289,8 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
       return null;
     }
 
-    // If the requesting query is not equal to current query, load the posting
-    // lists
+    // If the requesting query is not equal to current query, load the corresponding 
+    // posting lists for the terms in to querylist as a cache.
     if (!currentQuery.equals(query._query)) {
       currentQuery = query._query;
       loadQueryList(query);
@@ -332,9 +346,10 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     if (termIndices.size() == 0) {
       return;
     }
+    //sort the index, one reading can load all the terms.
     termIndices.sort(null);
     try {
-      // For all the terms appeared in query load its postin list to queryList
+      // For all the terms appeared in query load its posting list to queryList
       DataInputStream reader = new DataInputStream(new BufferedInputStream(
           new FileInputStream(postingListFile)));
 
@@ -364,6 +379,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   }
 
   private int next(String term, int docid) {
+    //If the term is not in the dictionary, i.e. not in any documents, return -1
     if (!_dictionary.containsKey(term)) {
       return -1;
     }
@@ -376,6 +392,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     return li.get(binarySearchForNext(li, 1, size - 1, docid));
   }
 
+  //binary search algorithm for "next" method, slightly different than normal binary searh.
   private int binarySearchForNext(List<Integer> li, int low, int high,
       int docid) {
     int mid = 0;
@@ -403,7 +420,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   public int corpusTermFrequency(String term) {
     if (_dictionary.containsKey(term)) {
       int termIndex = _dictionary.get(term);
-      // check whether the term is in queryList if not read from disk
+      // Check whether the term is in queryList if not read from disk
       if (_queryList.containsKey(termIndex)) {
         int results = 0;
         List<Integer> li = _queryList.get(termIndex);
@@ -483,6 +500,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     return 0;
   }
 
+  //Binary search for documentTermFrequency method, which is a standard binary search
   private int binarySearchForDoc(List<Integer> list, int low, int high,
       int docid) {
     int mid;
