@@ -34,8 +34,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable{
 
   // Version1: each list is in the form [did, occurrence, did, occurrence, ...]
   //private List<List<Integer>> _postingLists = new ArrayList<List<Integer>>();
-  private List<Map<Integer, List<Integer>>> _postingLists = 
-      new ArrayList<Map<Integer, List<Integer>>>();
+  private PostingLists _postingLists = new PostingLists();
 
   private Map<String, Integer> _documentUrls = new HashMap<String, Integer>();
 
@@ -163,42 +162,41 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable{
   }
   
   // Constructs posting list for document
-  private void indexDocument (String stemmedDocument, int docid) {
-    Scanner s = new Scanner(stemmedDocument);
-
+  private void indexDocument(String document, int docid) {
     int offset = 0;
-    Map<Integer, List<Integer>> listMap = null;
-    List<Integer> offsets = null;
-    int termIndex = 0;
+    boolean firstVisit = true;
+    Scanner s = new Scanner(document);
+    List<Integer> termList = null;
+    int pos = 0;
     while (s.hasNext()) {
       String term = s.next();
-
-      // For new term, update dictionary and build listMap for it
-      if ( !_dictionary.containsKey(term) ) {
-        _dictionary.put(term, _dictionarySize);
-        _dictionarySize++;
-        offsets = new ArrayList<Integer>();
-        listMap = new HashMap<Integer, List<Integer>>();
-        listMap.put(docid, offsets);
-        _postingLists.add(listMap);
-      }
-
-      // update hashmap
-      termIndex = _dictionary.get(term);
-      listMap = _postingLists.get(termIndex);
-      
-      if (listMap.containsKey(docid)) {
-        offsets = listMap.get(docid);
-        //System.out.println("offset: " + offset);
-        offsets.add(offset);
+      if (_dictionary.containsKey(term)) {
+        int termIndex = _dictionary.get(term);
+        termList = _postingLists.get(termIndex);
+        //countList = _docCount.get(termIndex);
+        if (firstVisit) {
+          termList.add(docid);
+          termList.add(0);
+          
+        }
       } else {
-        offsets = new ArrayList<Integer>();
-        offsets.add(offset);
-        listMap.put(docid, offsets);
+        //Encounter a new term, add to postin lists
+        termList = new ArrayList<Integer>();
+        termList.add(docid);
+
+        termList.add(0);
+
+        _dictionary.put(term, _dictionary.size());
+        _postingLists.add(termList);
+        //_docCount.add(countList);
       }
-      //printListMap(listMap);
+      termList.add(offset);
+      if (firstVisit) firstVisit = false;
       offset++;
       _totalTermFrequency++;
+    }
+    if (termList != null) {
+    termList.add(-1);
     }
     System.out.println(_numDocs);
     s.close();
