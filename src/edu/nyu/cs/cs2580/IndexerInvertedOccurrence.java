@@ -34,7 +34,9 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable{
 
   // Version1: each list is in the form [did, occurrence, did, occurrence, ...]
   //private List<List<Integer>> _postingLists = new ArrayList<List<Integer>>();
-  private PostingLists _postingLists = new PostingLists();
+  private List<List<Integer>> _postingLists = new ArrayList<List<Integer>>();
+  
+  private Map<Integer, Integer> _access = new HashMap<Integer, Integer>();
 
   private Map<String, Integer> _documentUrls = new HashMap<String, Integer>();
 
@@ -101,17 +103,11 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable{
     ++_numDocs;
   }
   
-  private String toString(List<Map<Integer, List<Integer>>> pl) {
+  private String toString(List<List<Integer>> pl) {
     String result = "[";
-    List<Integer> offsets = null;
-    for (Map<Integer, List<Integer>> listMap : pl) {
-      for (Integer docid : listMap.keySet()) {
-        result += "<" + docid + ",[";
-        offsets = listMap.get(docid);
-        for (Integer offset : offsets) {
-          result += offset + ",";
-        }
-        result += "]>, ";
+    for (List<Integer> listMap : pl) {
+      for (Integer docid : listMap) {
+        result += docid +",";
       }
       result += "\n";
     }
@@ -164,40 +160,38 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable{
   // Constructs posting list for document
   private void indexDocument(String document, int docid) {
     int offset = 0;
-    boolean firstVisit = true;
     Scanner s = new Scanner(document);
     List<Integer> termList = null;
-    int pos = 0;
+    int termIndex = 0;
+    
     while (s.hasNext()) {
       String term = s.next();
       if (_dictionary.containsKey(term)) {
-        int termIndex = _dictionary.get(term);
+        termIndex = _dictionary.get(term);
         termList = _postingLists.get(termIndex);
-        //countList = _docCount.get(termIndex);
-        if (firstVisit) {
+        // has changed
+        if (_access.get(termIndex) != docid) {
+          termList.add(-1);
           termList.add(docid);
-          termList.add(0);
-          
+          _access.put(termIndex, docid);
         }
+        
       } else {
         //Encounter a new term, add to postin lists
         termList = new ArrayList<Integer>();
         termList.add(docid);
-
-        termList.add(0);
-
-        _dictionary.put(term, _dictionary.size());
+        termIndex = _dictionary.size();
+        _access.put(termIndex, docid);
+        
+        _dictionary.put(term, termIndex);
         _postingLists.add(termList);
         //_docCount.add(countList);
       }
       termList.add(offset);
-      if (firstVisit) firstVisit = false;
       offset++;
       _totalTermFrequency++;
     }
-    if (termList != null) {
-    termList.add(-1);
-    }
+    
     System.out.println(_numDocs);
     s.close();
   }
