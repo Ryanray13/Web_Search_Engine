@@ -113,6 +113,16 @@ class QueryHandler implements HttpHandler {
     }
     response.append(response.length() > 0 ? "\n" : "");
   }
+  
+  private void constructHtmlOutput(final Vector<ScoredDocument> docs, StringBuffer response) {
+    response.append("[\n");
+    for (ScoredDocument doc : docs) {
+      response.append(doc.asHtmlResult());
+      response.append("\n");
+    }
+    response.deleteCharAt(response.length() - 2);
+    response.append("]\n");
+  }
 
   public void handle(HttpExchange exchange) throws IOException {
     String requestMethod = exchange.getRequestMethod();
@@ -167,6 +177,7 @@ class QueryHandler implements HttpHandler {
       break;
     case HTML:
       // @CS2580: Plug in your HTML output
+      constructHtmlOutput(scoredDocs, response);
       break;
     default:
       // nothing

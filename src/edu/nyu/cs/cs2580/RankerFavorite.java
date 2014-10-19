@@ -1,5 +1,7 @@
 package edu.nyu.cs.cs2580;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 
 import edu.nyu.cs.cs2580.QueryHandler.CgiArguments;
@@ -21,6 +23,8 @@ public class RankerFavorite extends Ranker {
 
   @Override
   public Vector<ScoredDocument> runQuery(Query query, int numResults) {
+    List<Document> docs = new ArrayList<Document>();
+    //while(_indexer.nextDoc(query, docid))
     return null;
   }
 }
