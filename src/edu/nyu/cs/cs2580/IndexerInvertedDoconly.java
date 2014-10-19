@@ -40,16 +40,14 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   // When serving, using as query cache
   private transient Map<String, List<Integer>> _postingLists = new HashMap<String, List<Integer>>();
 
-  private List<Integer> _integerList = new ArrayList<Integer>();
-
   // Cache current running query
   private transient String currentQuery = "";
-  private transient String indexPrefix = "";
   private transient String postingListFile = "";
   private transient String indexFile = "";
+  private final transient String OBJECT_KEY = "Object";
   private final transient String LIST = "lists";
   private final transient String INDEX = "index";
-  private final transient int PARTIAL_SIZE = 300000;
+  private final transient int PARTIAL_SIZE = 400000;
 
   // Map document url to docid
   private Map<String, Integer> _documentUrls = new HashMap<String, Integer>();
@@ -57,13 +55,15 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   // Store all the documents
   private List<Document> _documents = new ArrayList<Document>();
 
+  //Store all the Integer Objects
+  private List<Integer> _integerFactory = new ArrayList<Integer>();
+  
   private long totalTermFrequency = 0;
 
   public IndexerInvertedDoconly(Options options) {
-    super(options);
-    indexPrefix = options._indexPrefix;
-    postingListFile = indexPrefix + "/wiki.list";
-    indexFile = indexPrefix + "/wiki.idx";
+    super(options); 
+    postingListFile = options._indexPrefix + "/wiki.list";
+    indexFile = options._indexPrefix + "/wiki.idx";
     System.out.println("Using Indexer: " + this.getClass().getSimpleName());
   }
 
@@ -113,6 +113,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
         + Long.toString(_totalTermFrequency) + " terms.");
   }
 
+  //delete existing index files on the disk
   private void deleteExistingFiles() {
     File newfile = new File(postingListFile);
     if (newfile.exists()) {
@@ -204,20 +205,21 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     s.close();
   }
 
+  //Integer factory
   private Integer getIntegerInstance(int i) {
-    if (i < _integerList.size()) {
-      return _integerList.get(i);
+    if (i < _integerFactory.size()) {
+      return _integerFactory.get(i);
     } else {
-      for (int j = _integerList.size(); j <= i; j++) {
+      for (int j = _integerFactory.size(); j <= i; j++) {
         Integer in = new Integer(j);
-        _integerList.add(in);
+        _integerFactory.add(in);
       }
-      return _integerList.get(_integerList.size() - 1);
+      return _integerFactory.get(_integerFactory.size() - 1);
     }
   }
 
   private void writeMapToDisk() {
-    DB db = getDB(postingListFile, false);
+    DB db = getDBInstance(postingListFile, false);
     Map<String, List<Integer>> listMap = db.getHashMap(LIST);
     List<Integer> oldList = null;
     List<Integer> list = null;
@@ -231,21 +233,20 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
         listMap.put(term, list);
       }
 
-    }
-    db.compact();
+    } 
     db.commit();
     db.close();
   }
 
   private void writeIndexToDisk() throws FileNotFoundException, IOException {
-    DB db = getDB(indexFile, false);
+    DB db = getDBInstance(indexFile, false);
     Map<String, IndexerInvertedDoconly> indexMap = db.getHashMap(INDEX);
-    indexMap.put("Object", this);
+    indexMap.put(OBJECT_KEY, this);
     db.compact();
     db.commit();
     db.close();
 
-    db = getDB(postingListFile, false);
+    db = getDBInstance(postingListFile, false);
     Map<String, List<Integer>> listMap = db.getHashMap(LIST);
     List<Integer> oldList = null;
     List<Integer> list = null;
@@ -266,7 +267,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
   }
 
-  private DB getDB(String path, boolean readOnly) {
+  private DB getDBInstance(String path, boolean readOnly) {
     File file = new File(path);
     if (readOnly) {
       return DBMaker.newFileDB(file).mmapFileEnable().readOnly()
@@ -279,18 +280,17 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
   @Override
   public void loadIndex() throws IOException, ClassNotFoundException {
-    String indexFile = indexPrefix + "/wiki.idx";
     System.out.println("Load index from: " + indexFile);
-    DB db = getDB(indexFile, true);
+    DB db = getDBInstance(indexFile, true);
     Map<String, IndexerInvertedDoconly> indexMap = db.getHashMap(INDEX);
-    IndexerInvertedDoconly newIndexer = indexMap.get("Object");
+    IndexerInvertedDoconly newIndexer = indexMap.get(OBJECT_KEY);
 
     this.totalTermFrequency = newIndexer.totalTermFrequency;
     this._totalTermFrequency = this.totalTermFrequency;
     this._documents = newIndexer._documents;
     this._documentUrls = newIndexer._documentUrls;
     this._numDocs = _documents.size();
-    this._integerList = newIndexer._integerList;
+    this._integerFactory = newIndexer._integerFactory;
     db.close();
     // Loading each size of the term posting list.
     System.out.println(Integer.toString(_numDocs) + " documents loaded "
@@ -354,7 +354,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   }
 
   public void loadQueryList(Query query) {
-    DB db = getDB(postingListFile, true);
+    DB db = getDBInstance(postingListFile, true);
     Map<String, List<Integer>> listMap = db.getHashMap(LIST);
 
     _postingLists.clear();
@@ -413,7 +413,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
   // Given a term, load term list from disk
   private List<Integer> getTermList(String term) {
-    DB db = getDB(postingListFile, true);
+    DB db = getDBInstance(postingListFile, true);
     Map<String, List<Integer>> listMap = db.getHashMap(LIST);
     List<Integer> list = listMap.get(term);
     db.close();
