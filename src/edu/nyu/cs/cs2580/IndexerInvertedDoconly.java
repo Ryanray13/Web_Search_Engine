@@ -49,7 +49,8 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   private transient String currentQuery = "";
   private transient String indexFile = "";
   private int partNumber = 0;
-  private final transient int PARTIAL_SIZE = 400000;
+  private final transient int PARTIAL_SIZE = 600000;
+  private final transient int CACHE_SIZE = 20;
 
   // Map document url to docid
   private Map<String, Integer> _documentUrls = new HashMap<String, Integer>();
@@ -91,8 +92,6 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
           reader.close();
         }
       } else {
-        long start = System.currentTimeMillis();
-        System.out.println("start indexing");
         for (File file : allFiles) {
           processDocument(file);
           if (_postingLists.size() >= PARTIAL_SIZE) {
@@ -101,16 +100,11 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
             _postingLists.clear();
           }
         }
-        System.out.println("finish indexing :"
-            + (System.currentTimeMillis() - start) / 1000);
       }
     } else {
       throw new IOException("Corpus prefix is not a direcroty");
     }
-    long start = System.currentTimeMillis();
     writeIndexToDisk();
-    System.out.println("finish writing :"
-        + (System.currentTimeMillis() - start) / 1000);
     _totalTermFrequency = totalTermFrequency;
     System.out.println("Indexed " + Integer.toString(_numDocs) + " docs with "
         + Long.toString(_totalTermFrequency) + " terms.");
@@ -259,8 +253,6 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     IndexerInvertedDoconly newIndexer = (IndexerInvertedDoconly) is
         .readObject();
     is.close();
-    
-
 
     this.totalTermFrequency = newIndexer.totalTermFrequency;
     this._totalTermFrequency = this.totalTermFrequency;
@@ -355,13 +347,18 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     for (String phrase : phrases) {
       String[] terms = phrase.trim().split(" +");
       for (String term : terms) {
+        if(!_postingLists.containsKey(term)){
         _postingLists.put(term, getTermList(term));
+        if(_postingLists.size() > CACHE_SIZE){
+          return ;
+        }
+        }
       }
     }
   }
 
   private int next(String term, int docid) {
-    List<Integer> list = _postingLists.get(term);
+    List<Integer> list = getTermList(term);
     if (list == null) {
       return -1;
     }
@@ -390,21 +387,24 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
   @Override
   public int corpusDocFrequencyByTerm(String term) {
-    // check whether the term is in postingLists, if not load from disk
-    if (_postingLists.containsKey(term)) {
-      return _postingLists.get(term).size() / 2;
-    } else {
       List<Integer> list = getTermList(term);
       if (list == null) {
         return 0;
       } else {
         return list.size() / 2;
       }
-    }
   }
 
+  private List<Integer> getTermList(String term){
+    if (_postingLists.containsKey(term)) {
+      return _postingLists.get(term);
+    }else{
+      return getTermListFromDisk(term);
+    }
+  }
+   
   // Given a term, load term list from disk
-  private List<Integer> getTermList(String term) {
+  private List<Integer> getTermListFromDisk(String term) {
     int part = 0;
     List<Integer> list = new ArrayList<Integer>();
     while (part < this.partNumber) {
@@ -433,16 +433,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   @Override
   public int corpusTermFrequency(String term) {
     // check whether the term is in postingLists, if not load from disk
-    if (_postingLists.containsKey(term)) {
-      int results = 0;
-      List<Integer> list = _postingLists.get(term);
-      for (int i = 1; i < list.size(); i = i + 2) {
-        results += list.get(i);
-      }
-      return results;
-    } else {
-      List<Integer> list = getTermList(term);
-      
+      List<Integer> list = getTermList(term);     
       if (list == null) {
         return 0;
       } else {
@@ -452,7 +443,6 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
         }
         return results;
       }
-    }
   }
 
   @Override
@@ -460,15 +450,6 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     if (_documentUrls.containsKey(url)) {
       int docid = _documentUrls.get(url);
       // check whether the term is in postingLists, if not load from disk
-      if (_postingLists.containsKey(term)) {
-        List<Integer> list = _postingLists.get(term);
-        int result = binarySearchForDoc(list, 0, list.size() - 1, docid);
-        if (result == -1) {
-          return 0;
-        } else {
-          return list.get(result + 1);
-        }
-      } else {
         List<Integer> list = getTermList(term);
         if (list == null) {
           return 0;
@@ -481,7 +462,6 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
           }
         }
       }
-    }
     return 0;
   }
 
