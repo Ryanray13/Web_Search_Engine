@@ -31,20 +31,15 @@ public class RankerFavorite extends Ranker {
     Queue<ScoredDocument> rankQueue = new PriorityQueue<ScoredDocument>();
     Document doc = null;
     int docid = -1;
-    int count = 0;
     while ((doc = _indexer.nextDoc(query, docid)) != null) {
-      if(count == 1000 && rankQueue.size() >= numResults){
-        count = 0;
-        break;
-      }
       ScoredDocument sdoc = scoreDocument(query, doc);
       if(sdoc != null){
         rankQueue.add(sdoc);
         if (rankQueue.size() > numResults) {
           rankQueue.poll();
         }
-      }  
-      count ++;
+      }      
+      docid = doc._docid;
     }
 
     Vector<ScoredDocument> results = new Vector<ScoredDocument>();
