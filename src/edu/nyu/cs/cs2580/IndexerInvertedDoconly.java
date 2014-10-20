@@ -3,9 +3,6 @@ package edu.nyu.cs.cs2580;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,9 +12,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.RandomAccessFile;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,13 +37,16 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   // When serving, using as query cache
   private transient Map<String, List<Integer>> _postingLists = new HashMap<String, List<Integer>>();
 
+  // disk list offset
+  private transient Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
+
+  // Store all the Integer Objects
+  private transient List<Integer> _integerFactory = new ArrayList<Integer>();
+
   // Cache current running query
   private transient String currentQuery = "";
-  private transient String postingListFile = "";
   private transient String indexFile = "";
-  private final transient String OBJECT_KEY = "Object";
-  private final transient String LIST = "lists";
-  private final transient String INDEX = "index";
+  private int partNumber = 0;
   private final transient int PARTIAL_SIZE = 400000;
 
   // Map document url to docid
@@ -55,15 +55,16 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   // Store all the documents
   private List<Document> _documents = new ArrayList<Document>();
 
-  //Store all the Integer Objects
-  private List<Integer> _integerFactory = new ArrayList<Integer>();
-  
   private long totalTermFrequency = 0;
 
+  // Provided for serialization
+  public IndexerInvertedDoconly() {
+  }
+
   public IndexerInvertedDoconly(Options options) {
-    super(options); 
-    postingListFile = options._indexPrefix + "/wiki.list";
+    super(options);
     indexFile = options._indexPrefix + "/wiki.idx";
+    _integerFactory.add(new Integer(-1));
     System.out.println("Using Indexer: " + this.getClass().getSimpleName());
   }
 
@@ -94,6 +95,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
           processDocument(file);
           if (_postingLists.size() >= PARTIAL_SIZE) {
             writeMapToDisk();
+            _diskIndex.clear();
             _postingLists.clear();
           }
         }
@@ -101,10 +103,9 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
             + (System.currentTimeMillis() - start) / 1000);
       }
     } else {
-      throw new IOException("Corpus prefix is not a directory");
+      throw new IOException("Corpus prefix is not a direcroty");
     }
     long start = System.currentTimeMillis();
-    System.out.println("start writing");
     writeIndexToDisk();
     System.out.println("finish writing :"
         + (System.currentTimeMillis() - start) / 1000);
@@ -113,23 +114,16 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
         + Long.toString(_totalTermFrequency) + " terms.");
   }
 
-  //delete existing index files on the disk
+  // delete existing index files on the disk
   private void deleteExistingFiles() {
-    File newfile = new File(postingListFile);
-    if (newfile.exists()) {
-      newfile.delete();
-    }
-    newfile = new File(indexFile);
-    if (newfile.exists()) {
-      newfile.delete();
-    }
-    newfile = new File(postingListFile + ".p");
-    if (newfile.exists()) {
-      newfile.delete();
-    }
-    newfile = new File(indexFile + ".p");
-    if (newfile.exists()) {
-      newfile.delete();
+    File newfile = new File(_options._indexPrefix);
+    if (newfile.isDirectory()) {
+      File[] files = newfile.listFiles();
+      for (File file : files) {
+        if (file.getName().matches(".*wiki.*")) {
+          file.delete();
+        }
+      }
     }
   }
 
@@ -205,12 +199,12 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     s.close();
   }
 
-  //Integer factory
+  // Integer factory
   private Integer getIntegerInstance(int i) {
-    if (i < _integerFactory.size()) {
-      return _integerFactory.get(i);
+    if (i < _integerFactory.size() - 1) {
+      return _integerFactory.get(i + 1);
     } else {
-      for (int j = _integerFactory.size(); j <= i; j++) {
+      for (int j = _integerFactory.size() - 1; j <= i; j++) {
         Integer in = new Integer(j);
         _integerFactory.add(in);
       }
@@ -218,80 +212,59 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     }
   }
 
-  private void writeMapToDisk() {
-    DB db = getDBInstance(postingListFile, false);
-    Map<String, List<Integer>> listMap = db.getHashMap(LIST);
-    List<Integer> oldList = null;
-    List<Integer> list = null;
-    for (String term : _postingLists.keySet()) {
-      list = _postingLists.get(term);
-      oldList = listMap.get(term);
-      if (oldList != null) {
-        oldList.addAll(list);
-        listMap.put(term, oldList);
-      } else {
-        listMap.put(term, list);
-      }
+  private void writeMapToDisk() throws IOException {
+    String partialListFile = _options._indexPrefix + "/wikipart"
+        + String.valueOf(partNumber) + ".list";
+    String partialIndexFile = _options._indexPrefix + "/wikiIndexpart"
+        + String.valueOf(partNumber) + ".idx";
+    int offset = 0;
+    DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
+        new FileOutputStream(partialListFile)));
 
-    } 
-    db.commit();
-    db.close();
+    for (String term : _postingLists.keySet()) {
+      List<Integer> list = _postingLists.get(term);
+      writer.writeInt(list.size());
+      for (int i = 0; i < list.size(); i++) {
+        writer.writeInt(list.get(i));
+      }
+      _diskIndex.put(term, getIntegerInstance(offset));
+      offset += (list.size()) + 1;     
+    }
+    writer.close();
+    ObjectOutputStream os = new ObjectOutputStream(new BufferedOutputStream(
+        new FileOutputStream(partialIndexFile)));
+    os.writeObject(this._diskIndex);
+    os.close();
+    partNumber++;
   }
 
   private void writeIndexToDisk() throws FileNotFoundException, IOException {
-    DB db = getDBInstance(indexFile, false);
-    Map<String, IndexerInvertedDoconly> indexMap = db.getHashMap(INDEX);
-    indexMap.put(OBJECT_KEY, this);
-    db.compact();
-    db.commit();
-    db.close();
-
-    db = getDBInstance(postingListFile, false);
-    Map<String, List<Integer>> listMap = db.getHashMap(LIST);
-    List<Integer> oldList = null;
-    List<Integer> list = null;
-    for (String term : _postingLists.keySet()) {
-      list = _postingLists.get(term);
-      oldList = listMap.get(term);
-      if (oldList != null) {
-        oldList.addAll(list);
-        listMap.put(term, oldList);
-      } else {
-        listMap.put(term, list);
-      }
-    }
-    db.compact();
-    db.commit();
-    db.close();
+    writeMapToDisk();
+    ObjectOutputStream os = new ObjectOutputStream(new BufferedOutputStream(
+        new FileOutputStream(indexFile)));
+    os.writeObject(this);
+    os.close();
     _postingLists.clear();
-
-  }
-
-  private DB getDBInstance(String path, boolean readOnly) {
-    File file = new File(path);
-    if (readOnly) {
-      return DBMaker.newFileDB(file).mmapFileEnable().readOnly()
-          .transactionDisable().make();
-    } else {
-      return DBMaker.newFileDB(file).mmapFileEnable().transactionDisable()
-          .make();
-    }
+    _diskIndex.clear();
   }
 
   @Override
   public void loadIndex() throws IOException, ClassNotFoundException {
     System.out.println("Load index from: " + indexFile);
-    DB db = getDBInstance(indexFile, true);
-    Map<String, IndexerInvertedDoconly> indexMap = db.getHashMap(INDEX);
-    IndexerInvertedDoconly newIndexer = indexMap.get(OBJECT_KEY);
+    ObjectInputStream is = new ObjectInputStream(new BufferedInputStream(
+        new FileInputStream(indexFile)));
+    IndexerInvertedDoconly newIndexer = (IndexerInvertedDoconly) is
+        .readObject();
+    is.close();
 
     this.totalTermFrequency = newIndexer.totalTermFrequency;
     this._totalTermFrequency = this.totalTermFrequency;
     this._documents = newIndexer._documents;
     this._documentUrls = newIndexer._documentUrls;
     this._numDocs = _documents.size();
-    this._integerFactory = newIndexer._integerFactory;
-    db.close();
+    this.partNumber = newIndexer.partNumber;
+    System.out.println(partNumber);
+    is.close();
     // Loading each size of the term posting list.
     System.out.println(Integer.toString(_numDocs) + " documents loaded "
         + "with " + Long.toString(_totalTermFrequency) + " terms!");
@@ -319,24 +292,31 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
       currentQuery = query._query;
       loadQueryList(query);
     }
-
-    List<Integer> docids = new ArrayList<Integer>();
-
-    for (String term : _postingLists.keySet()) {
-      docids.add(next(term, docid));
+    Boolean isResult = new Boolean(true);
+    while ((docid = getNextDocID(query, docid, isResult)) != -1) {
+      if (isResult) {
+        return getDoc(docid);
+      }
     }
+    return null;
+  }
 
+  private int getNextDocID(Query query, int docid, Boolean isEqual) {
+    List<Integer> docids = new ArrayList<Integer>();
+    for (String term : _postingLists.keySet()) {
+      docids.add(getIntegerInstance(next(term, docid)));
+    }
     if (docids.size() == 0) {
-      return null;
+      return -1;
     }
 
     int result = docids.get(0);
     int max = result;
-    boolean isEqual = true;
+    isEqual = true;
     for (int i = 1; i < docids.size(); i++) {
       int id = docids.get(i);
       if (id == -1) {
-        return null;
+        return -1;
       }
       if (id != result) {
         isEqual = false;
@@ -347,25 +327,22 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     }
 
     if (isEqual) {
-      return getDoc(result);
+      return result;
+
     } else {
-      return nextDoc(query, max - 1);
+      return max - 1;
     }
   }
 
   public void loadQueryList(Query query) {
-    DB db = getDBInstance(postingListFile, true);
-    Map<String, List<Integer>> listMap = db.getHashMap(LIST);
-
     _postingLists.clear();
     Vector<String> phrases = query._tokens;
     for (String phrase : phrases) {
       String[] terms = phrase.trim().split(" +");
       for (String term : terms) {
-        _postingLists.put(term, listMap.get(term));
+        _postingLists.put(term, getTermList(term));
       }
     }
-    db.close();
   }
 
   private int next(String term, int docid) {
@@ -413,10 +390,33 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
   // Given a term, load term list from disk
   private List<Integer> getTermList(String term) {
-    DB db = getDBInstance(postingListFile, true);
-    Map<String, List<Integer>> listMap = db.getHashMap(LIST);
-    List<Integer> list = listMap.get(term);
-    db.close();
+    int part = 0;
+    List<Integer> list = new ArrayList<Integer>();
+    while (part < this.partNumber) {
+
+      String partialListFile = _options._indexPrefix + "/wikipart"
+          + String.valueOf(part) + ".list";
+      String partialIndexFile = _options._indexPrefix + "/wikiIndexpart"
+          + String.valueOf(part) + ".idx";
+      try {
+        ObjectInputStream is = new ObjectInputStream(new BufferedInputStream(
+            new FileInputStream(partialIndexFile)));
+        this._diskIndex = (Map<String, Integer>)is.readObject();
+        is.close();
+        if (_diskIndex.containsKey(term)) {
+          RandomAccessFile reader = new RandomAccessFile(partialListFile, "r");
+          reader.seek(_diskIndex.get(term) * 4);
+          int size = reader.readInt();
+          for (int i = 0; i < size; i++) {
+            list.add(getIntegerInstance(reader.readInt()));
+          }
+          reader.close();
+        }      
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+      part++;
+    }
     return list;
   }
 
@@ -432,6 +432,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
       return results;
     } else {
       List<Integer> list = getTermList(term);
+      
       if (list == null) {
         return 0;
       } else {
