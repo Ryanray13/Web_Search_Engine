@@ -19,13 +19,19 @@ public class QueryPhrase extends Query {
       return;
     }
 
+    this._tokens.clear();
+    Stemmer stemmer = new Stemmer();
+    stemmer.add(_query.toLowerCase().toCharArray(), _query.length());
+    stemmer.stemWithStep1();
+    String stemedQuery = stemmer.toString();
+    
     boolean quote = false;
-    int len = _query.length();
+    int len = stemedQuery.length();
     int p1 = 0;
     int p2 = 0;
     char ch;
     while (p2 < len) {
-      ch = _query.charAt(p2);
+      ch = stemedQuery.charAt(p2);
       if (ch == '"') {
         if (p2 == 0) {
           p1 = 1;
@@ -33,16 +39,16 @@ public class QueryPhrase extends Query {
         } else if (p2 == len - 1) {
           if (quote == true) {
             quote = false;
-            _tokens.add(_query.substring(p1, p2).trim());
+            _tokens.add(stemedQuery.substring(p1, p2).trim());
             p1 = p2 + 1;
           }
         } else {
-          if (quote && _query.charAt(p2 + 1) == ' ') {
+          if (quote && stemedQuery.charAt(p2 + 1) == ' ') {
             quote = false;
-            _tokens.add(_query.substring(p1, p2).trim());
+            _tokens.add(stemedQuery.substring(p1, p2).trim());
             p1 = p2 + 1;
-          } else if (!quote && _query.charAt(p2 - 1) == ' ') {
-            putIntoVector(_query.substring(p1, p2).trim());
+          } else if (!quote && stemedQuery.charAt(p2 - 1) == ' ') {
+            putIntoVector(stemedQuery.substring(p1, p2).trim());
             quote = true;
             p1 = p2 + 1;
           }
@@ -51,10 +57,10 @@ public class QueryPhrase extends Query {
       ++p2;
     }
     if (p1 < p2) {
-      if (_query.charAt(p2 - 1) == '"') {
-        putIntoVector(_query.substring(p1, p2 - 1).trim());
+      if (stemedQuery.charAt(p2 - 1) == '"') {
+        putIntoVector(stemedQuery.substring(p1, p2 - 1).trim());
       } else {
-        putIntoVector(_query.substring(p1, p2).trim());
+        putIntoVector(stemedQuery.substring(p1, p2).trim());
       }
     }
   }

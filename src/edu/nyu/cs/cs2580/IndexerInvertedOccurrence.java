@@ -25,11 +25,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable{
 
   private static final long serialVersionUID = -4516219082721025281L;
 
-  /**---- Private instances ----*/
-  // Map from term to its integer representation
-  private Map<String, Integer> _dictionary = 
-      new HashMap<String, Integer>();
-  
+  /**---- Private instances ----*/  
   private Map<String, List<Integer>> _postingLists = 
       new HashMap<String, List<Integer>>();
 
@@ -37,10 +33,12 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable{
   private transient String currentQuery = "";
   private transient String postingListFile = "";
   private transient String indexFile = "";
+  private transient int part = 1;
   private final transient String OBJECT_KEY = "Object";
   private final transient String LIST = "lists";
   private final transient String INDEX = "index";
   private final transient int PARTIAL_SIZE = 300000;
+
 
   // Map document url to docid
   private Map<String, Integer> _documentUrls = new HashMap<String, Integer>();
@@ -50,6 +48,8 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable{
 
   //Store all the Integer Objects
   private List<Integer> _integerFactory = new ArrayList<Integer>();
+  
+  private List<String> filePath =new ArrayList<String>(); 
   
   private long totalTermFrequency = 0;
 
@@ -124,21 +124,17 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable{
 
   //delete existing index files on the disk
   private void deleteExistingFiles() {
-    File newfile = new File(postingListFile);
-    if (newfile.exists()) {
-      newfile.delete();
-    }
-    newfile = new File(indexFile);
-    if (newfile.exists()) {
-      newfile.delete();
-    }
-    newfile = new File(postingListFile + ".p");
-    if (newfile.exists()) {
-      newfile.delete();
-    }
-    newfile = new File(indexFile + ".p");
-    if (newfile.exists()) {
-      newfile.delete();
+    File newfile = new File(_options._indexPrefix);
+    if(newfile.isDirectory()){
+      File[] files = newfile.listFiles();
+      for(File file : files){
+        if(file.getName().matches("part.*list.*")){
+          file.delete();
+        }
+        if(file.getName().matches(".*wiki.*")){
+          file.delete();
+        }
+      }
     }
   }
 
@@ -206,7 +202,6 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable{
       totalTermFrequency++;
       offset++;
     }
-    System.out.println(_numDocs);
     s.close();
   }
 
@@ -224,20 +219,21 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable{
   }
 
   private void writeMapToDisk() {
-    DB db = getDBInstance(postingListFile, false);
+    String partialListFile = _options._indexPrefix + "/part" + String.valueOf(part) + ".list";
+    part++;
+    DB db = getDBInstance(partialListFile, false);
     Map<String, List<Integer>> listMap = db.getHashMap(LIST);
-    List<Integer> oldList = null;
-    List<Integer> list = null;
+    //List<Integer> oldList = null;
+   // List<Integer> list = null;
     for (String term : _postingLists.keySet()) {
-      list = _postingLists.get(term);
+      /* list = _postingLists.get(term);
       oldList = listMap.get(term);
       if (oldList != null) {
         oldList.addAll(list);
         listMap.put(term, oldList);
-      } else {
-        listMap.put(term, list);
-      }
-
+      } else {*/
+        listMap.put(term, _postingLists.get(term));
+     // }
     } 
     db.commit();
     db.close();
@@ -251,19 +247,21 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable{
     db.commit();
     db.close();
 
-    db = getDBInstance(postingListFile, false);
+    String partialListFile = _options._indexPrefix + "/part" + String.valueOf(part) + ".list";
+    part++;
+    db = getDBInstance(partialListFile, false);
     Map<String, List<Integer>> listMap = db.getHashMap(LIST);
-    List<Integer> oldList = null;
-    List<Integer> list = null;
+   //  List<Integer> oldList = null;
+   // List<Integer> list = null;
     for (String term : _postingLists.keySet()) {
-      list = _postingLists.get(term);
+     /* list = _postingLists.get(term);
       oldList = listMap.get(term);
       if (oldList != null) {
         oldList.addAll(list);
         listMap.put(term, oldList);
-      } else {
-        listMap.put(term, list);
-      }
+      } else {*/
+        listMap.put(term, _postingLists.get(term));
+     // }
     }
     db.compact();
     db.commit();
@@ -293,9 +291,10 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable{
 
     this.totalTermFrequency = newIndexer.totalTermFrequency;
     this._totalTermFrequency = this.totalTermFrequency;
+    this.filePath = newIndexer.filePath;
     this._documents = newIndexer._documents;
-    this._documentUrls = newIndexer._documentUrls;
     this._numDocs = _documents.size();
+    this._documentUrls = newIndexer._documentUrls;    
     this._integerFactory = newIndexer._integerFactory;
     db.close();
     // Loading each size of the term posting list.
