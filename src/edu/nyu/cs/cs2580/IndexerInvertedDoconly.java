@@ -92,7 +92,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
         System.out.println("start indexing");
         for (File file : allFiles) {
           processDocument(file);
-          if (_postingLists.keySet().size() >= PARTIAL_SIZE) {
+          if (_postingLists.size() >= PARTIAL_SIZE) {
             writeMapToDisk();
             _postingLists.clear();
           }
@@ -101,7 +101,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
             + (System.currentTimeMillis() - start) / 1000);
       }
     } else {
-      throw new IOException("Corpus prefix is not a direcroty");
+      throw new IOException("Corpus prefix is not a directory");
     }
     long start = System.currentTimeMillis();
     System.out.println("start writing");
@@ -330,8 +330,8 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
       return null;
     }
 
-    int max = -1;
     int result = docids.get(0);
+    int max = result;
     boolean isEqual = true;
     for (int i = 1; i < docids.size(); i++) {
       int id = docids.get(i);
