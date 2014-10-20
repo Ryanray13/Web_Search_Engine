@@ -39,6 +39,8 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
   // disk list offset
   private transient Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
+  
+  private transient List<Map<String, Integer>> indexMaps = new ArrayList<Map<String,Integer>>();
 
   // Store all the Integer Objects
   private transient List<Integer> _integerFactory = new ArrayList<Integer>();
@@ -248,6 +250,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     _diskIndex.clear();
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public void loadIndex() throws IOException, ClassNotFoundException {
     System.out.println("Load index from: " + indexFile);
@@ -256,6 +259,8 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     IndexerInvertedDoconly newIndexer = (IndexerInvertedDoconly) is
         .readObject();
     is.close();
+    
+
 
     this.totalTermFrequency = newIndexer.totalTermFrequency;
     this._totalTermFrequency = this.totalTermFrequency;
@@ -263,8 +268,18 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     this._documentUrls = newIndexer._documentUrls;
     this._numDocs = _documents.size();
     this.partNumber = newIndexer.partNumber;
-    System.out.println(partNumber);
+    this._diskIndex = null;
     is.close();
+    for(int i = 0; i<partNumber; i++){
+      String partialIndexFile = _options._indexPrefix + "/wikiIndexpart"
+          + String.valueOf(i) + ".idx";
+      ObjectInputStream is1 = new ObjectInputStream(new BufferedInputStream(
+          new FileInputStream(partialIndexFile)));
+      indexMaps.add((HashMap<String, Integer>)is1.readObject());
+      is1.close();
+    }
+    ((ArrayList<Map<String,Integer>>)indexMaps).trimToSize();  
+    
     // Loading each size of the term posting list.
     System.out.println(Integer.toString(_numDocs) + " documents loaded "
         + "with " + Long.toString(_totalTermFrequency) + " terms!");
@@ -396,16 +411,11 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
       String partialListFile = _options._indexPrefix + "/wikipart"
           + String.valueOf(part) + ".list";
-      String partialIndexFile = _options._indexPrefix + "/wikiIndexpart"
-          + String.valueOf(part) + ".idx";
       try {
-        ObjectInputStream is = new ObjectInputStream(new BufferedInputStream(
-            new FileInputStream(partialIndexFile)));
-        this._diskIndex = (Map<String, Integer>)is.readObject();
-        is.close();
-        if (_diskIndex.containsKey(term)) {
+        Map<String, Integer> index = indexMaps.get(part);
+        if (index.containsKey(term)) {
           RandomAccessFile reader = new RandomAccessFile(partialListFile, "r");
-          reader.seek(_diskIndex.get(term) * 4);
+          reader.seek(index.get(term) * 4);
           int size = reader.readInt();
           for (int i = 0; i < size; i++) {
             list.add(getIntegerInstance(reader.readInt()));
