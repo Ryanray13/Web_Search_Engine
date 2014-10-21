@@ -31,6 +31,7 @@ public class RankerFavorite extends Ranker {
     Queue<ScoredDocument> rankQueue = new PriorityQueue<ScoredDocument>();
     Document doc = null;
     int docid = -1;
+    
     while ((doc = _indexer.nextDoc(query, docid)) != null) {
       ScoredDocument sdoc = scoreDocument(query, doc);
       if(sdoc != null){

@@ -24,7 +24,6 @@ import java.util.Vector;
 import edu.nyu.cs.cs2580.SearchEngine.Options;
 
 import org.jsoup.Jsoup;
-import org.mapdb.*;
 
 /**
  * @CS2580: Implement this class for HW2.
