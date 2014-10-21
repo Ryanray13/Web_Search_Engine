@@ -10,3 +10,7 @@ wikipart*.list files, all serve as index on disk.
 
 For running the server
 java -cp src:jsoup.jar -Xmx512m edu.nyu.cs.cs2580.SearchEngine  --mode=serve --port=258XX --options=conf/engine.conf
+
+FYI:
+When parsing phrase(words with quotes), I only parse phrase with space i.e. ["new york" city] will be parsed in to 
+two phrases, while ["new york"city] with no space after the second quote, will be parsed as new york"city.

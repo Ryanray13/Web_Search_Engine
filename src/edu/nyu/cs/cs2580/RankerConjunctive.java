@@ -28,7 +28,7 @@ public class RankerConjunctive extends Ranker {
     Queue<ScoredDocument> rankQueue = new PriorityQueue<ScoredDocument>();
     Document doc = null;
     int docid = -1;
-    while ((doc = _indexer.nextDoc(query, docid)) != null) {
+    while ((doc = _indexer.nextDoc(query, docid)) != null) {     
       ScoredDocument sdoc = scoreDocument(query, doc);
       if(sdoc != null){
         rankQueue.add(sdoc);
@@ -38,7 +38,7 @@ public class RankerConjunctive extends Ranker {
       }      
       docid = doc._docid;
     }
-
+ 
     Vector<ScoredDocument> results = new Vector<ScoredDocument>();
     ScoredDocument scoredDoc = null;
     while ((scoredDoc = rankQueue.poll()) != null) {
@@ -51,15 +51,17 @@ public class RankerConjunctive extends Ranker {
   private ScoredDocument scoreDocument(Query query, Document doc) {
     double score = 0.0;
     if (((DocumentIndexed) doc).getLength() == 0) {     
+      
       return null;
     }
 
     //Conjunctive calculate.
     Vector<String> phrases = query._tokens;
     for (String phrase : phrases) {
+      
       double probability = 0;
       String[] terms = phrase.trim().split(" +");
-      for (String term : terms) {
+      for (String term : terms) {      
         probability = (1 - LAMBDA)
             * _indexer.documentTermFrequency(term, doc.getUrl())
             / ((DocumentIndexed) doc).getLength() + LAMBDA

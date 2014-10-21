@@ -261,7 +261,6 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     this._numDocs = _documents.size();
     this.partNumber = newIndexer.partNumber;
     this._diskIndex = null;
-    is.close();
     for(int i = 0; i<partNumber; i++){
       String partialIndexFile = _options._indexPrefix + "/wikiIndexpart"
           + String.valueOf(i) + ".idx";
@@ -288,6 +287,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
    */
   @Override
   public Document nextDoc(Query query, int docid) {
+    
     if (query == null) {
       return null;
     }
