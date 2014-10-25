@@ -584,12 +584,14 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     String inputFile = _options._indexPrefix + "/wikipart.list";
 
     try {
+      RandomAccessFile raf = new RandomAccessFile(inputFile, "r");
       DataInputStream reader = new DataInputStream(new BufferedInputStream(
-          new FileInputStream(inputFile)));
-      reader.skipBytes(offset * 4);
+          new FileInputStream(raf.getFD())));
+      raf.seek(offset * 4);
       for (int i = 0; i < size; i++) {
         list.add((reader.readInt()));
       }
+      raf.close();
       reader.close();
     } catch (Exception e) {
       e.printStackTrace();
