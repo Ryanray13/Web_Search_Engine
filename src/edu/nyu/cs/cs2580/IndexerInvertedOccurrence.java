@@ -36,7 +36,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
 
   /** ---- Private instances ---- */
   private transient Map<Integer, List<Integer>> _postingLists = new HashMap<Integer, List<Integer>>();
- 
+
   private transient Map<Integer, Integer> cacheIndex = null;
 
   // Cache current running query
@@ -53,10 +53,10 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
   private Map<String, Integer> _documentUrls = new HashMap<String, Integer>();
 
   private Map<String, Integer> _dictionary = new HashMap<String, Integer>();
-  
-  //disk list offset
+
+  // disk list offset
   private List<Integer> _diskIndex = new ArrayList<Integer>();
-  
+
   // Store all the documents
   private List<Document> _documents = new ArrayList<Document>();
 
@@ -107,7 +107,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     }
 
     writeIndexToDisk();
-    System.out.println((System.currentTimeMillis()-start)/1000);
+    System.out.println((System.currentTimeMillis() - start) / 1000);
     _totalTermFrequency = totalTermFrequency;
     System.out.println("Indexed " + Integer.toString(_numDocs) + " docs with "
         + Long.toString(_totalTermFrequency) + " terms.");
@@ -167,7 +167,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     document.setLength(stemedDocument.length());
     _documents.add(document);
     // System.out.println("url: " + document.getUrl());
-    _documentUrls.put(document.getUrl(), document._docid); 
+    _documentUrls.put(document.getUrl(), document._docid);
     ++_numDocs;
   }
 
@@ -178,16 +178,17 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     List<Integer> list = null;
     while (s.hasNext()) {
       String term = s.next();
-      if (_dictionary.containsKey(term)&& _postingLists.containsKey(_dictionary.get(term))) {
+      if (_dictionary.containsKey(term)
+          && _postingLists.containsKey(_dictionary.get(term))) {
         list = _postingLists.get(_dictionary.get(term));
         list.add(docid);
       } else {
         // Encounter a new term, add to posting lists
         list = new ArrayList<Integer>();
         list.add(docid);
-        if(!_dictionary.containsKey(term)){
+        if (!_dictionary.containsKey(term)) {
           _dictionary.put(term, _dictionary.size());
-        }        
+        }
         _postingLists.put(_dictionary.get(term), list);
       }
       list.add(offset);
@@ -493,10 +494,10 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
       String[] terms = phrase.trim().split(" +");
       for (String term : terms) {
         if (_dictionary.containsKey(term)) {
-          if (!_postingLists.containsKey(_dictionary.get(term))) {           
+          if (!_postingLists.containsKey(_dictionary.get(term))) {
             _postingLists.put(_dictionary.get(term), getTermList(term));
             if (_postingLists.size() >= CACHE_SIZE) {
-           
+
               return;
             }
           }
@@ -533,7 +534,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
       // if found
       if (contains) {
         return contains;
-      }    
+      }
       pos = Collections.min(positions);
     }
   }
@@ -683,10 +684,10 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     int offset = _diskIndex.get(_dictionary.get(term));
     int size = _diskIndex.get(_dictionary.get(term) + 1) - offset;
     String inputFile = _options._indexPrefix + "/wikipart.list";
-
     try {
-      RandomAccessFile reader = new RandomAccessFile(inputFile, "r");
-      reader.seek(offset * 4);
+      DataInputStream reader = new DataInputStream(new BufferedInputStream(
+          new FileInputStream(inputFile)));
+      reader.skipBytes(offset * 4);
       for (int i = 0; i < size; i++) {
         list.add((reader.readInt()));
       }
@@ -694,6 +695,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     } catch (Exception e) {
       e.printStackTrace();
     }
+
     cacheIndex.put(_dictionary.get(term), 0);
     return list;
   }
@@ -703,10 +705,10 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
   public int corpusTermFrequency(String term) {
     // check whether the term is in postingLists, if not load from disk
     List<Integer> list = getTermList(term);
-      if (list == null) {
-        return 0;
-      }
-    
+    if (list == null) {
+      return 0;
+    }
+
     return list.size() / 2;
   }
 

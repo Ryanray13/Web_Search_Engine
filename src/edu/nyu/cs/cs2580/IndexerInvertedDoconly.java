@@ -103,7 +103,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
       throw new IOException("Corpus prefix is not a direcroty");
     }
     writeIndexToDisk();
-    System.out.println((System.currentTimeMillis() - start)/1000);
+    System.out.println((System.currentTimeMillis() - start) / 1000);
     _totalTermFrequency = totalTermFrequency;
     System.out.println("Indexed " + Integer.toString(_numDocs) + " docs with "
         + Long.toString(_totalTermFrequency) + " terms.");
@@ -172,7 +172,8 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     List<Integer> list = null;
     while (s.hasNext()) {
       String term = s.next();
-      if (_dictionary.containsKey(term)&& _postingLists.containsKey(_dictionary.get(term))){
+      if (_dictionary.containsKey(term)
+          && _postingLists.containsKey(_dictionary.get(term))) {
         list = _postingLists.get(_dictionary.get(term));
         int lastIndex = list.size() - 1;
         if (list.get(lastIndex - 1) == docid) {
@@ -183,13 +184,13 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
           list.add((1));
         }
       } else {
-        // Encounter a new term, add to posting lists       
+        // Encounter a new term, add to posting lists
         list = new ArrayList<Integer>();
         list.add((docid));
         list.add((1));
-        if(!_dictionary.containsKey(term)){
+        if (!_dictionary.containsKey(term)) {
           _dictionary.put(term, _dictionary.size());
-        }        
+        }
         _postingLists.put(_dictionary.get(term), list);
       }
       totalTermFrequency++;
@@ -339,7 +340,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     while ((i < _postingLists.size()) && (j < diskLength)) {
       Integer term = keyList.get(i);
       if (term == diskTerm) {
-        diskList.clear();        
+        diskList.clear();
         for (int k = 0; k < termSize; k++) {
           diskList.add((reader.readInt()));
         }
@@ -568,7 +569,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     if (!_dictionary.containsKey(term)) {
       return null;
     }
-    if (_postingLists.containsKey(_dictionary.get(term))) { 
+    if (_postingLists.containsKey(_dictionary.get(term))) {
       return _postingLists.get(_dictionary.get(term));
     } else {
       return getTermListFromDisk(term);
@@ -583,8 +584,9 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     String inputFile = _options._indexPrefix + "/wikipart.list";
 
     try {
-      RandomAccessFile reader = new RandomAccessFile(inputFile, "r");
-      reader.seek(offset * 4);
+      DataInputStream reader = new DataInputStream(new BufferedInputStream(
+          new FileInputStream(inputFile)));
+      reader.skipBytes(offset * 4);
       for (int i = 0; i < size; i++) {
         list.add((reader.readInt()));
       }
