@@ -3,6 +3,7 @@ package edu.nyu.cs.cs2580;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -32,25 +33,26 @@ import edu.nyu.cs.cs2580.SearchEngine.Options;
 public class IndexerInvertedCompressed extends Indexer implements Serializable {
 
   private static final long serialVersionUID = 5984985672402218465L;
+  private static final transient int CACHE_SIZE = 20;
+  private static final transient int PARTIAL_SIZE = 205;
+ // private static final transient int LIST_SIZE = 1500000;
+  
   /** ---- Private instances ---- */
   private transient Map<String, List<Integer>> _postingLists = new HashMap<String, List<Integer>>();
-  private transient Map<String, List<Byte>> _cacheLists  = new HashMap<String, List<Byte>>();
-  private transient Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
-  private transient Map<String, Integer> cacheIndex = new HashMap<String, Integer>();
+  private transient Map<String, List<Byte>> _cacheLists  = null;
+  private transient Map<String, Integer> cacheIndex = null;
+  private transient List<Integer> _diskLength = new ArrayList<Integer>();
 
   // Cache current running query
   private transient String currentQuery = "";
   private transient String indexFile = "";
-
-  private static final transient int CACHE_SIZE = 10;
-  private static final transient int PARTIAL_SIZE = 1800;
-  private static final transient int LIST_SIZE = 1500000;
-  private int partNumber = 0;
+  private transient int partNumber = 0;
 
   // Map document url to docid
   private Map<String, Integer> _documentUrls = new HashMap<String, Integer>();
 
-  private transient List<Map<String, Integer>> indexMaps = new ArrayList<Map<String, Integer>>();
+  // disk list offset
+  private Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
 
   // Store all the documents
   private List<Document> _documents = new ArrayList<Document>();
@@ -70,6 +72,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   public void constructIndex() throws IOException {
     // delete already existing index files
     deleteExistingFiles();
+    long start = System.currentTimeMillis();
     File corpusDirectory = new File(_options._corpusPrefix);
     if (corpusDirectory.isDirectory()) {
       System.out.println("Construct index from: " + corpusDirectory);
@@ -92,7 +95,6 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
           if (_numDocs % PARTIAL_SIZE == 0) {
             writeMapToDisk();
             _postingLists.clear();
-            _diskIndex.clear();
           }
         }
       }
@@ -100,9 +102,11 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
       throw new IOException("Corpus prefix is not a direcroty");
     }
 
-    // System.out.println(_postingLists.toString());
+    long start2 = System.currentTimeMillis();
     writeIndexToDisk();
     _totalTermFrequency = totalTermFrequency;
+    System.out.println(start2 - start);
+    System.out.println(System.currentTimeMillis() - start2);
     System.out.println("Indexed " + Integer.toString(_numDocs) + " docs with "
         + Long.toString(_totalTermFrequency) + " terms.");
   }
@@ -172,13 +176,17 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     List<Integer> list = null;
     while (s.hasNext()) {
       String term = s.next();
-      if (_postingLists.containsKey(term)) {
+      if (_diskIndex.containsKey(term)
+          && _postingLists.containsKey(term)) {
         list = _postingLists.get(term);
         list.add(docid);
       } else {
         // Encounter a new term, add to posting lists
         list = new ArrayList<Integer>();
         list.add(docid);
+        if (!_diskIndex.containsKey(term)) {
+          _diskIndex.put(term,0);
+        }
         _postingLists.put(term, list);
       }
       list.add(offset);
@@ -189,35 +197,23 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   }
 
   private void writeMapToDisk() throws IOException {
-    String partialListFile = _options._indexPrefix + "/wikipart"
+    String outputFile = _options._indexPrefix + "/wikipart"
         + String.valueOf(partNumber) + ".list";
-    String partialIndexFile = _options._indexPrefix + "/wikiIndexpart"
-        + String.valueOf(partNumber) + ".idx";
-    int offset = 0;
-    DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
-        new FileOutputStream(partialListFile)));
 
-    for (String term : _postingLists.keySet()) {
-      List<Integer> list = _postingLists.get(term);
-      List<Byte> byteList = new ArrayList<Byte>();
-      for (int i = 0; i < list.size(); i++) {
-        byte[] values = vByte(list.get(i));
-        for (byte value : values) {
-          byteList.add(value);
-        }
+    List<String> keyList = new ArrayList<String>(_postingLists.keySet());
+    Collections.sort(keyList);
+    DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
+        new FileOutputStream(outputFile)));
+    for (String key : keyList) {
+      List<Integer> termList = _postingLists.get(key);
+      writer.writeUTF(key);
+      writer.writeInt(termList.size());
+      for (Integer value : termList) {
+        writer.writeInt(value);
       }
-      writer.writeInt(byteList.size());
-      for (Byte _byte : byteList) {
-        writer.writeByte(_byte);
-      }
-      _diskIndex.put(term, offset);
-      offset += (byteList.size()) + 4;
     }
+    _diskLength.add(_postingLists.size());
     writer.close();
-    ObjectOutputStream os = new ObjectOutputStream(new BufferedOutputStream(
-        new FileOutputStream(partialIndexFile)));
-    os.writeObject(this._diskIndex);
-    os.close();
     partNumber++;
   }
 
@@ -293,16 +289,89 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   }
 
   private void writeIndexToDisk() throws FileNotFoundException, IOException {
-    writeMapToDisk();
+    String outputFile = _options._indexPrefix + "/wiki.list";
+    File[] inputFiles = new File[partNumber];
+    DataInputStream[] readers = new DataInputStream[partNumber];
+    for (int i = 0; i < partNumber; i++) {
+      inputFiles[i] = new File(_options._indexPrefix + "/wikipart"
+          + String.valueOf(i) + ".list");
+      readers[i] = new DataInputStream(new BufferedInputStream(
+          new FileInputStream(inputFiles[i])));
+    }
+    DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
+        new FileOutputStream(outputFile)));
+
+    List<String> keyList = new ArrayList<String>(_postingLists.keySet());
+    List<String> dictionaryList = new ArrayList<String>(_diskIndex.keySet());
+    Collections.sort(dictionaryList);
+    Collections.sort(keyList);
+    List<Integer> diskList = new ArrayList<Integer>();
+    List<Byte> byteList = new ArrayList<Byte>();
+    
+    int[] index = new int[partNumber];
+    String[] diskTerms = new String[partNumber];
+    int[] termSizes = new int[partNumber];
+    String term;
+    int memIndex = 0;
+    int offset = 0;
+    term = keyList.get(memIndex);
+    for (int i = 0; i < partNumber; i++) {
+      diskTerms[i] = readers[i].readUTF();
+      termSizes[i] = readers[i].readInt();
+    }
+    int j = 0;
+    int k = 0;
+    for (int i = 0; i < dictionaryList.size(); i++) {
+      diskList.clear();
+      byteList.clear();
+      for (j = 0; j < partNumber; j++) {
+        if (diskTerms[j].equals(dictionaryList.get(i))) {
+          for (k = 0; k < termSizes[j]; k++) {
+            diskList.add(readers[j].readInt());
+          }
+          index[j]++;
+          if (index[j] < _diskLength.get(j)) {
+            diskTerms[j] = readers[j].readUTF();
+            termSizes[j] = readers[j].readInt();
+          }
+        }
+      }
+      if (term.equals(dictionaryList.get(i))) {
+        List<Integer> termList = _postingLists.get(term);
+        for (k = 0; k < termList.size(); k++) {
+          diskList.add(termList.get(k));
+        }
+        memIndex++;
+        if (memIndex < keyList.size()) {
+          term = keyList.get(memIndex);
+        }
+      }
+      
+      for (k = 0; k < diskList.size(); k++) {
+        byte[] values = vByte(diskList.get(k));
+        for (byte value : values) {
+          byteList.add(value);
+        }
+      }
+      writer.writeInt(byteList.size());
+      for (k = 0; k < byteList.size(); k++) {
+        writer.writeByte(byteList.get(k));
+      }
+      _diskIndex.put(dictionaryList.get(i),offset);
+      offset += (byteList.size() + 4);     
+    }
+    writer.close();
+    for (j = 0; j < partNumber; j++) {
+      readers[j].close();
+      inputFiles[j].delete();
+    }
+    _postingLists.clear();
     ObjectOutputStream os = new ObjectOutputStream(new BufferedOutputStream(
         new FileOutputStream(indexFile)));
     os.writeObject(this);
     os.close();
-    _postingLists.clear();
-    _diskIndex.clear();
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public void loadIndex() throws IOException, ClassNotFoundException {
     System.out.println("Load index from: " + indexFile);
@@ -317,20 +386,12 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     this._documents = newIndexer._documents;
     this._documentUrls = newIndexer._documentUrls;
     this._numDocs = _documents.size();
-    this.partNumber = newIndexer.partNumber;
-    this._diskIndex = null;
+    this._diskIndex = newIndexer._diskIndex;
+    this._diskLength = null;
     this._postingLists = null;
-
-    for (int i = 0; i < partNumber; i++) {
-      String partialIndexFile = _options._indexPrefix + "/wikiIndexpart"
-          + String.valueOf(i) + ".idx";
-      ObjectInputStream is1 = new ObjectInputStream(new BufferedInputStream(
-          new FileInputStream(partialIndexFile)));
-      indexMaps.add((HashMap<String, Integer>) is1.readObject());
-      is1.close();
-    }
-    ((ArrayList<Map<String, Integer>>) indexMaps).trimToSize();
-
+    _cacheLists = new HashMap<String, List<Byte>>();
+    cacheIndex = new HashMap<String, Integer>();
+    
     // Loading each size of the term posting list.
     System.out.println(Integer.toString(_numDocs) + " documents loaded "
         + "with " + Long.toString(_totalTermFrequency) + " terms!");
@@ -380,19 +441,19 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     }
   }
 
-  public void loadQueryList(Query query) {
+  private void loadQueryList(Query query) {
     _cacheLists.clear();
     cacheIndex.clear();
-    List<Byte> list;
     Vector<String> phrases = query._tokens;
     for (String phrase : phrases) {
       String[] terms = phrase.trim().split(" +");
       for (String term : terms) {
-        if (!_cacheLists.containsKey(term)) {
-          list = getTermListFromDisk(term);
-          _cacheLists.put(term, list);
-          if(_cacheLists.size() >= CACHE_SIZE){
-            return  ;
+        if (_diskIndex.containsKey(term)) {
+          if (!_cacheLists.containsKey(term)) {
+            _cacheLists.put(term, getTermListFromDisk(term));
+            if (_cacheLists.size() >= CACHE_SIZE) {
+              return;
+            }
           }
         }
       }
@@ -561,45 +622,36 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
    * @return
    */
   private List<Integer> getTermList(String term) {
+    if (!_diskIndex.containsKey(term)) {
+      return null;
+    }
     List<Integer> list;
     if (_cacheLists.containsKey(term)) {
       list= decodeByte(_cacheLists.get(term));
     } else {
       list= decodeByte(getTermListFromDisk(term));
     }
-    if(list.size()%2 == 1){
-      list.remove(list.size()-1);
-    }
     return list;
   }
 
   // Given a term, load term list from disk
   private List<Byte> getTermListFromDisk(String term) {
-    int part = 0;
-    int sumSize = 0;
     List<Byte> list = new ArrayList<Byte>();
-    while (part < this.partNumber) {
-      String partialListFile = _options._indexPrefix + "/wikipart"
-          + String.valueOf(part) + ".list";
-      try {
-        Map<String, Integer> index = indexMaps.get(part);
-        if (index.containsKey(term)) {
-          RandomAccessFile reader = new RandomAccessFile(partialListFile, "r");
-          reader.seek(index.get(term));
-          int size = reader.readInt();
-          for (int i = 0; i < size; i++) {
-            list.add(reader.readByte());
-          }
-          reader.close();
-          sumSize+=size;
-        }
-      } catch (Exception e) {
-        e.printStackTrace();
+    int offset = _diskIndex.get(term);
+    String inputFile = _options._indexPrefix + "/wiki.list";
+    try {
+      RandomAccessFile raf = new RandomAccessFile(inputFile, "r");
+      DataInputStream reader = new DataInputStream(new BufferedInputStream(
+          new FileInputStream(raf.getFD())));
+      raf.seek(offset);
+      int size = reader.readInt();
+      for (int i = 0; i < size; i++) {
+        list.add((reader.readByte()));
       }
-      if(sumSize >= LIST_SIZE ){
-        break;
-      }
-      part++;
+      raf.close();
+      reader.close();
+    } catch (Exception e) {
+      e.printStackTrace();
     }
     cacheIndex.put(term, 0);
     return list;
