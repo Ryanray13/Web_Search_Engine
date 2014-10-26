@@ -35,9 +35,9 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
   private static final long serialVersionUID = -4516219082721025281L;
 
   private static final transient int CACHE_SIZE = 10;
-  //private static final transient int LIST_SIZE = 1000000;
+  // private static final transient int LIST_SIZE = 1000000;
   private static final transient int PARTIAL_SIZE = 205;
-  
+
   /** ---- Private instances ---- */
   private transient Map<String, List<Integer>> _postingLists = new HashMap<String, List<Integer>>();
 
@@ -173,8 +173,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     List<Integer> list = null;
     while (s.hasNext()) {
       String term = s.next();
-      if (_diskIndex.containsKey(term)
-          && _postingLists.containsKey(term)) {
+      if (_diskIndex.containsKey(term) && _postingLists.containsKey(term)) {
         list = _postingLists.get(term);
         list.add(docid);
       } else {
@@ -182,7 +181,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
         list = new ArrayList<Integer>();
         list.add(docid);
         if (!_diskIndex.containsKey(term)) {
-          _diskIndex.put(term,0);
+          _diskIndex.put(term, 0);
         }
         _postingLists.put(term, list);
       }
@@ -246,7 +245,6 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     int j = 0;
     int k = 0;
     for (int i = 0; i < dictionaryList.size(); i++) {
-      diskList.clear();
       for (j = 0; j < partNumber; j++) {
         if (diskTerms[j].equals(dictionaryList.get(i))) {
           for (k = 0; k < termSizes[j]; k++) {
@@ -261,20 +259,19 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
       }
       if (term.equals(dictionaryList.get(i))) {
         List<Integer> termList = _postingLists.get(term);
-        for (k = 0; k < termList.size(); k++) {
-          diskList.add(termList.get(k));
-        }
+        diskList.addAll(termList);
         memIndex++;
         if (memIndex < keyList.size()) {
           term = keyList.get(memIndex);
         }
       }
       writer.writeInt(diskList.size());
-      for (k = 0; k < diskList.size(); k++) {
-        writer.writeInt(diskList.get(k));
+      for (Integer value : diskList) {
+        writer.writeInt(value);
       }
-      _diskIndex.put(dictionaryList.get(i),offset);
-      offset += (diskList.size() + 1);     
+      _diskIndex.put(dictionaryList.get(i), offset);
+      offset += (diskList.size() + 1);
+      diskList.clear();
     }
 
     writer.close();
@@ -306,7 +303,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     this._diskIndex = newIndexer._diskIndex;
     this._diskLength = null;
     cacheIndex = new HashMap<String, Integer>();
-    
+
     // Loading each size of the term posting list.
     System.out.println(Integer.toString(_numDocs) + " documents loaded "
         + "with " + Long.toString(_totalTermFrequency) + " terms!");
@@ -372,7 +369,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
       }
     }
   }
-  
+
   /**
    * Gets the term list from memory, or from disk when not in memory. If not in
    * disk either, return null
@@ -413,7 +410,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     cacheIndex.put(term, 0);
     return list;
   }
-  
+
   /**
    * Returns the next document id in which contains all tokens from query.
    * Returns -1 if no qualified document exists.
@@ -547,7 +544,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     }
     return -1;
   }
- 
+
   @Override
   // Number of documents in which {@code term} appeared, over the full corpus.
   public int corpusDocFrequencyByTerm(String term) {

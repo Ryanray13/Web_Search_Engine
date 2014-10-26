@@ -35,11 +35,11 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   private static final long serialVersionUID = 5984985672402218465L;
   private static final transient int CACHE_SIZE = 20;
   private static final transient int PARTIAL_SIZE = 205;
- // private static final transient int LIST_SIZE = 1500000;
-  
+  // private static final transient int LIST_SIZE = 1500000;
+
   /** ---- Private instances ---- */
   private transient Map<String, List<Integer>> _postingLists = new HashMap<String, List<Integer>>();
-  private transient Map<String, List<Byte>> _cacheLists  = null;
+  private transient Map<String, List<Byte>> _cacheLists = null;
   private transient Map<String, Integer> cacheIndex = null;
   private transient List<Integer> _diskLength = new ArrayList<Integer>();
 
@@ -165,7 +165,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     document.setLength(stemedDocument.length());
     _documents.add(document);
     // System.out.println("url: " + document.getUrl());
-    _documentUrls.put(document.getUrl(), document._docid); 
+    _documentUrls.put(document.getUrl(), document._docid);
     ++_numDocs;
   }
 
@@ -176,8 +176,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     List<Integer> list = null;
     while (s.hasNext()) {
       String term = s.next();
-      if (_diskIndex.containsKey(term)
-          && _postingLists.containsKey(term)) {
+      if (_diskIndex.containsKey(term) && _postingLists.containsKey(term)) {
         list = _postingLists.get(term);
         list.add(docid);
       } else {
@@ -185,7 +184,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
         list = new ArrayList<Integer>();
         list.add(docid);
         if (!_diskIndex.containsKey(term)) {
-          _diskIndex.put(term,0);
+          _diskIndex.put(term, 0);
         }
         _postingLists.put(term, list);
       }
@@ -204,12 +203,20 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     Collections.sort(keyList);
     DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
         new FileOutputStream(outputFile)));
+    List<Byte> byteList = new ArrayList<Byte>();
     for (String key : keyList) {
+      byteList.clear();
       List<Integer> termList = _postingLists.get(key);
       writer.writeUTF(key);
-      writer.writeInt(termList.size());
-      for (Integer value : termList) {
-        writer.writeInt(value);
+      for (int k = 0; k < termList.size(); k++) {
+        byte[] values = vByte(termList.get(k));
+        for (byte value : values) {
+          byteList.add(value);
+        }
+      }
+      writer.writeInt(byteList.size());
+      for (Byte value : byteList) {
+        writer.writeByte(value);
       }
     }
     _diskLength.add(_postingLists.size());
@@ -305,9 +312,8 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     List<String> dictionaryList = new ArrayList<String>(_diskIndex.keySet());
     Collections.sort(dictionaryList);
     Collections.sort(keyList);
-    List<Integer> diskList = new ArrayList<Integer>();
+    List<Byte> diskList = new ArrayList<Byte>();
     List<Byte> byteList = new ArrayList<Byte>();
-    
     int[] index = new int[partNumber];
     String[] diskTerms = new String[partNumber];
     int[] termSizes = new int[partNumber];
@@ -322,12 +328,10 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     int j = 0;
     int k = 0;
     for (int i = 0; i < dictionaryList.size(); i++) {
-      diskList.clear();
-      byteList.clear();
       for (j = 0; j < partNumber; j++) {
         if (diskTerms[j].equals(dictionaryList.get(i))) {
           for (k = 0; k < termSizes[j]; k++) {
-            diskList.add(readers[j].readInt());
+            diskList.add(readers[j].readByte());
           }
           index[j]++;
           if (index[j] < _diskLength.get(j)) {
@@ -339,26 +343,27 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
       if (term.equals(dictionaryList.get(i))) {
         List<Integer> termList = _postingLists.get(term);
         for (k = 0; k < termList.size(); k++) {
-          diskList.add(termList.get(k));
+          byte[] values = vByte(termList.get(k));
+          for (byte value : values) {
+            byteList.add(value);
+          }
         }
+        diskList.addAll(byteList);
         memIndex++;
         if (memIndex < keyList.size()) {
           term = keyList.get(memIndex);
         }
       }
-      
-      for (k = 0; k < diskList.size(); k++) {
-        byte[] values = vByte(diskList.get(k));
-        for (byte value : values) {
-          byteList.add(value);
-        }
+
+      writer.writeInt(diskList.size());
+      for (Byte value : diskList) {
+        writer.writeByte(value);
       }
-      writer.writeInt(byteList.size());
-      for (k = 0; k < byteList.size(); k++) {
-        writer.writeByte(byteList.get(k));
-      }
-      _diskIndex.put(dictionaryList.get(i),offset);
-      offset += (byteList.size() + 4);     
+
+      _diskIndex.put(dictionaryList.get(i), offset);
+      offset += (diskList.size() + 4);
+      diskList.clear();
+      byteList.clear();
     }
     writer.close();
     for (j = 0; j < partNumber; j++) {
@@ -391,7 +396,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     this._postingLists = null;
     _cacheLists = new HashMap<String, List<Byte>>();
     cacheIndex = new HashMap<String, Integer>();
-    
+
     // Loading each size of the term posting list.
     System.out.println(Integer.toString(_numDocs) + " documents loaded "
         + "with " + Long.toString(_totalTermFrequency) + " terms!");
@@ -460,57 +465,47 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     }
   }
 
-  // terms at least contain 2 words
-  private boolean containPhrase(String[] terms, int docid) {
-    int pos = -1;
-    // position == -1 indicate has searched to the end of the document
-    while (true) {
-      boolean contains = true;
-      List<Integer> positions = new ArrayList<Integer>();
-
-      for (String term : terms) {
-        int p = nextPos(term, docid, pos);
-        if (p == -1) {
-          return false;
-        }
-        positions.add(p);
-      }
-
-      int p1 = positions.get(0);
-      for (int i = 1; i < positions.size(); i++) {
-        int p2 = positions.get(i);
-        if ((p1 + 1) != p2) {
-          contains = false;
-          break;
-        }
-        p1 = p2;
-      }
-      // if found
-      if (contains) {
-        return contains;
-      }
-      pos = Collections.min(positions);
+  /**
+   * Gets the term list from memory, or from disk when not in memory. If not in
+   * disk either, return null
+   * 
+   * @param term
+   * @return
+   */
+  private List<Integer> getTermList(String term) {
+    if (!_diskIndex.containsKey(term)) {
+      return null;
     }
+    List<Integer> list;
+    if (_cacheLists.containsKey(term)) {
+      list = decodeByte(_cacheLists.get(term));
+    } else {
+      list = decodeByte(getTermListFromDisk(term));
+    }
+    return list;
   }
 
-  // return next occurrence of word in document after current position
-  private int nextPos(String word, int docid, int pos) {
-    List<Integer> list = getTermList(word);
-    if (list == null || list.size() == 0) {
-      return -1;
-    }
-
-    int cache = cacheIndex.get(word);
-
-    int p = 0;
-    while (list.get(cache) == docid) {
-      p = list.get(cache + 1);
-      if (p > pos) {
-        return p;
+  // Given a term, load term list from disk
+  private List<Byte> getTermListFromDisk(String term) {
+    List<Byte> list = new ArrayList<Byte>();
+    int offset = _diskIndex.get(term);
+    String inputFile = _options._indexPrefix + "/wiki.list";
+    try {
+      RandomAccessFile raf = new RandomAccessFile(inputFile, "r");
+      DataInputStream reader = new DataInputStream(new BufferedInputStream(
+          new FileInputStream(raf.getFD())));
+      raf.seek(offset);
+      int size = reader.readInt();
+      for (int i = 0; i < size; i++) {
+        list.add((reader.readByte()));
       }
-      cache = cache + 2;
+      raf.close();
+      reader.close();
+    } catch (Exception e) {
+      e.printStackTrace();
     }
-    return -1;
+    cacheIndex.put(term, 0);
+    return list;
   }
 
   /**
@@ -595,6 +590,59 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     return list.get(cache);
   }
 
+  // terms at least contain 2 words
+  private boolean containPhrase(String[] terms, int docid) {
+    int pos = -1;
+    // position == -1 indicate has searched to the end of the document
+    while (true) {
+      boolean contains = true;
+      List<Integer> positions = new ArrayList<Integer>();
+
+      for (String term : terms) {
+        int p = nextPos(term, docid, pos);
+        if (p == -1) {
+          return false;
+        }
+        positions.add(p);
+      }
+
+      int p1 = positions.get(0);
+      for (int i = 1; i < positions.size(); i++) {
+        int p2 = positions.get(i);
+        if ((p1 + 1) != p2) {
+          contains = false;
+          break;
+        }
+        p1 = p2;
+      }
+      // if found
+      if (contains) {
+        return contains;
+      }
+      pos = Collections.min(positions);
+    }
+  }
+
+  // return next occurrence of word in document after current position
+  private int nextPos(String word, int docid, int pos) {
+    List<Integer> list = getTermList(word);
+    if (list == null || list.size() == 0) {
+      return -1;
+    }
+
+    int cache = cacheIndex.get(word);
+
+    int p = 0;
+    while (list.get(cache) == docid) {
+      p = list.get(cache + 1);
+      if (p > pos) {
+        return p;
+      }
+      cache = cache + 2;
+    }
+    return -1;
+  }
+
   @Override
   // Number of documents in which {@code term} appeared, over the full corpus.
   public int corpusDocFrequencyByTerm(String term) {
@@ -612,49 +660,6 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
       }
     }
     return result;
-  }
-
-  /**
-   * Gets the term list from memory, or from disk when not in memory. If not in
-   * disk either, return null
-   * 
-   * @param term
-   * @return
-   */
-  private List<Integer> getTermList(String term) {
-    if (!_diskIndex.containsKey(term)) {
-      return null;
-    }
-    List<Integer> list;
-    if (_cacheLists.containsKey(term)) {
-      list= decodeByte(_cacheLists.get(term));
-    } else {
-      list= decodeByte(getTermListFromDisk(term));
-    }
-    return list;
-  }
-
-  // Given a term, load term list from disk
-  private List<Byte> getTermListFromDisk(String term) {
-    List<Byte> list = new ArrayList<Byte>();
-    int offset = _diskIndex.get(term);
-    String inputFile = _options._indexPrefix + "/wiki.list";
-    try {
-      RandomAccessFile raf = new RandomAccessFile(inputFile, "r");
-      DataInputStream reader = new DataInputStream(new BufferedInputStream(
-          new FileInputStream(raf.getFD())));
-      raf.seek(offset);
-      int size = reader.readInt();
-      for (int i = 0; i < size; i++) {
-        list.add((reader.readByte()));
-      }
-      raf.close();
-      reader.close();
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    cacheIndex.put(term, 0);
-    return list;
   }
 
   @Override

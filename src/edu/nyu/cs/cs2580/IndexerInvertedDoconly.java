@@ -33,15 +33,15 @@ import org.jsoup.Jsoup;
 public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
   private static final long serialVersionUID = -2048986665889156698L;
-   
+
   private static final transient int CACHE_SIZE = 30;
-  //private static final transient int LIST_SIZE = 1000000;
+  // private static final transient int LIST_SIZE = 1000000;
   private static final transient int PARTIAL_SIZE = 256;
 
   // Using hashMap to present postinglists, each term has a list of Integers.
   // When serving, using as query cache
   private transient Map<String, List<Integer>> _postingLists = new HashMap<String, List<Integer>>();
-  
+
   private transient List<Integer> _diskLength = new ArrayList<Integer>();
 
   // Cache current running query
@@ -51,7 +51,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
   // Map document url to docid
   private Map<String, Integer> _documentUrls = new HashMap<String, Integer>();
-  
+
   // disk list offset
   private Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
 
@@ -175,8 +175,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     List<Integer> list = null;
     while (s.hasNext()) {
       String term = s.next();
-      if (_diskIndex.containsKey(term)
-          && _postingLists.containsKey(term)) {
+      if (_diskIndex.containsKey(term) && _postingLists.containsKey(term)) {
         list = _postingLists.get(term);
         int lastIndex = list.size() - 1;
         if (list.get(lastIndex - 1) == docid) {
@@ -221,7 +220,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     writer.close();
     partNumber++;
   }
-  
+
   private void writeIndexToDisk() throws FileNotFoundException, IOException {
     String outputFile = _options._indexPrefix + "/wiki.list";
     File[] inputFiles = new File[partNumber];
@@ -254,7 +253,6 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     int j = 0;
     int k = 0;
     for (int i = 0; i < dictionaryList.size(); i++) {
-      diskList.clear();
       for (j = 0; j < partNumber; j++) {
         if (diskTerms[j].equals(dictionaryList.get(i))) {
           for (k = 0; k < termSizes[j]; k++) {
@@ -269,20 +267,19 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
       }
       if (term.equals(dictionaryList.get(i))) {
         List<Integer> termList = _postingLists.get(term);
-        for (k = 0; k < termList.size(); k++) {
-          diskList.add(termList.get(k));
-        }
+        diskList.addAll(termList);
         memIndex++;
         if (memIndex < keyList.size()) {
           term = keyList.get(memIndex);
         }
       }
       writer.writeInt(diskList.size());
-      for (k = 0; k < diskList.size(); k++) {
-        writer.writeInt(diskList.get(k));
+      for (Integer value : diskList) {
+        writer.writeInt(value);
       }
-      _diskIndex.put(dictionaryList.get(i),offset);
-      offset += (diskList.size() + 1);     
+      _diskIndex.put(dictionaryList.get(i), offset);
+      offset += (diskList.size() + 1);
+      diskList.clear();
     }
 
     writer.close();
@@ -404,7 +401,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
       }
     }
   }
-  
+
   private List<Integer> getTermList(String term) {
     if (!_diskIndex.containsKey(term)) {
       return null;
