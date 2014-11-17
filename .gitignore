@@ -11,5 +11,8 @@ bin/*
 /bin/
 public/.idea/*
 /data/wiki/*
+<<<<<<< HEAD
 /data/index/*
 /results/*
+=======
+>>>>>>> e81bd268ffc7398e5ec04dbd71f8a242fc90278b
