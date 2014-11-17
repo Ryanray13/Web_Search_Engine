@@ -12,9 +12,12 @@ import edu.nyu.cs.cs2580.SearchEngine.Options;
  * 
  * In HW1: instructor's {@link IndexerFullScan} is provided as is.
  * 
- * In HW2: student will implement {@link IndexerInvertedDoconly},
+ * In HW2: students will implement {@link IndexerInvertedDoconly},
  * {@link IndexerInvertedOccurrence}, and {@link IndexerInvertedCompressed}.
  * See comments below for more info.
+ * 
+ * In HW3: students will incorporate the corpus analysis and log mining results
+ * into indexing process through {@link CorpusAnalyzer} and {@link LogMiner}.
  *
  * @author congyu
  * @author fdiaz
@@ -22,6 +25,10 @@ import edu.nyu.cs.cs2580.SearchEngine.Options;
 public abstract class Indexer {
   // Options to configure each concrete Indexer, do not serialize.
   protected Options _options = null;
+
+  // CorpusAnalyzer and LogMinder that support the indexing process.
+  protected CorpusAnalyzer _corpusAnalyzer = null;
+  protected LogMiner _logMiner = null;
 
   // In-memory data structures populated once for each server. Those fields
   // are populated during index loading time and must not be modified during
@@ -36,6 +43,8 @@ public abstract class Indexer {
   // The real constructor
   public Indexer(Options options) {
     _options = options;
+    _corpusAnalyzer = CorpusAnalyzer.Factory.getCorpusAnalyzerByOption(options);
+    _logMiner = LogMiner.Factory.getLogMinerByOption(options);
   }
 
   // APIs for document retrieval.
@@ -75,9 +84,12 @@ public abstract class Indexer {
    *      drop the processing of a certain inverted list.
    *
    * The index must reside at the directory of index_prefix, no other data can
-   * be stored (either in a hidden file or in a temporary directory). We will
-   * construct your index on one machine and move the index to a different
-   * machine for serving, so do NOT try to play tricks. 
+   * be stored (either in a hidden file or in a temporary directory). In serve
+   * mode, the constructed index should provide the necessary functionality to
+   * support the search tasks.
+   *
+   * In HW3: leverage load() functions from both {@link CorpusAnalyzer} and
+   * {@link LogMiner}.
    */
   public abstract void constructIndex() throws IOException;
 
@@ -116,8 +128,9 @@ public abstract class Indexer {
   // Number of times {@code term} appeared in corpus. 
   public abstract int corpusTermFrequency(String term);
 
-  // Number of times {@code term} appeared in the document {@code url}.
-  public abstract int documentTermFrequency(String term, String url);
+  // Number of times {@code term} appeared in the document {@code docid}.
+  // *** @CS2580: Note the function signature change from url to docid. ***
+  public abstract int documentTermFrequency(String term, int docid);
 
   /**
    * All Indexers must be created through this factory class based on the

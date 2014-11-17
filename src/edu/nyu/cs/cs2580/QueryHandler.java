@@ -42,6 +42,7 @@ class QueryHandler implements HttpHandler {
       PHRASE,
       QL,
       LINEAR,
+      COMPREHENSIVE,
     }
     public RankerType _rankerType = RankerType.NONE;
     
@@ -113,16 +114,6 @@ class QueryHandler implements HttpHandler {
     }
     response.append(response.length() > 0 ? "\n" : "");
   }
-  
-  private void constructHtmlOutput(final Vector<ScoredDocument> docs, StringBuffer response) {
-    response.append("[\n");
-    for (ScoredDocument doc : docs) {
-      response.append(doc.asHtmlResult());
-      response.append("\n");
-    }
-    response.deleteCharAt(response.length() - 2);
-    response.append("]\n");
-  }
 
   public void handle(HttpExchange exchange) throws IOException {
     String requestMethod = exchange.getRequestMethod();
@@ -164,13 +155,12 @@ class QueryHandler implements HttpHandler {
     }
 
     // Processing the query.
-    Query processedQuery = new QueryPhrase(cgiArgs._query);
+    Query processedQuery = new Query(cgiArgs._query);
     processedQuery.processQuery();
 
     // Ranking.
     Vector<ScoredDocument> scoredDocs =
         ranker.runQuery(processedQuery, cgiArgs._numResults);
-    
     StringBuffer response = new StringBuffer();
     switch (cgiArgs._outputFormat) {
     case TEXT:
@@ -178,7 +168,6 @@ class QueryHandler implements HttpHandler {
       break;
     case HTML:
       // @CS2580: Plug in your HTML output
-      constructHtmlOutput(scoredDocs, response);
       break;
     default:
       // nothing

@@ -27,12 +27,7 @@ class ScoredDocument implements Comparable<ScoredDocument> {
    * @CS2580: Student should implement {@code asHtmlResult} for final project.
    */
   public String asHtmlResult() {
-    StringBuffer buf = new StringBuffer();
-    buf.append("\"id\": ").append(String.valueOf(_doc._docid))
-    .append(", \"title\": \"").append(_doc.getTitle())
-    .append("\", \"score\": ").append(String.valueOf(_score))
-    .append("},");
-    return buf.toString();
+    return "";
   }
 
   @Override
