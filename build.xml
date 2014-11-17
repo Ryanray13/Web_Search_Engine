@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ====================================================================== 
+     Nov 17, 2014 1:49:20 AM                                                        
+
+     project    
+     description
+                   
+     steven                                                                
+     ====================================================================== -->
+<project name="web_search_engine" >
+    <description>
+            Web search engine assignment
+    </description>
+    <property name="src" location="src"/>
+	  <property name="bin" location="bin" />
+	  <property name="dist" location="dist" />
+	  <property name="conf" location="conf" />
+	  <property name="main" value="edu.nyu.cs.cs2580.SearchEngine" />
+    <property name="mining" value="--mode=mining --options=../conf/engine.conf" />
+    <property name="index" value="--mode=index --options=../conf/engine.conf" />
+    <property name="server" value="--mode=serve -port=25801 --options=../conf/engine.conf" />
+	  <!-- ================================= 
+	          target: compile              
+	         ================================= -->
+	    <target name="compile" description="Compile the project">
+	        <javac includeantruntime="false" srcdir="${src}" destdir="${bin}" />
+	    </target>
+	 <!-- ================================= 
+	            target: mining mode
+	           ================================= -->
+	      <target name="mining mode" depends="compile" description="run server mode">
+	          <java dir="${bin}" classname="${main}" fork="true">
+	            <arg line="${mining}" />
+	          </java>
+	      </target>
+
+	   <!-- ================================= 
+	            target: index mode
+	           ================================= -->
+	      <target name="index mode" depends="compile" description="run index mode">
+	          <java dir="${bin}" classname="${main}" fork="yes">
+	            <arg line="${index}" />
+	          </java>
+	      </target>
+
+    <!-- ================================= 
+          target: server mode
+         ================================= -->
+    <target name="server mode" depends="compile" description="run server mode">
+        <java dir="${bin}" classname="${main}" fork="true">
+          <arg line="${server}" />
+        </java>
+    </target>
+	
+    <!-- - - - - - - - - - - - - - - - - - 
+          target: depends                      
+         - - - - - - - - - - - - - - - - - -->
+    <target name="depends">
+    </target>
+
+</project>
