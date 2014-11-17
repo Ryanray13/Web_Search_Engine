@@ -1,12 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- ====================================================================== 
-     Nov 17, 2014 1:49:20 AM                                                        
-
-     project    
-     description
-                   
-     steven                                                                
-     ====================================================================== -->
 <project name="web_search_engine" >
     <description>
             Web search engine assignment
