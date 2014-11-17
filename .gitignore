@@ -10,5 +10,6 @@ bin/*
 */src/edu/nyu/cs/.DS_Store
 /bin/
 public/.idea/*
-/data/*
+/data/wiki/*
+/data/index/*
 /results/*
