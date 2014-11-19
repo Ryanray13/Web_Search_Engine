@@ -114,7 +114,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     if (newfile.isDirectory()) {
       File[] files = newfile.listFiles();
       for (File file : files) {
-        if (file.getName().matches(".*wiki.*")) {
+        if (file.getName().matches(".*wiki\\.list") || file.getName().matches(".*wiki\\.idx")) {
           file.delete();
         }
       }

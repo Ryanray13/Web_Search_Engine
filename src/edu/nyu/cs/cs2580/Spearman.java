@@ -69,8 +69,8 @@ public class Spearman {
     double result = 0.0;
     int n = pageRanks.size();
     
-    HashMap<Integer, Double> pagerankMap = new HashMap<Integer, Double>();
-    HashMap<Integer, Double> numviewMap= new HashMap<Integer, Double>();
+    Map<Integer, Double> pagerankMap = new HashMap<Integer, Double>();
+    Map<Integer, Double> numviewMap= new HashMap<Integer, Double>();
     for (int i = 0; i < n; i++) {
       pagerankMap.put(i, pageRanks.get(i));
       numviewMap.put(i, numViews.get(i));
@@ -102,7 +102,7 @@ public class Spearman {
   }
   
   private static TreeMap<Integer, Double> sortByValue (
-      HashMap<Integer, Double> map) {
+      Map<Integer, Double> map) {
     ValueComparator vc =  new ValueComparator(map);
     TreeMap<Integer, Double> sortedMap = new TreeMap<Integer,Double>(vc);
     sortedMap.putAll(map);
@@ -114,7 +114,7 @@ public class Spearman {
     int rank = 0;
     double lastValue = -1;
     List<Integer> result = new ArrayList<Integer>();
-    TreeMap<Integer, Integer> sortedMap =
+    Map<Integer, Integer> sortedMap =
         new TreeMap<Integer, Integer>();
     for (Map.Entry<Integer, Double> entry : map.entrySet()) {
       double value = entry.getValue();

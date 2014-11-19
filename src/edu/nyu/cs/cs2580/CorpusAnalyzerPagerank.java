@@ -1,6 +1,17 @@
 package edu.nyu.cs.cs2580;
 
+import java.io.BufferedOutputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import edu.nyu.cs.cs2580.SearchEngine.Options;
 
@@ -11,6 +22,8 @@ public class CorpusAnalyzerPagerank extends CorpusAnalyzer {
   public CorpusAnalyzerPagerank(Options options) {
     super(options);
   }
+  
+  private static final double LAMBDA = 0.1;
 
   /**
    * This function processes the corpus as specified inside {@link _options}
@@ -33,8 +46,76 @@ public class CorpusAnalyzerPagerank extends CorpusAnalyzer {
    */
   @Override
   public void prepare() throws IOException {
+    deleteExistingFiles();
     System.out.println("Preparing " + this.getClass().getName());
+    Map<String, Integer> _documentUrls = new HashMap<String, Integer>();
+    Map<Integer,Set<Integer>> corpusGraph = new HashMap<Integer, Set<Integer>>();
+    Map<Integer, Integer> redirects = new HashMap<Integer,Integer>();
+    int docid = 0;
+    File corpusDirectory = new File(_options._corpusPrefix);
+    if (corpusDirectory.isDirectory()) {
+      File[] allFiles = corpusDirectory.listFiles();
+      for (File file : allFiles) {
+        _documentUrls.put(file.getName(), docid);
+        docid++;
+      }
+      for (File file : allFiles) {
+        if(_documentUrls.containsKey(file.getName() + ".html")){
+          redirects.put(_documentUrls.get(file.getName()),_documentUrls.get(file.getName() + ".html"));
+        }
+      }
+      for (File file : allFiles) {
+        Set<Integer> linkSet = new HashSet<Integer>();
+        if(isValidDocument(file) && !redirects.containsKey(_documentUrls.get(file.getName()))){
+          HeuristicLinkExtractor extractor = new HeuristicLinkExtractor(file);
+          String link = extractor.getNextInCorpusLinkTarget();
+          while(link!=null){
+            if(_documentUrls.containsKey(link)){
+              int linkDocid = _documentUrls.get(link);
+              if(redirects.containsKey(linkDocid)){
+                linkDocid = redirects.get(linkDocid);
+              }
+              
+              if(!linkSet.contains(linkDocid)){
+                linkSet.add(linkDocid);
+              }
+            }
+            link = extractor.getNextInCorpusLinkTarget();
+          }
+          corpusGraph.put(_documentUrls.get(file.getName()), linkSet);
+        }
+      }
+           
+      String outputFile = _options._indexPrefix + "/wiki.graph";
+      String objectFile = _options._indexPrefix + "/wiki.graph.structure";
+      DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
+          new FileOutputStream(outputFile)));
+      for(Integer key : corpusGraph.keySet()){
+        writer.writeInt(key);
+        Set<Integer> list = corpusGraph.get(key);
+        for(Integer str : list){
+          writer.writeInt(str);
+        }
+      }
+      writer.close();
+      ObjectOutputStream wo = new ObjectOutputStream(new BufferedOutputStream(
+          new FileOutputStream(objectFile)));
+      wo.writeObject(_documentUrls);
+      wo.close();
+    }    
     return;
+  }
+  
+  private void deleteExistingFiles() {
+    File newfile = new File(_options._indexPrefix);
+    if (newfile.isDirectory()) {
+      File[] files = newfile.listFiles();
+      for (File file : files) {
+        if (file.getName().matches(".*wiki\\.graph.*")) {
+          file.delete();
+        }
+      }
+    }
   }
 
   /**
