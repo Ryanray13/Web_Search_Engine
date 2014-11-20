@@ -350,7 +350,11 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     for (String phrase : phrases) {
       String[] terms = phrase.trim().split(" +");
       for (String term : terms) {
-        docids.add((next(term, docid)));
+        int id = next(term, docid);
+        if (id == -1) {
+          return -1;
+        }
+        docids.add(id);
       }
     }
     if (docids.size() == 0) {
@@ -362,9 +366,6 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     isEqual = true;
     for (int i = 1; i < docids.size(); i++) {
       int id = docids.get(i);
-      if (id == -1) {
-        return -1;
-      }
       if (id != result) {
         isEqual = false;
       }

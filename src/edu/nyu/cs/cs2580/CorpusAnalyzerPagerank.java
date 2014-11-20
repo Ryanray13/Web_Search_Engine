@@ -10,10 +10,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -151,6 +149,7 @@ public class CorpusAnalyzerPagerank extends CorpusAnalyzer {
    *
    * @throws IOException
    */
+  @SuppressWarnings("unchecked")
   @Override
   public void compute() throws IOException {
     System.out.println("Computing using " + this.getClass().getName());
