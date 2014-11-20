@@ -363,7 +363,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     int result = docids.get(0);
     int max = result;
     isEqual = true;
-    for (int i = 1; i < docids.size(); i++) {
+    for (int i = 0; i < docids.size(); i++) {
       int id = docids.get(i);
       if (id == -1) {
         return -1;
@@ -375,10 +375,9 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
         max = id;
       }
     }
-
+    
     if (isEqual) {
       return result;
-
     } else {
       return max - 1;
     }
