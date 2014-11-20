@@ -172,8 +172,9 @@ public class CorpusAnalyzerPagerank extends CorpusAnalyzer {
     reader.close();      
     ObjectInputStream is = new ObjectInputStream(new BufferedInputStream(
         new FileInputStream(structureFile)));
+    Map<Integer, String> docidMap = null;
     try {
-      Map<Integer, String> docidMap = (HashMap<Integer, String>)is.readObject();
+      docidMap = (HashMap<Integer, String>)is.readObject();
     } catch (ClassNotFoundException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
@@ -224,8 +225,15 @@ public class CorpusAnalyzerPagerank extends CorpusAnalyzer {
       itr--;
     }
    
-    
-    
+    String pageRankFile = _options._indexPrefix + "/pageRank/wiki.pageRank";
+    DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
+        new FileOutputStream(pageRankFile)));
+    writer.writeInt(pageRank.size());
+    for (Integer docid : pageRank.keySet()) {
+      writer.writeUTF(docidMap.get(docid));
+      writer.writeDouble(pageRank.get(docid));
+    }
+    writer.close();    
     return;
   }
 
