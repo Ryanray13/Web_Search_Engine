@@ -529,7 +529,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
   // return next occurrence of word in document after current position
   private int nextPos(String word, int docid, int pos) {
     List<Integer> list = getTermList(word);
-    if (list == null || list.size() == 0) {
+    if (list == null || list.size() == 0 || list.get(list.size()-1) <= pos) {
       return -1;
     }
 

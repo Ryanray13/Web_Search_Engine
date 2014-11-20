@@ -39,7 +39,6 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
 
   /** ---- Private instances ---- */
   private transient Map<String, List<Integer>> _postingLists = new HashMap<String, List<Integer>>();
-  private transient Map<String, List<Byte>> _cacheLists = null;
   private transient Map<String, Integer> cacheIndex = null;
   private transient List<Integer> _diskLength = new ArrayList<Integer>();
 
@@ -393,8 +392,6 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     this._numDocs = _documents.size();
     this._diskIndex = newIndexer._diskIndex;
     this._diskLength = null;
-    this._postingLists = null;
-    _cacheLists = new HashMap<String, List<Byte>>();
     cacheIndex = new HashMap<String, Integer>();
 
     // Loading each size of the term posting list.
@@ -421,9 +418,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
       loadQueryList(query);
     }
     while (true) {
-
       boolean found = true;
-
       int docCandidate = nextContainAllDocument(query, docid);
       if (docCandidate == -1) {
         return null;
@@ -447,16 +442,16 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   }
 
   private void loadQueryList(Query query) {
-    _cacheLists.clear();
+    _postingLists.clear();
     cacheIndex.clear();
     Vector<String> phrases = query._tokens;
     for (String phrase : phrases) {
       String[] terms = phrase.trim().split(" +");
       for (String term : terms) {
         if (_diskIndex.containsKey(term)) {
-          if (!_cacheLists.containsKey(term)) {
-            _cacheLists.put(term, getTermListFromDisk(term));
-            if (_cacheLists.size() >= CACHE_SIZE) {
+          if (!_postingLists.containsKey(term)) {
+            _postingLists.put(term, decodeByte(getTermListFromDisk(term)));
+            if (_postingLists.size() >= CACHE_SIZE) {
               return;
             }
           }
@@ -477,12 +472,12 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
       return null;
     }
     List<Integer> list;
-    if (_cacheLists.containsKey(term)) {
-      list = decodeByte(_cacheLists.get(term));
+    if (_postingLists.containsKey(term)) {
+      return _postingLists.get(term);
     } else {
       list = decodeByte(getTermListFromDisk(term));
+      return list;
     }
-    return list;
   }
 
   // Given a term, load term list from disk
@@ -626,12 +621,11 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   // return next occurrence of word in document after current position
   private int nextPos(String word, int docid, int pos) {
     List<Integer> list = getTermList(word);
-    if (list == null || list.size() == 0) {
+    if (list == null || list.size() == 0 || list.get(list.size()-1) <= pos) {
       return -1;
     }
 
     int cache = cacheIndex.get(word);
-
     int p = 0;
     while (list.get(cache) == docid) {
       p = list.get(cache + 1);
@@ -666,15 +660,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   // Number of times {@code term} appeared in corpus.
   public int corpusTermFrequency(String term) {
     // check whether the term is in postingLists, if not load from disk
-    List<Integer> list = null;
-    if (_cacheLists.containsKey(term)) {
-      list = decodeByte(_cacheLists.get(term));
-    } else {
-      list = decodeByte(getTermListFromDisk(term));
-      if (list == null) {
-        return 0;
-      }
-    }
+    List<Integer> list =getTermList(term);
     return list.size() / 2;
   }
 
