@@ -1,7 +1,21 @@
 package edu.nyu.cs.cs2580;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
+import edu.nyu.cs.cs2580.CorpusAnalyzer.HeuristicLinkExtractor;
 import edu.nyu.cs.cs2580.SearchEngine.Options;
 
 /**
@@ -29,7 +43,45 @@ public class LogMinerNumviews extends LogMiner {
   @Override
   public void compute() throws IOException {
     System.out.println("Computing using " + this.getClass().getName());
-    return;
+    Set<String> redirects = new HashSet<String>();
+    Set<String> docs = new HashSet<String>();
+    Map<String, Integer> numViews = new HashMap<String, Integer>();
+    
+    File corpusDirectory = new File(_options._corpusPrefix);
+    if (corpusDirectory.isDirectory())
+    {
+    	File[] allFiles = corpusDirectory.listFiles();
+    	for (File file : allFiles) {
+    		docs.add(file.getName());
+    	}
+    	
+    	for (File file : allFiles) {
+    		if (docs.contains(file.getName() + ".html")) {
+    			redirects.add(file.getName());
+    		}
+    	}
+    	File logFile = new File(_options._logPrefix);
+    	BufferedReader reader = new BufferedReader(new FileReader(logFile));
+    	String line;
+    	int i = 0;
+    	while((line = reader.readLine()) != null)
+    	{
+    		i++;
+    		String[] logLine = line.split(" ");
+    		if (logLine.length != 3)
+    			continue;
+    		String docName = logLine[1];
+    		String docNum = logLine[2];
+    		try {
+    			numViews.put(docName, Integer.parseInt(docNum));
+    		} catch (Exception e) {
+    			continue;
+    		}
+    	}
+    	ObjectOutputStream os = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream("data/index/numviews/wiki.num")));
+    	os.writeObject(numViews);
+    	os.close();
+    }
   }
 
   /**
@@ -41,6 +93,15 @@ public class LogMinerNumviews extends LogMiner {
   @Override
   public Object load() throws IOException {
     System.out.println("Loading using " + this.getClass().getName());
-    return null;
+    ObjectInputStream is = new ObjectInputStream(new BufferedInputStream(new FileInputStream("data/index/numviews/wiki.num")));
+    Object obj = null;
+    try {
+		obj = is.readObject();	
+	} catch (ClassNotFoundException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
+    is.close();
+    return obj;
   }
 }
