@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 public class Spearman {
-  
+
   public static void main(String[] args) {
     try {
       parseCommand(args);
@@ -35,19 +35,18 @@ public class Spearman {
       System.exit(-1);
     }
   }
-  
-  private static void parseCommand(String[] args) 
-      throws IOException {
+
+  private static void parseCommand(String[] args) throws IOException {
     // no args are provided or wrong number of args provided
-    //TODO: Do I need to check null first ?
-    Check(args != null && args.length == 2, 
+    // TODO: Do I need to check null first ?
+    Check(args != null && args.length == 2,
         "Please provide path to PageRanks and path to NumViews.");
     PATH_TO_PAGERANKS = args[0];
     PATH_TO_NUMVIEWS = args[1];
   }
 
-  private static List<Double> processFile(String path) 
-      throws IOException, NumberFormatException{
+  private static List<Double> processFile(String path) throws IOException,
+      NumberFormatException {
     BufferedReader reader = new BufferedReader(new FileReader(path));
     List<Double> result = new ArrayList<Double>();
     try {
@@ -61,24 +60,24 @@ public class Spearman {
     return result;
   }
 
-  //TODO: formula correct? who's average??
-  //TODO: how to rank duplicates??
-  //TODO: calculate the value based on order
-  private static double calcSpearmanCorrelation(
-      List<Double> pageRanks, List<Double> numViews) {
+  // TODO: formula correct? who's average??
+  // TODO: how to rank duplicates??
+  // TODO: calculate the value based on order
+  private static double calcSpearmanCorrelation(List<Double> pageRanks,
+      List<Double> numViews) {
     double result = 0.0;
     int n = pageRanks.size();
-    
+
     Map<Integer, Double> pagerankMap = new HashMap<Integer, Double>();
-    Map<Integer, Double> numviewMap= new HashMap<Integer, Double>();
+    Map<Integer, Double> numviewMap = new HashMap<Integer, Double>();
     for (int i = 0; i < n; i++) {
       pagerankMap.put(i, pageRanks.get(i));
       numviewMap.put(i, numViews.get(i));
     }
-    
+
     List<Integer> pageRanksRanks = getRanks(sortByValue(pagerankMap));
     List<Integer> numViewsRanks = getRanks(sortByValue(numviewMap));
-    
+
     double pageranksAvg = getAverage(pageRanksRanks);
     double numviewsAvg = getAverage(numViewsRanks);
 
@@ -92,7 +91,7 @@ public class Spearman {
       sumDiffPageRanks += diff1 * diff1;
       sumDiffNumViews += diff2 * diff2;
     }
-    
+
     if (sumDiffPageRanks * sumDiffNumViews == 0) {
       result = -1;
     } else {
@@ -100,11 +99,10 @@ public class Spearman {
     }
     return result;
   }
-  
-  private static TreeMap<Integer, Double> sortByValue (
-      Map<Integer, Double> map) {
-    ValueComparator vc =  new ValueComparator(map);
-    TreeMap<Integer, Double> sortedMap = new TreeMap<Integer,Double>(vc);
+
+  private static TreeMap<Integer, Double> sortByValue(Map<Integer, Double> map) {
+    ValueComparator vc = new ValueComparator(map);
+    TreeMap<Integer, Double> sortedMap = new TreeMap<Integer, Double>(vc);
     sortedMap.putAll(map);
     return sortedMap;
   }
@@ -114,8 +112,7 @@ public class Spearman {
     int rank = 0;
     double lastValue = -1;
     List<Integer> result = new ArrayList<Integer>();
-    Map<Integer, Integer> sortedMap =
-        new TreeMap<Integer, Integer>();
+    Map<Integer, Integer> sortedMap = new TreeMap<Integer, Integer>();
     for (Map.Entry<Integer, Double> entry : map.entrySet()) {
       double value = entry.getValue();
       if (value == lastValue) {
@@ -132,7 +129,7 @@ public class Spearman {
     }
     return result;
   }
-  
+
   private static double getAverage(List<Integer> list) {
     int n = list.size();
     double sum = 0.0;
@@ -141,9 +138,9 @@ public class Spearman {
     }
     return (n == 0) ? 0 : (sum / n);
   }
-  
+
   private static String PATH_TO_PAGERANKS = "";
-  private static String PATH_TO_NUMVIEWS= "";
+  private static String PATH_TO_NUMVIEWS = "";
 }
 
 class ValueComparator implements Comparator<Integer> {
@@ -159,6 +156,6 @@ class ValueComparator implements Comparator<Integer> {
       return -1;
     } else {
       return 1;
-    } 
+    }
   }
 }

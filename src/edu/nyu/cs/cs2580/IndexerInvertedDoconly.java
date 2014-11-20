@@ -74,7 +74,6 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   public void constructIndex() throws IOException {
     // delete already existing index files
     deleteExistingFiles();
-    long start = System.currentTimeMillis();
     File corpusDirectory = new File(_options._corpusPrefix);
     if (corpusDirectory.isDirectory()) {
       System.out.println("Construct index from: " + corpusDirectory);
@@ -103,10 +102,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     } else {
       throw new IOException("Corpus prefix is not a direcroty");
     }
-    long start2 = System.currentTimeMillis();
     writeIndexToDisk();
-    System.out.println((start2 - start) / 1000);
-    System.out.println((System.currentTimeMillis() - start2) / 1000);
     _totalTermFrequency = totalTermFrequency;
     System.out.println("Indexed " + Integer.toString(_numDocs) + " docs with "
         + Long.toString(_totalTermFrequency) + " terms.");
@@ -118,7 +114,8 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     if (newfile.isDirectory()) {
       File[] files = newfile.listFiles();
       for (File file : files) {
-        if (file.getName().matches(".*wiki\\.list") || file.getName().matches(".*wiki\\.idx")) {
+        if (file.getName().matches(".*wiki\\.list")
+            || file.getName().matches(".*wiki\\.idx")) {
           file.delete();
         }
       }
@@ -488,24 +485,15 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     }
   }
 
-  /*public int documentTermFrequency(String term, String url) {
-    if (_documentUrls.containsKey(url)) {
-      int docid = _documentUrls.get(url);
-      // check whether the term is in postingLists, if not load from disk
-      List<Integer> list = getTermList(term);
-      if (list == null) {
-        return 0;
-      } else {
-        int result = binarySearchForDoc(list, 0, list.size() - 1, docid);
-        if (result == -1) {
-          return 0;
-        } else {
-          return list.get(result + 1);
-        }
-      }
-    }
-    return 0;
-  }*/
+  /*
+   * public int documentTermFrequency(String term, String url) { if
+   * (_documentUrls.containsKey(url)) { int docid = _documentUrls.get(url); //
+   * check whether the term is in postingLists, if not load from disk
+   * List<Integer> list = getTermList(term); if (list == null) { return 0; }
+   * else { int result = binarySearchForDoc(list, 0, list.size() - 1, docid); if
+   * (result == -1) { return 0; } else { return list.get(result + 1); } } }
+   * return 0; }
+   */
 
   // Binary search for documentTermFrequency method, which is a standard binary
   // search

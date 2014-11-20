@@ -114,7 +114,8 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     if (newfile.isDirectory()) {
       File[] files = newfile.listFiles();
       for (File file : files) {
-        if (file.getName().matches(".*wiki\\.list") || file.getName().matches(".*wiki\\.idx")) {
+        if (file.getName().matches(".*wiki\\.list")
+            || file.getName().matches(".*wiki\\.idx")) {
           file.delete();
         }
       }
@@ -529,7 +530,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
   // return next occurrence of word in document after current position
   private int nextPos(String word, int docid, int pos) {
     List<Integer> list = getTermList(word);
-    if (list == null || list.size() == 0) {
+    if (list == null || list.size() == 0 || list.get(list.size() - 1) <= pos) {
       return -1;
     }
 
@@ -572,32 +573,19 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     if (list == null) {
       return 0;
     }
-
     return list.size() / 2;
   }
 
   // Number of times {@code term} appeared in the document {@code url}.
-  /*public int documentTermFrequency(String term, String url) {
-    if (_documentUrls.containsKey(url)) {
-      int docid = _documentUrls.get(url);
-      // check whether the term is in postingLists, if not load from disk
-      List<Integer> list = getTermList(term);
-      if (list == null) {
-        return 0;
-      }
-      int result = 0;
-      for (int i = 0; i < list.size(); i = i + 2) {
-        if (docid == list.get(i)) {
-          result++;
-        }
-        if (list.get(i) > docid) {
-          break;
-        }
-      }
-      return result;
-    }
-    return 0;
-  }*/
+  /*
+   * public int documentTermFrequency(String term, String url) { if
+   * (_documentUrls.containsKey(url)) { int docid = _documentUrls.get(url); //
+   * check whether the term is in postingLists, if not load from disk
+   * List<Integer> list = getTermList(term); if (list == null) { return 0; } int
+   * result = 0; for (int i = 0; i < list.size(); i = i + 2) { if (docid ==
+   * list.get(i)) { result++; } if (list.get(i) > docid) { break; } } return
+   * result; } return 0; }
+   */
 
   @Override
   public int documentTermFrequency(String term, int docid) {

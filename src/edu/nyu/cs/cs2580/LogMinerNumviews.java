@@ -46,41 +46,51 @@ public class LogMinerNumviews extends LogMiner {
     Set<String> redirects = new HashSet<String>();
     Set<String> docs = new HashSet<String>();
     Map<String, Integer> numViews = new HashMap<String, Integer>();
-    
+
     File corpusDirectory = new File(_options._corpusPrefix);
-    if (corpusDirectory.isDirectory())
-    {
-    	File[] allFiles = corpusDirectory.listFiles();
-    	for (File file : allFiles) {
-    		docs.add(file.getName());
-    	}
-    	
-    	for (File file : allFiles) {
-    		if (docs.contains(file.getName() + ".html")) {
-    			redirects.add(file.getName());
-    		}
-    	}
-    	File logFile = new File(_options._logPrefix);
-    	BufferedReader reader = new BufferedReader(new FileReader(logFile));
-    	String line;
-    	int i = 0;
-    	while((line = reader.readLine()) != null)
-    	{
-    		i++;
-    		String[] logLine = line.split(" ");
-    		if (logLine.length != 3)
-    			continue;
-    		String docName = logLine[1];
-    		String docNum = logLine[2];
-    		try {
-    			numViews.put(docName, Integer.parseInt(docNum));
-    		} catch (Exception e) {
-    			continue;
-    		}
-    	}
-    	ObjectOutputStream os = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream("data/index/numviews/wiki.num")));
-    	os.writeObject(numViews);
-    	os.close();
+    if (corpusDirectory.isDirectory()) {
+      File[] allFiles = corpusDirectory.listFiles();
+      for (File file : allFiles) {
+        docs.add(file.getName());
+      }
+
+      for (File file : allFiles) {
+        if (docs.contains(file.getName() + ".html")) {
+          redirects.add(file.getName());
+        }
+      }
+      File logDir = new File(_options._logPrefix);
+      if (logDir.exists() && logDir.isDirectory()) {
+        File[] logFiles = logDir.listFiles();
+        for (File logFile : logFiles) {
+          BufferedReader reader = new BufferedReader(new FileReader(logFile));
+          String line;
+          int i = 0;
+          while ((line = reader.readLine()) != null) {
+            i++;
+            String[] logLine = line.split(" ");
+            if (logLine.length != 3)
+              continue;
+            String docName = logLine[1];
+            String docNum = logLine[2];
+            try {
+              numViews.put(docName, Integer.parseInt(docNum));
+            } catch (Exception e) {
+              continue;
+            }
+          }
+          reader.close();
+        }
+        File dir = new File(_options._indexPrefix + "/numviews");
+        if (!dir.exists() || !dir.isDirectory()) {
+          dir.mkdir();
+        }
+        ObjectOutputStream os = new ObjectOutputStream(
+            new BufferedOutputStream(new FileOutputStream(
+                _options._indexPrefix + "/numviews/wiki.num")));
+        os.writeObject(numViews);
+        os.close();
+      }
     }
   }
 
@@ -93,14 +103,15 @@ public class LogMinerNumviews extends LogMiner {
   @Override
   public Object load() throws IOException {
     System.out.println("Loading using " + this.getClass().getName());
-    ObjectInputStream is = new ObjectInputStream(new BufferedInputStream(new FileInputStream("data/index/numviews/wiki.num")));
+    ObjectInputStream is = new ObjectInputStream(new BufferedInputStream(
+        new FileInputStream(_options._indexPrefix + "/numviews/wiki.num")));
     Object obj = null;
     try {
-		obj = is.readObject();	
-	} catch (ClassNotFoundException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	}
+      obj = is.readObject();
+    } catch (ClassNotFoundException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
     is.close();
     return obj;
   }
