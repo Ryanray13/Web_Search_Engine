@@ -73,13 +73,14 @@ public class LogMinerNumviews extends LogMiner {
             String docNum = logLine[2];
             if (!docs.contains(docName))
             	continue;
-            if (redirects.contains(docName))
-            	continue;
-            if (numViews.containsKey(docName)) {
-            	numViews.put(docName, numViews.get(docName) + Integer.parseInt(docNum));
-            	continue;
-            }
+            if (redirects.contains(docName)){
+              docName = docName + ".html";
+            }        
             try {
+              if (numViews.containsKey(docName)) {
+                numViews.put(docName, numViews.get(docName) + Integer.parseInt(docNum));
+                continue;
+              }
               numViews.put(docName, Integer.parseInt(docNum));
             } catch (Exception e) {
               continue;

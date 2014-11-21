@@ -41,16 +41,15 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   // Using hashMap to present postinglists, each term has a list of Integers.
   // When serving, using as query cache
   private transient Map<String, List<Integer>> _postingLists = new HashMap<String, List<Integer>>();
-
+  private transient Map<String, Integer> _numViews = new HashMap<String, Integer>();
+  private transient Map<String, Float> _pageRanks = new HashMap<String, Float>();
   private transient List<Integer> _diskLength = new ArrayList<Integer>();
 
   // Cache current running query
   private transient String currentQuery = "";
   private transient String indexFile = "";
+  private transient String docTermFile = "";
   private transient int partNumber = 0;
-
-  // Map document url to docid
-  private Map<String, Integer> _documentUrls = new HashMap<String, Integer>();
 
   // disk list offset
   private Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
@@ -67,13 +66,17 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   public IndexerInvertedDoconly(Options options) {
     super(options);
     indexFile = options._indexPrefix + "/wiki.idx";
+    docTermFile = options._indexPrefix + "/wiki.docterm";
     System.out.println("Using Indexer: " + this.getClass().getSimpleName());
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public void constructIndex() throws IOException {
     // delete already existing index files
     deleteExistingFiles();
+    _pageRanks = (HashMap<String,Float>)CorpusAnalyzer.Factory.getCorpusAnalyzerByOption(_options).load();
+    _numViews =  (HashMap<String,Integer>)LogMiner.Factory.getLogMinerByOption(_options).load();
     File corpusDirectory = new File(_options._corpusPrefix);
     if (corpusDirectory.isDirectory()) {
       System.out.println("Construct index from: " + corpusDirectory);
@@ -162,12 +165,12 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     document.setTitle(parsedDocument.title());
     document.setLength(stemedDocument.length());
     _documents.add(document);
-    _documentUrls.put(document.getUrl(), (document._docid));
     ++_numDocs;
   }
 
   // Constructing the posting list
   private void indexDocument(String document, int docid) {
+    List<Integer> docTermList = new ArrayList<Integer>();
     Scanner s = new Scanner(document);
     List<Integer> list = null;
     while (s.hasNext()) {
@@ -188,7 +191,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
         list.add((docid));
         list.add((1));
         if (!_diskIndex.containsKey(term)) {
-          _diskIndex.put(term, _diskIndex.size());
+          _diskIndex.put(term, 0);
         }
         _postingLists.put(term, list);
       }
@@ -303,10 +306,11 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     this.totalTermFrequency = newIndexer.totalTermFrequency;
     this._totalTermFrequency = this.totalTermFrequency;
     this._documents = newIndexer._documents;
-    this._documentUrls = newIndexer._documentUrls;
     this._numDocs = _documents.size();
     this._diskIndex = newIndexer._diskIndex;
     this._diskLength = null;
+    this._pageRanks = null;
+    this._numViews = null;
     // Loading each size of the term posting list.
     System.out.println(Integer.toString(_numDocs) + " documents loaded "
         + "with " + Long.toString(_totalTermFrequency) + " terms!");

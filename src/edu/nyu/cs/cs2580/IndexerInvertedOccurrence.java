@@ -48,6 +48,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
   // Cache current running query
   private transient String currentQuery = "";
   private transient String indexFile = "";
+  private transient String docTermFile = "";
   private transient int partNumber = 0;
 
   // Map document url to docid
@@ -67,6 +68,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
   public IndexerInvertedOccurrence(Options options) {
     super(options);
     indexFile = options._indexPrefix + "/wiki.idx";
+    docTermFile = options._indexPrefix + "/wiki.docterm";
     System.out.println("Using Indexer: " + this.getClass().getSimpleName());
   }
 

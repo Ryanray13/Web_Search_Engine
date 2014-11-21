@@ -8,6 +8,7 @@ public class DocumentIndexed extends Document {
   private static final long serialVersionUID = 9184892508124423115L;
   
   private int _length = 0;
+  private int _offset = -1;
   
   public DocumentIndexed(int docid) {
     super(docid);
@@ -15,6 +16,10 @@ public class DocumentIndexed extends Document {
   
   public void setLength(int length) {
     this._length = length;
+  }
+  
+  public void setOffset(int offset) {
+    this._offset = offset;
   }
   
   public int getLength(){
