@@ -52,6 +52,7 @@ public class LogMinerNumviews extends LogMiner {
       File[] allFiles = corpusDirectory.listFiles();
       for (File file : allFiles) {
         docs.add(file.getName());
+        numViews.put(file.getName(), 0);
       }
 
       for (File file : allFiles) {
@@ -77,11 +78,7 @@ public class LogMinerNumviews extends LogMiner {
               docName = docName + ".html";
             }        
             try {
-              if (numViews.containsKey(docName)) {
-                numViews.put(docName, numViews.get(docName) + Integer.parseInt(docNum));
-                continue;
-              }
-              numViews.put(docName, Integer.parseInt(docNum));
+            	numViews.put(docName, numViews.get(docName) + Integer.parseInt(docNum));
             } catch (Exception e) {
               continue;
             }
