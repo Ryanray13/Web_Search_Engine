@@ -65,14 +65,20 @@ public class LogMinerNumviews extends LogMiner {
         for (File logFile : logFiles) {
           BufferedReader reader = new BufferedReader(new FileReader(logFile));
           String line;
-          int i = 0;
           while ((line = reader.readLine()) != null) {
-            i++;
             String[] logLine = line.split(" ");
             if (logLine.length != 3)
               continue;
             String docName = logLine[1];
             String docNum = logLine[2];
+            if (!docs.contains(docName))
+            	continue;
+            if (redirects.contains(docName))
+            	continue;
+            if (numViews.containsKey(docName)) {
+            	numViews.put(docName, numViews.get(docName) + Integer.parseInt(docNum));
+            	continue;
+            }
             try {
               numViews.put(docName, Integer.parseInt(docNum));
             } catch (Exception e) {
