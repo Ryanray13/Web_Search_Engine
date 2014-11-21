@@ -40,19 +40,20 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   /** ---- Private instances ---- */
   private transient Map<String, List<Integer>> _postingLists = new HashMap<String, List<Integer>>();
   private transient Map<String, Integer> cacheIndex = null;
+  private transient Map<String, Integer> _numViews = new HashMap<String, Integer>();
+  private transient Map<String, Float> _pageRanks = new HashMap<String, Float>();
   private transient List<Integer> _diskLength = new ArrayList<Integer>();
 
   // Cache current running query
   private transient String currentQuery = "";
   private transient String indexFile = "";
+  private transient String diskIndexFile = "";
   private transient String docTermFile = "";
+  private transient int docTermOffset = 0;
   private transient int partNumber = 0;
 
-  // Map document url to docid
-  private Map<String, Integer> _documentUrls = new HashMap<String, Integer>();
-
   // disk list offset
-  private Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
+  private transient Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
 
   // Store all the documents
   private List<Document> _documents = new ArrayList<Document>();
@@ -64,15 +65,21 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
 
   public IndexerInvertedCompressed(Options options) {
     super(options);
-    indexFile = options._indexPrefix + "/wiki.idx";
+    indexFile = options._indexPrefix + "/wiki.obj";
+    diskIndexFile = options._indexPrefix + "wiki.idx";
     docTermFile = options._indexPrefix + "/wiki.docterm";
     System.out.println("Using Indexer: " + this.getClass().getSimpleName());
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public void constructIndex() throws IOException {
     // delete already existing index files
     deleteExistingFiles();
+    _pageRanks = (HashMap<String, Float>) CorpusAnalyzer.Factory
+        .getCorpusAnalyzerByOption(_options).load();
+    _numViews = (HashMap<String, Integer>) LogMiner.Factory
+        .getLogMinerByOption(_options).load();
     File corpusDirectory = new File(_options._corpusPrefix);
     if (corpusDirectory.isDirectory()) {
       System.out.println("Construct index from: " + corpusDirectory);
@@ -113,7 +120,10 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     if (newfile.isDirectory()) {
       File[] files = newfile.listFiles();
       for (File file : files) {
-        if (file.getName().matches(".*wiki.*")) {
+        if (file.getName().matches(".*wiki.*\\.list")
+            || file.getName().matches(".*wiki.*\\.idx")
+            || file.getName().matches(".*wiki.*\\.docterm")
+            || file.getName().matches(".*wiki.*\\.obj")) {
           file.delete();
         }
       }
@@ -160,8 +170,6 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     document.setTitle(parsedDocument.title());
     document.setLength(stemedDocument.length());
     _documents.add(document);
-    // System.out.println("url: " + document.getUrl());
-    _documentUrls.put(document.getUrl(), document._docid);
     ++_numDocs;
   }
 
@@ -371,6 +379,15 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
         new FileOutputStream(indexFile)));
     os.writeObject(this);
     os.close();
+    
+    writer = new DataOutputStream(new BufferedOutputStream(
+        new FileOutputStream(diskIndexFile)));
+    writer.writeInt(_diskIndex.size());
+    for(String str: _diskIndex.keySet()){
+      writer.writeUTF(str);
+      writer.writeInt(_diskIndex.get(str));
+    }
+    writer.close();
   }
 
   @Override
@@ -385,12 +402,16 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     this.totalTermFrequency = newIndexer.totalTermFrequency;
     this._totalTermFrequency = this.totalTermFrequency;
     this._documents = newIndexer._documents;
-    this._documentUrls = newIndexer._documentUrls;
     this._numDocs = _documents.size();
-    this._diskIndex = newIndexer._diskIndex;
     this._diskLength = null;
     cacheIndex = new HashMap<String, Integer>();
-
+    DataInputStream reader = new DataInputStream(new BufferedInputStream(
+        new FileInputStream(diskIndexFile)));
+    int diskIndexSize = reader.readInt();
+    for(int i = 0; i< diskIndexSize; i++){
+      _diskIndex.put(reader.readUTF(), reader.readInt());
+    }
+    reader.close();
     // Loading each size of the term posting list.
     System.out.println(Integer.toString(_numDocs) + " documents loaded "
         + "with " + Long.toString(_totalTermFrequency) + " terms!");
@@ -688,6 +709,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
         break;
       }
     }
+    cacheIndex.put(term, cache);
     return result;
   }
 }
