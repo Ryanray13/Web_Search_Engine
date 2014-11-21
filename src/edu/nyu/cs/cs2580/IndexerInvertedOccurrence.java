@@ -587,7 +587,12 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
         return 0;
       }
       int result = 0;
-      for (int i = 0; i < list.size(); i = i + 2) {
+      int cache = cacheIndex.get(term);
+      int i = 0;
+      if(list.get(cache) <= docid){
+        i = cache;
+      }
+      for (; i < list.size(); i = i + 2) {
         if (docid == list.get(i)) {
           result++;
         }

@@ -674,8 +674,13 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
       if (list == null) {
         return 0;
       }
+      int cache = cacheIndex.get(term);
+      int i = 0;
+      if(list.get(cache) <= docid){
+        i = cache;
+      }
       int result = 0;
-      for (int i = 0; i < list.size(); i = i + 2) {
+      for (; i < list.size(); i = i + 2) {
         if (docid == list.get(i)) {
           result++;
         }
