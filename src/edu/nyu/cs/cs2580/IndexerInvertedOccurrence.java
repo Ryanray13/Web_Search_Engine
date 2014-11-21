@@ -578,20 +578,27 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     return list.size() / 2;
   }
 
-  // Number of times {@code term} appeared in the document {@code url}.
-  /*
-   * public int documentTermFrequency(String term, String url) { if
-   * (_documentUrls.containsKey(url)) { int docid = _documentUrls.get(url); //
-   * check whether the term is in postingLists, if not load from disk
-   * List<Integer> list = getTermList(term); if (list == null) { return 0; } int
-   * result = 0; for (int i = 0; i < list.size(); i = i + 2) { if (docid ==
-   * list.get(i)) { result++; } if (list.get(i) > docid) { break; } } return
-   * result; } return 0; }
-   */
-
   @Override
   public int documentTermFrequency(String term, int docid) {
-    SearchEngine.Check(false, "Not implemented!");
-    return 0;
+    // check whether the term is in postingLists, if not load from disk
+    List<Integer> list = getTermList(term);
+    if (list == null) {
+      return 0;
+    }
+    int result = 0;
+    int cache = cacheIndex.get(term);
+    int i = 0;
+    if (list.get(cache) <= docid) {
+      i = cache;
+    }
+    for (; i < list.size(); i = i + 2) {
+      if (docid == list.get(i)) {
+        result++;
+      }
+      if (list.get(i) > docid) {
+        break;
+      }
+    }
+    return result;
   }
 }
