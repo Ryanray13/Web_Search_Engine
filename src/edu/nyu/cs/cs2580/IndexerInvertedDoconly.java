@@ -49,6 +49,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   private transient String currentQuery = "";
   private transient String indexFile = "";
   private transient String docTermFile = "";
+  private transient int docTermOffset = 0;
   private transient int partNumber = 0;
 
   // disk list offset
@@ -170,7 +171,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
   // Constructing the posting list
   private void indexDocument(String document, int docid) {
-    List<Integer> docTermList = new ArrayList<Integer>();
+    Map<String,Integer> docTermVector = new HashMap<String,Integer>();
     Scanner s = new Scanner(document);
     List<Integer> list = null;
     while (s.hasNext()) {

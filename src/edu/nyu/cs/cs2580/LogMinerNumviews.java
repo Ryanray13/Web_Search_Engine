@@ -52,12 +52,13 @@ public class LogMinerNumviews extends LogMiner {
       File[] allFiles = corpusDirectory.listFiles();
       for (File file : allFiles) {
         docs.add(file.getName());
-        numViews.put(file.getName(), 0);
       }
 
       for (File file : allFiles) {
         if (docs.contains(file.getName() + ".html")) {
           redirects.add(file.getName());
+        }else{
+          numViews.put(file.getName(), 0);
         }
       }
       File logDir = new File(_options._logPrefix);
