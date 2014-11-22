@@ -3,6 +3,7 @@ package edu.nyu.cs.cs2580;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -15,13 +16,16 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import edu.nyu.cs.cs2580.CorpusAnalyzer.HeuristicLinkExtractor;
 import edu.nyu.cs.cs2580.SearchEngine.Options;
 
 /**
  * @CS2580: Implement this class for HW3.
  */
 public class LogMinerNumviews extends LogMiner {
+
+  //TODO: put into mining dir?
+  private String outputFile = _options._indexPrefix + "/wiki/numViews";
+  //private String outputFile = _options._mininigPrefix + "/wiki/numViews";
 
   public LogMinerNumviews(Options options) {
     super(options);
@@ -74,18 +78,34 @@ public class LogMinerNumviews extends LogMiner {
             String docName = logLine[1];
             String docNum = logLine[2];
             if (!docs.contains(docName))
-            	continue;
+              continue;
             if (redirects.contains(docName)){
               docName = docName + ".html";
             }        
             try {
-            	numViews.put(docName, numViews.get(docName) + Integer.parseInt(docNum));
+              numViews.put(docName, numViews.get(docName) + Integer.parseInt(docNum));
             } catch (Exception e) {
               continue;
             }
           }
           reader.close();
         }
+        
+        File outdir = new File(_options._indexPrefix + "/wiki");
+        if (!outdir.exists() || !outdir.isDirectory()) {
+          outdir.mkdir();
+        }
+        
+        DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
+            new FileOutputStream(outputFile)));
+        writer.writeInt(numViews.size());
+        for (String docName: numViews.keySet()) {
+          writer.writeUTF(docName);
+          writer.writeInt(numViews.get(docName));
+        }
+        writer.close(); 
+        System.out.println("write num size: " + numViews.size());
+
         File dir = new File(_options._indexPrefix + "/numviews");
         if (!dir.exists() || !dir.isDirectory()) {
           dir.mkdir();
@@ -95,6 +115,9 @@ public class LogMinerNumviews extends LogMiner {
                 _options._indexPrefix + "/numviews/wiki.num")));
         os.writeObject(numViews);
         os.close();
+
+         
+
       }
     }
   }
@@ -114,7 +137,6 @@ public class LogMinerNumviews extends LogMiner {
     try {
       obj = is.readObject();
     } catch (ClassNotFoundException e) {
-      // TODO Auto-generated catch block
       e.printStackTrace();
     }
     is.close();
