@@ -1,6 +1,9 @@
 package edu.nyu.cs.cs2580;
 
+import java.util.HashSet;
 import java.util.Scanner;
+import java.util.Set;
+import java.util.Vector;
 
 /**
  * @CS2580: implement this class for HW2 to handle phrase. If the raw query is
@@ -18,14 +21,12 @@ public class QueryPhrase extends Query {
     if (_query == null) {
       return;
     }
-    
-    
+
     this._tokens.clear();
     Stemmer stemmer = new Stemmer();
     stemmer.add(_query.toLowerCase().toCharArray(), _query.length());
     stemmer.stemWithStep1();
     String stemedQuery = stemmer.toString();
-    
     boolean quote = false;
     int len = stemedQuery.length();
     int p1 = 0;
@@ -72,8 +73,22 @@ public class QueryPhrase extends Query {
     }
     Scanner s = new Scanner(str);
     while (s.hasNext()) {
-      _tokens.add(s.next());
+      String term = s.next();
+      _tokens.add(term);
     }
     s.close();
+  }
+  
+  public Vector<String> getTermVector(){
+    Set<String> result = new HashSet<String>();
+    for (String phrase : _tokens) {
+      String[] terms = phrase.trim().split(" +");
+      for (String term : terms) {
+        if(!result.contains(term)){
+          result.add(term);
+        }
+      }
+    }
+    return new Vector<String>(result);
   }
 }

@@ -48,7 +48,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   // disk list offset
   private transient Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
   private transient Set<String> docTermVector = new HashSet<String>();
-  
+
   // Cache current running query
   private transient String currentQuery = "";
   private transient String currentTerm = "";
@@ -60,13 +60,13 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   private transient int partNumber = 0;
   private transient List<Integer> cacheTermList;
 
-  //doc term list offset
+  // doc term list offset
   private List<Integer> _docTermOffset = new ArrayList<Integer>();
-  
+
   // Store all the documents
   private List<Document> _documents = new ArrayList<Document>();
-  
-  //store all the terms
+
+  // store all the terms
   private List<String> _termList = new ArrayList<String>();
 
   private long totalTermFrequency = 0;
@@ -88,7 +88,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   public void constructIndex() throws IOException {
     // delete already existing index files
     deleteExistingFiles();
-    long start=System.currentTimeMillis();
+    long start = System.currentTimeMillis();
     _pageRanks = (HashMap<String, Float>) CorpusAnalyzer.Factory
         .getCorpusAnalyzerByOption(_options).load();
     _numViews = (HashMap<String, Integer>) LogMiner.Factory
@@ -162,7 +162,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     indexDocument(stemedDocument, docid);
     document.setTitle(title);
     document.setLength(stemedDocument.length());
-    
+
     _documents.add(document);
     ++_numDocs;
   }
@@ -185,14 +185,14 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     document.setTitle(parsedDocument.title());
     document.setLength(stemedDocument.length());
     String fileName = file.getName();
-    if(_numViews.containsKey(fileName)){
+    if (_numViews.containsKey(fileName)) {
       document.setNumViews(_numViews.get(fileName));
-    }else{
+    } else {
       document.setNumViews(0);
     }
-    if(_pageRanks.containsKey(fileName)){
+    if (_pageRanks.containsKey(fileName)) {
       document.setPageRank(_pageRanks.get(file.getName()));
-    }else{
+    } else {
       document.setPageRank(0);
     }
     _documents.add(document);
@@ -219,7 +219,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
         _postingLists.put(term, list);
       }
       list.add(offset);
-      if(!docTermVector.contains(term)){
+      if (!docTermVector.contains(term)) {
         docTermVector.add(term);
       }
       totalTermFrequency++;
@@ -228,8 +228,8 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     s.close();
     try {
       DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
-          new FileOutputStream(docTermFile + ".temp",true)));
-      for(String str: docTermVector){
+          new FileOutputStream(docTermFile + ".temp", true)));
+      for (String str : docTermVector) {
         writer.writeUTF(str);
       }
       writer.close();
@@ -421,34 +421,34 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
       inputFiles[j].delete();
     }
     _postingLists.clear();
-    
+
     File tempFile = new File(docTermFile + ".temp");
     DataInputStream reader = new DataInputStream(new BufferedInputStream(
         new FileInputStream(tempFile)));
     writer = new DataOutputStream(new BufferedOutputStream(
         new FileOutputStream(docTermFile)));
     int size = _docTermOffset.size();
-    int preOffset=0;
+    int preOffset = 0;
     List<Byte> docTermList = new ArrayList<Byte>();
-    for(int i = 0; i<size; i++){
+    for (int i = 0; i < size; i++) {
       docTermList.clear();
-      for(j=0; j< _docTermOffset.get(i); j++){
+      for (j = 0; j < _docTermOffset.get(i); j++) {
         byte[] tempList = vByte(_diskIndex.get(reader.readUTF()));
-        for(byte byt:tempList){
+        for (byte byt : tempList) {
           docTermList.add(byt);
         }
       }
-      for(Byte byt:docTermList){
+      for (Byte byt : docTermList) {
         writer.writeByte(byt);
       }
-      
+
       preOffset += docTermList.size();
-      _docTermOffset.set(i, preOffset);   
+      _docTermOffset.set(i, preOffset);
     }
     reader.close();
     writer.close();
     tempFile.delete();
-    
+
     ObjectOutputStream os = new ObjectOutputStream(new BufferedOutputStream(
         new FileOutputStream(indexFile)));
     os.writeObject(this);
@@ -473,12 +473,12 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     this._diskLength = null;
     this._pageRanks = null;
     this._numViews = null;
-    this.docTermVector=null;
-    
+    this.docTermVector = null;
+
     cacheIndex = new HashMap<String, Integer>();
     DataInputStream reader = new DataInputStream(new BufferedInputStream(
         new FileInputStream(diskIndexFile)));
-    for(String str: _termList){
+    for (String str : _termList) {
       _diskIndex.put(str, reader.readInt());
     }
     reader.close();
@@ -532,16 +532,13 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   private void loadQueryList(Query query) {
     _postingLists.clear();
     cacheIndex.clear();
-    Vector<String> phrases = query._tokens;
-    for (String phrase : phrases) {
-      String[] terms = phrase.trim().split(" +");
-      for (String term : terms) {
-        if (_diskIndex.containsKey(term)) {
-          if (!_postingLists.containsKey(term)) {
-            _postingLists.put(term, decodeByte(getTermListFromDisk(term)));
-            if (_postingLists.size() >= CACHE_SIZE) {
-              return;
-            }
+    Vector<String> terms = ((QueryPhrase) query).getTermVector();
+    for (String term : terms) {
+      if (_diskIndex.containsKey(term)) {
+        if (!_postingLists.containsKey(term)) {
+          _postingLists.put(term, decodeByte(getTermListFromDisk(term)));
+          if (_postingLists.size() >= CACHE_SIZE) {
+            return;
           }
         }
       }
@@ -603,15 +600,12 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     while (true) {
       boolean isEqual = true;
       List<Integer> docids = new ArrayList<Integer>();
-      Vector<String> phrases = query._tokens;
-      for (String phrase : phrases) {
-        String[] terms = phrase.trim().split(" +");
-        for (String term : terms) {
-          int d = next(term, docid);
-          if (d == -1)
-            return -1;
-          docids.add(d);
-        }
+      Vector<String> terms = ((QueryPhrase) query).getTermVector();
+      for (String term : terms) {
+        int d = next(term, docid);
+        if (d == -1)
+          return -1;
+        docids.add(d);
       }
       if (docids.size() == 0) {
         return -1;
@@ -659,7 +653,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     if (cache > 0) {
       int current = list.get(cache);
       int i = cache;
-      while (list.get(i) == current) {
+      while (i >= 0 && list.get(i) == current) {
         i = i - 2;
       }
       if (list.get(i) > docid) {
@@ -760,19 +754,19 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
    */
   @Override
   public int documentTermFrequency(String term, int docid) {
- // check whether the term is in postingLists, if not load from disk
+    // check whether the term is in postingLists, if not load from disk
     List<Integer> list = null;
     int cache = 0;
-    if(_postingLists.containsKey(term)){
+    if (_postingLists.containsKey(term)) {
       list = _postingLists.get(term);
       cache = cacheIndex.get(term);
-    }else{
-      if(!currentTerm.equals(term)){
+    } else {
+      if (!currentTerm.equals(term)) {
         list = getTermList(term);
         cacheTermList = list;
         currentTerm = term;
         cacheTermListIndex = 0;
-      }else{
+      } else {
         list = cacheTermList;
         cache = cacheTermListIndex;
       }
@@ -781,28 +775,43 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
       return 0;
     }
     int result = 0;
-    int i = 0;
-    if(list.get(list.size() - 2) < docid){
+    if (list.get(list.size() - 2) < docid) {
       return 0;
     }
-    if(cache == list.size()){
+    if (cache == list.size()) {
       cache = 0;
     }
-    if (list.get(cache) <= docid) {
-      i = cache;
-    }
-    for (; i < list.size(); i = i + 2) {
-      if (docid == list.get(i)) {
-        result++;
+    if (cache > 0) {
+      int current = list.get(cache);
+      int i = cache;
+      while (i >= 0 && list.get(i) == current) {
+        i = i - 2;
       }
       if (list.get(i) > docid) {
+        cache = 0;
+      } else if (list.get(i) == docid) {
+        while (i >= 0 && list.get(i) == docid) {
+          i = i - 2;
+        }
+        if (i == 0) {
+          cache = i;
+        } else {
+          cache = i + 2;
+        }
+      }
+    }
+    for (; cache < list.size(); cache = cache + 2) {
+      if (docid == list.get(cache)) {
+        result++;
+      }
+      if (list.get(cache) >= docid) {
         break;
       }
     }
-    if(_postingLists.containsKey(term)){
-      cacheIndex.put(term, i);
-    }else{
-      cacheTermListIndex = i;
+    if (_postingLists.containsKey(term)) {
+      cacheIndex.put(term, cache);
+    } else {
+      cacheTermListIndex = cache;
     }
     return result;
   }
@@ -810,7 +819,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   @Override
   public List<String> getDocTermList(int docid) {
     int offset = 0;
-    if(docid != 0){
+    if (docid != 0) {
       offset = _docTermOffset.get(docid - 1);
     }
     int size = _docTermOffset.get(docid) - offset;
@@ -825,7 +834,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
         byteList.add(reader.readByte());
       }
       List<Integer> termList = decodeByte(byteList);
-      for(Integer value : termList){
+      for (Integer value : termList) {
         list.add(_termList.get(value));
       }
       raf.close();

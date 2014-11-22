@@ -49,7 +49,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   // disk list offset
   private transient Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
   private transient Set<String> docTermVector = new HashSet<String>();
-  
+
   // Cache current running query
   private transient String currentQuery = "";
   private transient String currentTerm = "";
@@ -59,14 +59,14 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   private transient String postingListFile = "";
   private transient int partNumber = 0;
   private transient List<Integer> cacheTermList;
-  
-  //doc term list offset
+
+  // doc term list offset
   private List<Integer> _docTermOffset = new ArrayList<Integer>();
 
   // Store all the documents
   private List<Document> _documents = new ArrayList<Document>();
-  
-  //store all the terms
+
+  // store all the terms
   private List<String> _termList = new ArrayList<String>();
 
   private long totalTermFrequency = 0;
@@ -89,7 +89,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   public void constructIndex() throws IOException {
     // delete already existing index files
     deleteExistingFiles();
-    long start=System.currentTimeMillis();
+    long start = System.currentTimeMillis();
     _pageRanks = (HashMap<String, Float>) CorpusAnalyzer.Factory
         .getCorpusAnalyzerByOption(_options).load();
     _numViews = (HashMap<String, Integer>) LogMiner.Factory
@@ -181,19 +181,19 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     DocumentIndexed document = new DocumentIndexed(docid);
     // Indexing.
     indexDocument(stemedDocument, docid);
-    
+
     document.setUrl(file.getAbsolutePath());
     document.setTitle(parsedDocument.title());
     document.setLength(stemedDocument.length());
     String fileName = file.getName();
-    if(_numViews.containsKey(fileName)){
+    if (_numViews.containsKey(fileName)) {
       document.setNumViews(_numViews.get(fileName));
-    }else{
+    } else {
       document.setNumViews(0);
     }
-    if(_pageRanks.containsKey(fileName)){
+    if (_pageRanks.containsKey(fileName)) {
       document.setPageRank(_pageRanks.get(file.getName()));
-    }else{
+    } else {
       document.setPageRank(0);
     }
     _documents.add(document);
@@ -212,7 +212,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
         if (list.get(lastIndex - 1) == docid) {
           int oldCount = list.get(lastIndex);
           list.set(lastIndex, (oldCount + 1));
-          
+
         } else {
           list.add((docid));
           list.add((1));
@@ -228,7 +228,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
         }
         _postingLists.put(term, list);
       }
-      if(!docTermVector.contains(term)){
+      if (!docTermVector.contains(term)) {
         docTermVector.add(term);
       }
       totalTermFrequency++;
@@ -236,8 +236,8 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     s.close();
     try {
       DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
-          new FileOutputStream(docTermFile + ".temp",true)));
-      for(String str: docTermVector){
+          new FileOutputStream(docTermFile + ".temp", true)));
+      for (String str : docTermVector) {
         writer.writeUTF(str);
       }
       writer.close();
@@ -245,11 +245,11 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
       // TODO Auto-generated catch block
       e.printStackTrace();
     }
-    int preOffset=0;
-    if(_docTermOffset.size()!=0){
+    int preOffset = 0;
+    if (_docTermOffset.size() != 0) {
       preOffset = _docTermOffset.get(_docTermOffset.size() - 1);
     }
-    _docTermOffset.add(docTermVector.size()+preOffset);
+    _docTermOffset.add(docTermVector.size() + preOffset);
     docTermVector.clear();
   }
 
@@ -351,19 +351,18 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     writer = new DataOutputStream(new BufferedOutputStream(
         new FileOutputStream(docTermFile)));
     int size = _docTermOffset.get(_docTermOffset.size() - 1);
-    for(int i = 0; i<size; i++){
+    for (int i = 0; i < size; i++) {
       writer.writeInt(_diskIndex.get(reader.readUTF()));
     }
     reader.close();
     writer.close();
     tempFile.delete();
-    
+
     ObjectOutputStream os = new ObjectOutputStream(new BufferedOutputStream(
         new FileOutputStream(indexFile)));
     os.writeObject(this);
     os.close();
   }
-  
 
   @Override
   public void loadIndex() throws IOException, ClassNotFoundException {
@@ -383,11 +382,11 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     this._diskLength = null;
     this._pageRanks = null;
     this._numViews = null;
-    this.docTermVector=null;
-    
+    this.docTermVector = null;
+
     DataInputStream reader = new DataInputStream(new BufferedInputStream(
         new FileInputStream(diskIndexFile)));
-    for(String str: _termList){
+    for (String str : _termList) {
       _diskIndex.put(str, reader.readInt());
     }
     reader.close();
@@ -430,16 +429,13 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
   private int getNextDocID(Query query, int docid, Boolean isEqual) {
     List<Integer> docids = new ArrayList<Integer>();
-    Vector<String> phrases = query._tokens;
-    for (String phrase : phrases) {
-      String[] terms = phrase.trim().split(" +");
-      for (String term : terms) {
-        int id = next(term, docid);
-        if (id == -1) {
-          return -1;
-        }
-        docids.add(id);
+    Vector<String> terms = ((QueryPhrase) query).getTermVector();
+    for (String term : terms) {
+      int id = next(term, docid);
+      if (id == -1) {
+        return -1;
       }
+      docids.add(id);
     }
     if (docids.size() == 0) {
       return -1;
@@ -468,20 +464,18 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
   private void loadQueryList(Query query) {
     _postingLists.clear();
-    Vector<String> phrases = query._tokens;
-    for (String phrase : phrases) {
-      String[] terms = phrase.trim().split(" +");
-      for (String term : terms) {
-        if (_diskIndex.containsKey(term)) {
-          if (!_postingLists.containsKey(term)) {
-            _postingLists.put(term, getTermList(term));
-            if (_postingLists.size() >= CACHE_SIZE) {
-              return;
-            }
+    Vector<String> terms = ((QueryPhrase) query).getTermVector();
+    for (String term : terms) {
+      if (_diskIndex.containsKey(term)) {
+        if (!_postingLists.containsKey(term)) {
+          _postingLists.put(term, getTermList(term));
+          if (_postingLists.size() >= CACHE_SIZE) {
+            return;
           }
         }
       }
     }
+
   }
 
   private List<Integer> getTermList(String term) {
@@ -591,11 +585,11 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   public int documentTermFrequency(String term, int docid) {
     // check whether the term is in postingLists, if not load from disk
     List<Integer> list = null;
-    if(!currentTerm.equals(term)){
+    if (!currentTerm.equals(term)) {
       list = getTermList(term);
       cacheTermList = list;
       currentTerm = term;
-    }else{
+    } else {
       list = cacheTermList;
     }
     if (list == null) {
@@ -613,7 +607,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   @Override
   public List<String> getDocTermList(int docid) {
     int offset = 0;
-    if(docid != 0){
+    if (docid != 0) {
       offset = _docTermOffset.get(docid - 1);
     }
     int size = _docTermOffset.get(docid) - offset;

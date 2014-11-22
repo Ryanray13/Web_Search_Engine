@@ -133,6 +133,7 @@ public abstract class Indexer {
   // *** @CS2580: Note the function signature change from url to docid. ***
   public abstract int documentTermFrequency(String term, int docid);
   
+  //Given a docid, get the list of term the document has
   public abstract List<String> getDocTermList(int docid);
 
   /**

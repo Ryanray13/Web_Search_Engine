@@ -2,10 +2,8 @@ package edu.nyu.cs.cs2580;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
@@ -17,6 +15,7 @@ public class PseudoRelevanceFeedback {
   private int _numterms;
   private Vector<ScoredDocument> _docs;
   private Query _query;
+  private Set<String> stopWords;
   
   class FrequentTerm implements Comparable<FrequentTerm>{
     private String _term;
@@ -45,12 +44,63 @@ public class PseudoRelevanceFeedback {
     _indexer = indexer;
     _numterms = numterms;
     _query = query;
+    stopWords = new HashSet<String>();
+    stopWords.add("the");
+    stopWords.add("of");
+    stopWords.add("and");
+    stopWords.add("in");
+    stopWords.add("athe");
+    stopWords.add("to");
+    stopWords.add("^");
+    stopWords.add("is");
+    stopWords.add("for");
+    stopWords.add("on");
+    stopWords.add("as");
+    stopWords.add("by");
+    stopWords.add("was");
+    stopWords.add("with");
+    stopWords.add("from");
+    stopWords.add("that");
+    stopWords.add("at");
+    stopWords.add("it");
+    stopWords.add("are");
+    stopWords.add("this");
+    stopWords.add("[edit]");
+    stopWords.add("retrieved");
+    stopWords.add("or");
+    stopWords.add("-");
+    stopWords.add("an");
+    stopWords.add("be");
+    stopWords.add("which");
+    stopWords.add("his");
+    stopWords.add("also");
+    stopWords.add("has");
+    stopWords.add("not");
+    stopWords.add("were");
+    stopWords.add("he");
+    stopWords.add("have");
+    stopWords.add("a");
+    stopWords.add("their");
+    stopWords.add("had");
+    stopWords.add("by");
+    stopWords.add("been");
+    stopWords.add("can");
+    stopWords.add("you");
+    stopWords.add("she");
+    stopWords.add("other");
+    stopWords.add("its");
+    stopWords.add("about");
+    stopWords.add("her");
+    stopWords.add("there");
+    stopWords.add("no");
+    stopWords.add("they");
   }
   
   public StringBuffer compute(){
     Set<String> termSet = new HashSet<String>();
     List<Integer> docidList = new ArrayList<Integer>();
     Queue<FrequentTerm> rankQueue = new PriorityQueue<FrequentTerm>();
+    Vector<String> queryTerms = ((QueryPhrase) _query).getTermVector();
     int totalTerms = 0;
     for(ScoredDocument doc : _docs){
       int docid = doc.getDocid();
@@ -58,7 +108,7 @@ public class PseudoRelevanceFeedback {
       Document document =  _indexer.getDoc(docid);
       List<String> termList = _indexer.getDocTermList(docid);
       for(String term : termList){
-        if(!termSet.contains(term)){
+        if(!termSet.contains(term) && !queryTerms.contains(term) && !stopWords.contains(term)){
           termSet.add(term);
         }
       }
@@ -68,9 +118,9 @@ public class PseudoRelevanceFeedback {
     for(String term : termSet){
       double prob = 0;
       for(int id : docidList){
-        prob += _indexer.documentTermFrequency(term, id)*1.0/totalTerms;
+        prob += _indexer.documentTermFrequency(term, id);
       }
-      rankQueue.add(new FrequentTerm(term, prob));
+      rankQueue.add(new FrequentTerm(term, prob/totalTerms));
       if (rankQueue.size() > _numterms) {
         rankQueue.poll();
       }

@@ -242,5 +242,4 @@ class IndexerFullScan extends Indexer implements Serializable {
     // TODO Auto-generated method stub
     return null;
   }
-
 }

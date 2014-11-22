@@ -31,7 +31,7 @@ class QueryHandler implements HttpHandler {
     public String _query = "";
     // How many results to return
     private int _numResults = 10;
-    
+
     private int _numTerms = 5;
 
     // The type of the ranker we will be using.
@@ -83,14 +83,15 @@ class QueryHandler implements HttpHandler {
           } catch (IllegalArgumentException e) {
             // Ignored, search engine should never fail upon invalid user input.
           }
-        }else if (key.equals("numterms")) {
+        } else if (key.equals("numterms")) {
           try {
-            _numTerms = Integer.parseInt(val);;
+            _numTerms = Integer.parseInt(val);
+            ;
           } catch (IllegalArgumentException e) {
             // Ignored, search engine should never fail upon invalid user input.
           }
         }
-        
+
       } // End of iterating over params
     }
   }
@@ -174,12 +175,12 @@ class QueryHandler implements HttpHandler {
     }
 
     // Processing the query.
-    Query processedQuery = new Query(cgiArgs._query);
+    Query processedQuery = new QueryPhrase(cgiArgs._query);
     processedQuery.processQuery();
 
     // Ranking.
     Vector<ScoredDocument> scoredDocs = ranker.runQuery(processedQuery,
-        cgiArgs._numResults); 
+        cgiArgs._numResults);
 
     if (uriPath.equals("/search")) {
       StringBuffer response = new StringBuffer();
@@ -197,7 +198,8 @@ class QueryHandler implements HttpHandler {
       respondWithMsg(exchange, response.toString());
       System.out.println("Finished query: " + cgiArgs._query);
     } else {
-      PseudoRelevanceFeedback pfg = new PseudoRelevanceFeedback(scoredDocs, _indexer, cgiArgs._numTerms, processedQuery);
+      PseudoRelevanceFeedback pfg = new PseudoRelevanceFeedback(scoredDocs,
+          _indexer, cgiArgs._numTerms, processedQuery);
       respondWithMsg(exchange, pfg.compute().toString());
       System.out.println("Finished Expansion: " + cgiArgs._query);
     }
