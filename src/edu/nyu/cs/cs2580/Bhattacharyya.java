@@ -30,6 +30,9 @@ public class Bhattacharyya {
       for (String outputFile : outputFiles) {
         prfs.add(getTermProbs(outputFile));
       }
+      
+      Check(prfs.size() >= 2, "Should provide at least two queries!");
+
       // calculate similarity
       int n = queries.size();
       double[][] coefficients = new double[n][n];
