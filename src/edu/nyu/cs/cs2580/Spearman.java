@@ -1,6 +1,9 @@
 package edu.nyu.cs.cs2580;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -15,11 +18,13 @@ public class Spearman {
   public static void main(String[] args) {
     try {
       parseCommand(args);
-      List<Double> pageRanks = processFile(PATH_TO_PAGERANKS);
-      List<Double> numViews = processFile(PATH_TO_NUMVIEWS);
+      Map<Integer, Float> pageRanks = processPageRank(PATH_TO_PAGERANKS);
+      Map<Integer, Float> numViews = processNumViews(PATH_TO_NUMVIEWS);
+      
+      
       // They should have the same length
       Check(pageRanks.size() == numViews.size(),
-          "PageRanks and NumViews should have the same number of values");
+          "PageRanks and NumViews should have the same number of documents");
       // calculate the Spearman
       double spearman = calcSpearmanCorrelation(pageRanks, numViews);
       // output the result
@@ -37,22 +42,60 @@ public class Spearman {
   }
 
   private static void parseCommand(String[] args) throws IOException {
-    // no args are provided or wrong number of args provided
-    // TODO: Do I need to check null first ?
     Check(args != null && args.length == 2,
         "Please provide path to PageRanks and path to NumViews.");
     PATH_TO_PAGERANKS = args[0];
     PATH_TO_NUMVIEWS = args[1];
   }
 
-  private static List<Double> processFile(String path) throws IOException,
+  
+  private static Map<Integer, Float> processPageRank(String filename) 
+      throws IOException {
+    Map<Integer, Float> idValMap = new HashMap<Integer, Float>();
+    DataInputStream reader = new DataInputStream(new BufferedInputStream(
+        new FileInputStream(filename)));
+    int size = reader.readInt();
+    int docid = 0;
+    for (int i = 0; i < size ; i++) {
+      docidMap.put(reader.readUTF(), docid);
+      idValMap.put(docid, reader.readFloat());
+      docid++;
+    }
+    reader.close();
+    return idValMap;
+  }
+  
+  private static Map<Integer, Float> processNumViews(String filename) 
+      throws IOException {
+    Map<Integer, Float> idValMap = new HashMap<Integer, Float>();
+    DataInputStream reader = new DataInputStream(new BufferedInputStream(
+        new FileInputStream(filename)));
+    int size = reader.readInt();
+    for (int i = 0; i < size ; i++) {
+      String docName = reader.readUTF();
+      if (!docName.startsWith(".")) {
+        Integer docid = docidMap.get(docName);
+        if (docid == null) {
+        }
+        Check((docid != null), "Document does not exist in both files " + docid + ",");
+        idValMap.put(docid, (float)reader.readInt());
+      } else {
+        //System.out.println("here");
+        reader.readInt();
+      }
+    }
+    reader.close();
+    return idValMap;
+  }
+
+  private static List<Float> processFile(String path) throws IOException,
       NumberFormatException {
     BufferedReader reader = new BufferedReader(new FileReader(path));
-    List<Double> result = new ArrayList<Double>();
+    List<Float> result = new ArrayList<Float>();
     try {
       String line = null;
       while ((line = reader.readLine()) != null) {
-        result.add(Double.parseDouble(line));
+        result.add(Float.parseFloat(line));
       }
     } finally {
       reader.close();
@@ -60,20 +103,10 @@ public class Spearman {
     return result;
   }
 
-  // TODO: formula correct? who's average??
-  // TODO: how to rank duplicates??
-  // TODO: calculate the value based on order
-  private static double calcSpearmanCorrelation(List<Double> pageRanks,
-      List<Double> numViews) {
+  private static double calcSpearmanCorrelation (
+      Map<Integer, Float> pagerankMap, Map<Integer, Float> numviewMap){
     double result = 0.0;
-    int n = pageRanks.size();
-
-    Map<Integer, Double> pagerankMap = new HashMap<Integer, Double>();
-    Map<Integer, Double> numviewMap = new HashMap<Integer, Double>();
-    for (int i = 0; i < n; i++) {
-      pagerankMap.put(i, pageRanks.get(i));
-      numviewMap.put(i, numViews.get(i));
-    }
+    int n = pagerankMap.size();
 
     List<Integer> pageRanksRanks = getRanks(sortByValue(pagerankMap));
     List<Integer> numViewsRanks = getRanks(sortByValue(numviewMap));
@@ -100,29 +133,22 @@ public class Spearman {
     return result;
   }
 
-  private static TreeMap<Integer, Double> sortByValue(Map<Integer, Double> map) {
+
+  private static TreeMap<Integer, Float> sortByValue(Map<Integer, Float> map) {
     ValueComparator vc = new ValueComparator(map);
-    TreeMap<Integer, Double> sortedMap = new TreeMap<Integer, Double>(vc);
+    TreeMap<Integer, Float> sortedMap = new TreeMap<Integer, Float>(vc);
     sortedMap.putAll(map);
     return sortedMap;
   }
 
-  private static List<Integer> getRanks(TreeMap<Integer, Double> map) {
-    int nDuplicates = 0;
-    int rank = 0;
-    double lastValue = -1;
+
+  private static List<Integer> getRanks(TreeMap<Integer, Float> map) {
+    int rank = 1;
     List<Integer> result = new ArrayList<Integer>();
     Map<Integer, Integer> sortedMap = new TreeMap<Integer, Integer>();
-    for (Map.Entry<Integer, Double> entry : map.entrySet()) {
-      double value = entry.getValue();
-      if (value == lastValue) {
-        nDuplicates++;
-      } else {
-        lastValue = value;
-        nDuplicates = 0;
-        rank++;
-      }
+    for (Map.Entry<Integer, Float> entry : map.entrySet()) {
       sortedMap.put(entry.getKey(), rank);
+      rank++;
     }
     for (Map.Entry<Integer, Integer> entry : sortedMap.entrySet()) {
       result.add(entry.getValue());
@@ -141,13 +167,14 @@ public class Spearman {
 
   private static String PATH_TO_PAGERANKS = "";
   private static String PATH_TO_NUMVIEWS = "";
+  private static Map<String, Integer> docidMap = new HashMap<String, Integer>();
 }
 
 class ValueComparator implements Comparator<Integer> {
 
-  Map<Integer, Double> map;
+  Map<Integer, Float> map;
 
-  public ValueComparator(Map<Integer, Double> base) {
+  public ValueComparator(Map<Integer, Float> base) {
     this.map = base;
   }
 
