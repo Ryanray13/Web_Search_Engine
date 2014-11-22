@@ -48,6 +48,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   private transient List<Integer> _diskLength = new ArrayList<Integer>();
   // disk list offset
   private transient Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
+  private transient Set<String> docTermVector = new HashSet<String>();
   
   // Cache current running query
   private transient String currentQuery = "";
@@ -201,7 +202,6 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
   // Constructing the posting list
   private void indexDocument(String document, int docid) {
-    Set<String> docTermVector = new HashSet<String>();
     Scanner s = new Scanner(document);
     List<Integer> list = null;
     while (s.hasNext()) {
@@ -250,6 +250,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
       preOffset = _docTermOffset.get(_docTermOffset.size() - 1);
     }
     _docTermOffset.add(docTermVector.size()+preOffset);
+    docTermVector.clear();
   }
 
   private void writeMapToDisk() throws IOException {
@@ -382,6 +383,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     this._diskLength = null;
     this._pageRanks = null;
     this._numViews = null;
+    this.docTermVector=null;
     
     DataInputStream reader = new DataInputStream(new BufferedInputStream(
         new FileInputStream(diskIndexFile)));

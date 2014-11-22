@@ -14,6 +14,10 @@ class ScoredDocument implements Comparable<ScoredDocument> {
     _doc = doc;
     _score = score;
   }
+  
+  public int getDocid(){
+    return _doc._docid;
+  }
 
   public String asTextResult() {
     StringBuffer buf = new StringBuffer();

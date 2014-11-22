@@ -14,7 +14,7 @@ import edu.nyu.cs.cs2580.SearchEngine.Options;
  * Handles each incoming query, students do not need to change this class except
  * to provide more query time CGI arguments and the HTML output.
  * 
- * N.B. This class is not thread-safe. 
+ * N.B. This class is not thread-safe.
  * 
  * @author congyu
  * @author fdiaz
@@ -32,25 +32,20 @@ class QueryHandler implements HttpHandler {
     // How many results to return
     private int _numResults = 10;
     
+    private int _numTerms = 5;
+
     // The type of the ranker we will be using.
     public enum RankerType {
-      NONE,
-      FULLSCAN,
-      CONJUNCTIVE,
-      FAVORITE,
-      COSINE,
-      PHRASE,
-      QL,
-      LINEAR,
-      COMPREHENSIVE,
+      NONE, FULLSCAN, CONJUNCTIVE, FAVORITE, COSINE, PHRASE, QL, LINEAR, COMPREHENSIVE,
     }
+
     public RankerType _rankerType = RankerType.NONE;
-    
+
     // The output format.
     public enum OutputFormat {
-      TEXT,
-      HTML,
+      TEXT, HTML,
     }
+
     public OutputFormat _outputFormat = OutputFormat.TEXT;
 
     public CgiArguments(String uriQuery) {
@@ -82,12 +77,25 @@ class QueryHandler implements HttpHandler {
           } catch (IllegalArgumentException e) {
             // Ignored, search engine should never fail upon invalid user input.
           }
+        } else if (key.equals("numdocs")) {
+          try {
+            _numResults = Integer.parseInt(val);
+          } catch (IllegalArgumentException e) {
+            // Ignored, search engine should never fail upon invalid user input.
+          }
+        }else if (key.equals("numterms")) {
+          try {
+            _numTerms = Integer.parseInt(val);;
+          } catch (IllegalArgumentException e) {
+            // Ignored, search engine should never fail upon invalid user input.
+          }
         }
-      }  // End of iterating over params
+        
+      } // End of iterating over params
     }
   }
 
-  // For accessing the underlying documents to be used by the Ranker. Since 
+  // For accessing the underlying documents to be used by the Ranker. Since
   // we are not worried about thread-safety here, the Indexer class must take
   // care of thread-safety.
   private Indexer _indexer;
@@ -106,16 +114,17 @@ class QueryHandler implements HttpHandler {
     responseBody.close();
   }
 
-  private void constructTextOutput(
-      final Vector<ScoredDocument> docs, StringBuffer response) {
+  private void constructTextOutput(final Vector<ScoredDocument> docs,
+      StringBuffer response) {
     for (ScoredDocument doc : docs) {
       response.append(response.length() > 0 ? "\n" : "");
       response.append(doc.asTextResult());
     }
     response.append(response.length() > 0 ? "\n" : "");
   }
-  
-  private void constructHtmlOutput(final Vector<ScoredDocument> docs, StringBuffer response) {
+
+  private void constructHtmlOutput(final Vector<ScoredDocument> docs,
+      StringBuffer response) {
     response.append("[\n");
     for (ScoredDocument doc : docs) {
       response.append(doc.asHtmlResult());
@@ -145,7 +154,7 @@ class QueryHandler implements HttpHandler {
     if (uriPath == null || uriQuery == null) {
       respondWithMsg(exchange, "Something wrong with the URI!");
     }
-    if (!uriPath.equals("/search") && !uriPath.equals("/prf") ) {
+    if (!uriPath.equals("/search") && !uriPath.equals("/prf")) {
       respondWithMsg(exchange, "Only /search or /prf is handled!");
     }
     System.out.println("Query: " + uriQuery);
@@ -157,11 +166,11 @@ class QueryHandler implements HttpHandler {
     }
 
     // Create the ranker.
-    Ranker ranker = Ranker.Factory.getRankerByArguments(
-        cgiArgs, SearchEngine.OPTIONS, _indexer);
+    Ranker ranker = Ranker.Factory.getRankerByArguments(cgiArgs,
+        SearchEngine.OPTIONS, _indexer);
     if (ranker == null) {
-      respondWithMsg(exchange,
-          "Ranker " + cgiArgs._rankerType.toString() + " is not valid!");
+      respondWithMsg(exchange, "Ranker " + cgiArgs._rankerType.toString()
+          + " is not valid!");
     }
 
     // Processing the query.
@@ -169,22 +178,28 @@ class QueryHandler implements HttpHandler {
     processedQuery.processQuery();
 
     // Ranking.
-    Vector<ScoredDocument> scoredDocs =
-        ranker.runQuery(processedQuery, cgiArgs._numResults);
-    StringBuffer response = new StringBuffer();
-    switch (cgiArgs._outputFormat) {
-    case TEXT:
-      constructTextOutput(scoredDocs, response);
-      break;
-    case HTML:
-      // @CS2580: Plug in your HTML output
-      constructHtmlOutput(scoredDocs, response);
-      break;
-    default:
-      // nothing
+    Vector<ScoredDocument> scoredDocs = ranker.runQuery(processedQuery,
+        cgiArgs._numResults); 
+
+    if (uriPath.equals("/search")) {
+      StringBuffer response = new StringBuffer();
+      switch (cgiArgs._outputFormat) {
+      case TEXT:
+        constructTextOutput(scoredDocs, response);
+        break;
+      case HTML:
+        // @CS2580: Plug in your HTML output
+        constructHtmlOutput(scoredDocs, response);
+        break;
+      default:
+        // nothing
+      }
+      respondWithMsg(exchange, response.toString());
+      System.out.println("Finished query: " + cgiArgs._query);
+    } else {
+      PseudoRelevanceFeedback pfg = new PseudoRelevanceFeedback(scoredDocs, _indexer, cgiArgs._numTerms, processedQuery);
+      respondWithMsg(exchange, pfg.compute().toString());
+      System.out.println("Finished Expansion: " + cgiArgs._query);
     }
-    respondWithMsg(exchange, response.toString());
-    System.out.println("Finished query: " + cgiArgs._query);
   }
 }
-

@@ -48,7 +48,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
   private transient List<Integer> _diskLength = new ArrayList<Integer>();
   // disk list offset
   private transient Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
-  
+  private transient Set<String> docTermVector = new HashSet<String>();
   
   // Cache current running query
   private transient String currentQuery = "";
@@ -89,7 +89,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
   public void constructIndex() throws IOException {
     // delete already existing index files
     deleteExistingFiles();
-    long start=System.currentTimeMillis();
+    long start=System.currentTimeMillis(); 
     _pageRanks = (HashMap<String, Float>) CorpusAnalyzer.Factory
         .getCorpusAnalyzerByOption(_options).load();
     _numViews = (HashMap<String, Integer>) LogMiner.Factory
@@ -203,7 +203,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
   // Constructing the posting list
   private void indexDocument(String document, int docid) {
     int offset = 0;
-    Set<String> docTermVector = new HashSet<String>();
+    //Set<String> docTermVector = new HashSet<String>();
     Scanner s = new Scanner(document);
     List<Integer> list = null;
     while (s.hasNext()) {
@@ -230,7 +230,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     s.close();
     try {
       DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
-          new FileOutputStream(docTermFile + ".temp",true)));
+          new FileOutputStream(docTermFile + ".temp", true)));
       for(String str: docTermVector){
         writer.writeUTF(str);
       }
@@ -244,6 +244,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
       preOffset = _docTermOffset.get(_docTermOffset.size() - 1);
     }
     _docTermOffset.add(docTermVector.size()+preOffset);
+    docTermVector.clear();
   }
 
   private void writeMapToDisk() throws IOException {
@@ -376,6 +377,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     this._diskLength = null;
     this._pageRanks = null;
     this._numViews = null;
+    this.docTermVector=null;
 
     cacheIndex = new HashMap<String, Integer>();
     DataInputStream reader = new DataInputStream(new BufferedInputStream(
@@ -678,6 +680,12 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     }
     int result = 0;
     int i = 0;
+    if(list.get(list.size() - 2) < docid){
+      return 0;
+    }
+    if(cache == list.size()){
+      cache = 0;
+    }
     if (list.get(cache) <= docid) {
       i = cache;
     }

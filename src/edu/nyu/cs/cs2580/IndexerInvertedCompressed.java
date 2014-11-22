@@ -47,6 +47,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   private transient List<Integer> _diskLength = new ArrayList<Integer>();
   // disk list offset
   private transient Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
+  private transient Set<String> docTermVector = new HashSet<String>();
   
   // Cache current running query
   private transient String currentQuery = "";
@@ -202,7 +203,6 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   private void indexDocument(String document, int docid) {
     int offset = 0;
     Scanner s = new Scanner(document);
-    Set<String> docTermVector = new HashSet<String>();
     List<Integer> list = null;
     while (s.hasNext()) {
       String term = s.next();
@@ -238,6 +238,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
       e.printStackTrace();
     }
     _docTermOffset.add(docTermVector.size());
+    docTermVector.clear();
   }
 
   private void writeMapToDisk() throws IOException {
@@ -472,6 +473,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     this._diskLength = null;
     this._pageRanks = null;
     this._numViews = null;
+    this.docTermVector=null;
     
     cacheIndex = new HashMap<String, Integer>();
     DataInputStream reader = new DataInputStream(new BufferedInputStream(
@@ -780,6 +782,12 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     }
     int result = 0;
     int i = 0;
+    if(list.get(list.size() - 2) < docid){
+      return 0;
+    }
+    if(cache == list.size()){
+      cache = 0;
+    }
     if (list.get(cache) <= docid) {
       i = cache;
     }
