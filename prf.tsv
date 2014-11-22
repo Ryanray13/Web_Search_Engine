@@ -1,1 +1,5 @@
+bing:data/prf/prf-1.tsv
+data%20mining:data/prf/prf-2.tsv
+google:data/prf/prf-3.tsv
+salsa:data/prf/prf-4.tsv
 web%20search:data/prf/prf-5.tsv

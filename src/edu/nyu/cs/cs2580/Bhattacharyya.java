@@ -30,7 +30,6 @@ public class Bhattacharyya {
       for (String outputFile : outputFiles) {
         prfs.add(getTermProbs(outputFile));
       }
-      
       // calculate similarity
       int n = queries.size();
       double[][] coefficients = new double[n][n];
@@ -41,8 +40,8 @@ public class Bhattacharyya {
           coefficients[j][i] = coefficient;
         }
       }
+
       outputResult(coefficients, PATH_TO_OUTPUT);
-      
     } catch (Exception e) {
       System.err.println(e.getMessage());
     }
@@ -58,6 +57,7 @@ public class Bhattacharyya {
           String str = queries.get(i) + "\t" + 
               queries.get(j) + "\t" + coefficients[i][j];
           bw.write(str);
+          bw.newLine();
         }
       }
     }
@@ -76,6 +76,12 @@ public class Bhattacharyya {
       termSet.add(term);
     }
     for (String term : termSet) {
+      if(map1.get(term)==null){
+        continue;
+      }
+      if(map2.get(term)==null){
+        continue;
+      }
       double prob1 = map1.get(term);
       double prob2 = map2.get(term);
       result += Math.sqrt(prob1 * prob2);
