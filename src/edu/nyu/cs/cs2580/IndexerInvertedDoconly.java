@@ -46,20 +46,27 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   private transient Map<String, Integer> _numViews = new HashMap<String, Integer>();
   private transient Map<String, Float> _pageRanks = new HashMap<String, Float>();
   private transient List<Integer> _diskLength = new ArrayList<Integer>();
-
+  // disk list offset
+  private transient Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
+  
   // Cache current running query
   private transient String currentQuery = "";
+  private transient String currentTerm = "";
   private transient String indexFile = "";
   private transient String diskIndexFile = "";
   private transient String docTermFile = "";
-  private transient int docTermOffset = 0;
+  private transient String postingListFile = "";
   private transient int partNumber = 0;
-
-  // disk list offset
-  private transient Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
+  private transient List<Integer> cacheTermList;
+  
+  //doc term list offset
+  private List<Integer> _docTermOffset = new ArrayList<Integer>();
 
   // Store all the documents
   private List<Document> _documents = new ArrayList<Document>();
+  
+  //store all the terms
+  private List<String> _termList = new ArrayList<String>();
 
   private long totalTermFrequency = 0;
 
@@ -69,9 +76,10 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
   public IndexerInvertedDoconly(Options options) {
     super(options);
-    indexFile = options._indexPrefix + "/wiki.obj";
-    diskIndexFile = options._indexPrefix + "wiki.idx";
+    indexFile = options._indexPrefix + "/wiki.object";
+    diskIndexFile = options._indexPrefix + "/wiki.idx";
     docTermFile = options._indexPrefix + "/wiki.docterm";
+    postingListFile = _options._indexPrefix + "/wiki.list";
     System.out.println("Using Indexer: " + this.getClass().getSimpleName());
   }
 
@@ -127,9 +135,9 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
       File[] files = newfile.listFiles();
       for (File file : files) {
         if (file.getName().matches(".*wiki.*\\.list")
-            || file.getName().matches(".*wiki.*\\.idx")
+            || file.getName().matches(".*wiki.*\\.idx.*")
             || file.getName().matches(".*wiki.*\\.docterm")
-            || file.getName().matches(".*wiki.*\\.obj")) {
+            || file.getName().matches(".*wiki.*\\.object")) {
           file.delete();
         }
       }
@@ -172,9 +180,21 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     DocumentIndexed document = new DocumentIndexed(docid);
     // Indexing.
     indexDocument(stemedDocument, docid);
+    
     document.setUrl(file.getAbsolutePath());
     document.setTitle(parsedDocument.title());
     document.setLength(stemedDocument.length());
+    String fileName = file.getName();
+    if(_numViews.containsKey(fileName)){
+      document.setNumViews(_numViews.get(fileName));
+    }else{
+      document.setNumViews(0);
+    }
+    if(_pageRanks.containsKey(fileName)){
+      document.setPageRank(_pageRanks.get(file.getName()));
+    }else{
+      document.setPageRank(0);
+    }
     _documents.add(document);
     ++_numDocs;
   }
@@ -210,15 +230,14 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
       }
       if(!docTermVector.contains(term)){
         docTermVector.add(term);
-        docTermOffset++;
       }
       totalTermFrequency++;
     }
-   
+    s.close();
     try {
       DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
-          new FileOutputStream(docTermFile,true)));
-      for(String str : docTermVector){
+          new FileOutputStream(docTermFile + ".temp",true)));
+      for(String str: docTermVector){
         writer.writeUTF(str);
       }
       writer.close();
@@ -226,7 +245,11 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
       // TODO Auto-generated catch block
       e.printStackTrace();
     }
-    s.close();
+    int preOffset=0;
+    if(_docTermOffset.size()!=0){
+      preOffset = _docTermOffset.get(_docTermOffset.size() - 1);
+    }
+    _docTermOffset.add(docTermVector.size()+preOffset);
   }
 
   private void writeMapToDisk() throws IOException {
@@ -251,7 +274,6 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   }
 
   private void writeIndexToDisk() throws FileNotFoundException, IOException {
-    String outputFile = _options._indexPrefix + "/wiki.list";
     File[] inputFiles = new File[partNumber];
     DataInputStream[] readers = new DataInputStream[partNumber];
     for (int i = 0; i < partNumber; i++) {
@@ -261,11 +283,14 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
           new FileInputStream(inputFiles[i])));
     }
     DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
-        new FileOutputStream(outputFile)));
+        new FileOutputStream(postingListFile)));
+    DataOutputStream writer2 = new DataOutputStream(new BufferedOutputStream(
+        new FileOutputStream(diskIndexFile)));
 
     List<String> keyList = new ArrayList<String>(_postingLists.keySet());
     List<String> dictionaryList = new ArrayList<String>(_diskIndex.keySet());
     Collections.sort(dictionaryList);
+    _termList = dictionaryList;
     Collections.sort(keyList);
     List<Integer> diskList = new ArrayList<Integer>();
     int[] index = new int[partNumber];
@@ -306,40 +331,36 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
       for (Integer value : diskList) {
         writer.writeInt(value);
       }
-      _diskIndex.put(dictionaryList.get(i), offset);
+      _diskIndex.put(dictionaryList.get(i), i);
+      writer2.writeInt(offset);
       offset += (diskList.size() + 1);
       diskList.clear();
     }
 
     writer.close();
+    writer2.close();
     for (j = 0; j < partNumber; j++) {
       readers[j].close();
       inputFiles[j].delete();
     }
     _postingLists.clear();
-    ObjectOutputStream os = new ObjectOutputStream(new BufferedOutputStream(
-        new FileOutputStream(indexFile)));
-    os.writeObject(this);
-    os.close();
-
-    writer = new DataOutputStream(new BufferedOutputStream(
-        new FileOutputStream(diskIndexFile)));
-    writer.writeInt(_diskIndex.size());
-    for(String str: _diskIndex.keySet()){
-      writer.writeUTF(str);
-      writer.writeInt(_diskIndex.get(str));
-    }
-    writer.close();
-
+    File tempFile = new File(docTermFile + ".temp");
     DataInputStream reader = new DataInputStream(new BufferedInputStream(
-        new FileInputStream(docTermFile)));
+        new FileInputStream(tempFile)));
     writer = new DataOutputStream(new BufferedOutputStream(
-        new FileOutputStream(docTermFile+".final")));
-    while(reader.available() > 0){
+        new FileOutputStream(docTermFile)));
+    int size = _docTermOffset.get(_docTermOffset.size() - 1);
+    for(int i = 0; i<size; i++){
       writer.writeInt(_diskIndex.get(reader.readUTF()));
     }
     reader.close();
     writer.close();
+    tempFile.delete();
+    
+    ObjectOutputStream os = new ObjectOutputStream(new BufferedOutputStream(
+        new FileOutputStream(indexFile)));
+    os.writeObject(this);
+    os.close();
   }
   
 
@@ -355,6 +376,8 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     this.totalTermFrequency = newIndexer.totalTermFrequency;
     this._totalTermFrequency = this.totalTermFrequency;
     this._documents = newIndexer._documents;
+    this._docTermOffset = newIndexer._docTermOffset;
+    this._termList = newIndexer._termList;
     this._numDocs = _documents.size();
     this._diskLength = null;
     this._pageRanks = null;
@@ -362,9 +385,8 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     
     DataInputStream reader = new DataInputStream(new BufferedInputStream(
         new FileInputStream(diskIndexFile)));
-    int diskIndexSize = reader.readInt();
-    for(int i = 0; i< diskIndexSize; i++){
-      _diskIndex.put(reader.readUTF(), reader.readInt());
+    for(String str: _termList){
+      _diskIndex.put(str, reader.readInt());
     }
     reader.close();
     // Loading each size of the term posting list.
@@ -475,9 +497,8 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   private List<Integer> getTermListFromDisk(String term) {
     List<Integer> list = new ArrayList<Integer>();
     int offset = _diskIndex.get(term);
-    String inputFile = _options._indexPrefix + "/wiki.list";
     try {
-      RandomAccessFile raf = new RandomAccessFile(inputFile, "r");
+      RandomAccessFile raf = new RandomAccessFile(postingListFile, "r");
       DataInputStream reader = new DataInputStream(new BufferedInputStream(
           new FileInputStream(raf.getFD())));
       raf.seek(offset * 4);
@@ -567,7 +588,14 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   @Override
   public int documentTermFrequency(String term, int docid) {
     // check whether the term is in postingLists, if not load from disk
-    List<Integer> list = getTermList(term);
+    List<Integer> list = null;
+    if(!currentTerm.equals(term)){
+      list = getTermList(term);
+      cacheTermList = list;
+      currentTerm = term;
+    }else{
+      list = cacheTermList;
+    }
     if (list == null) {
       return 0;
     } else {
@@ -578,5 +606,29 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
         return list.get(result + 1);
       }
     }
+  }
+
+  @Override
+  public List<String> getDocTermList(int docid) {
+    int offset = 0;
+    if(docid != 0){
+      offset = _docTermOffset.get(docid - 1);
+    }
+    int size = _docTermOffset.get(docid) - offset;
+    List<String> list = new ArrayList<String>();
+    try {
+      RandomAccessFile raf = new RandomAccessFile(docTermFile, "r");
+      DataInputStream reader = new DataInputStream(new BufferedInputStream(
+          new FileInputStream(raf.getFD())));
+      raf.seek(offset * 4);
+      for (int i = 0; i < size; i++) {
+        list.add(_termList.get(reader.readInt()));
+      }
+      raf.close();
+      reader.close();
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    return list;
   }
 }
