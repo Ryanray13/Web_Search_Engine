@@ -1,6 +1,7 @@
 package edu.nyu.cs.cs2580;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -69,7 +70,8 @@ public class SearchEngine {
     // The specific LogMiner to be used.
     public String _logMinerType = null;
 
-    // Additional group specific configuration can be added below.
+    // The parent path where the mining results reside.
+    public String _miningPrefix = null;
 
     /**
      * Constructor for options.
@@ -102,6 +104,8 @@ public class SearchEngine {
       Check(_logPrefix != null, "Missing option: log_prefix!");
       _indexPrefix = options.get("index_prefix");
       Check(_indexPrefix != null, "Missing option: index_prefix!");
+      _miningPrefix = options.get("mining_prefix");
+      Check(_miningPrefix!= null, "Missing option: mining_prefix!");
 
       // Populate specific options.
       _indexerType = options.get("indexer_type");
@@ -169,6 +173,10 @@ public class SearchEngine {
 
   private static void startMining()
       throws IOException, NoSuchAlgorithmException {
+    File miningDir = new File(SearchEngine.OPTIONS._miningPrefix);
+    if (!miningDir.exists() || !miningDir.isDirectory()) {
+      miningDir.mkdir();
+    }
     CorpusAnalyzer analyzer = CorpusAnalyzer.Factory.getCorpusAnalyzerByOption(
         SearchEngine.OPTIONS);
     Check(analyzer != null,
