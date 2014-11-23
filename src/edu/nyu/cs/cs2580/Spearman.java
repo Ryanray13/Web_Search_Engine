@@ -4,17 +4,13 @@ import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream.GetField;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
-import edu.nyu.cs.cs2580.Spearman.IdValPair;
 
 public class Spearman {
   
@@ -72,19 +68,18 @@ public class Spearman {
     
     processPageRank(PATH_TO_PAGERANKS);
     processNumViews(PATH_TO_NUMVIEWS);
-    
+
     Check(pageRanks.size() == numViews.size(),
         "PageRanks and NumViews should have the same number of documents");
     
+    // sort list by reverse order of pair's value
     Collections.sort(pageRanks, new ValComparator());
     Collections.sort(numViews, new ValComparator());
     
-    
-    System.out.println(pageRanks);
-    System.out.println(numViews);
     List<IdValPair> pagerankRanks = assignRanks(pageRanks);
     List<IdValPair> numviewRanks = assignRanks(numViews);
     
+    // sort list by pair's id
     Collections.sort(pagerankRanks, new IdComparator());
     Collections.sort(numviewRanks, new IdComparator());
     
@@ -127,12 +122,8 @@ public class Spearman {
     for (int i = 0; i < size ; i++) {
       String docName = reader.readUTF();
       Integer docid = docidMap.get(docName);
-      //Check((docid != null), "Document does not exist in both files " + docid + ",");
-      if (docid == null) {
-        reader.readInt();
-      } else {
-        numViews.add(new IdValPair(docid, (float)reader.readInt()));
-      }
+      Check((docid != null), "Document does not exist in both files " + docid + ",");
+      numViews.add(new IdValPair(docid, (float)reader.readInt()));
     }
     reader.close();
   }
