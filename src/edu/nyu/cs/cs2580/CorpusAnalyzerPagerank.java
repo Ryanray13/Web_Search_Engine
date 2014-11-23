@@ -27,6 +27,13 @@ public class CorpusAnalyzerPagerank extends CorpusAnalyzer {
 
   private static final float LAMBDA = 0.1f;
   private static final int ITERATION = 2;
+  
+  private final String graphFile = 
+      _options._miningPrefix + "/pageRankGraph";
+  private final String structureFile =
+      _options._miningPrefix + "/pageRankGraphStructure";
+  private final String pageRankFile =
+      _options._miningPrefix + "/pageRankResult";
 
   /**
    * This function processes the corpus as specified inside {@link _options} and
@@ -91,8 +98,6 @@ public class CorpusAnalyzerPagerank extends CorpusAnalyzer {
         }
       }
 
-      String graphFile = _options._indexPrefix + "/pageRank/wiki.graph";
-      String structureFile = _options._indexPrefix + "/pageRank/wiki.graph.structure";
       DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
           new FileOutputStream(graphFile)));
       writer.writeInt(corpusGraph.size());
@@ -112,7 +117,6 @@ public class CorpusAnalyzerPagerank extends CorpusAnalyzer {
           docidMap.put(id, key);
         }
       }
-      
       ObjectOutputStream os = new ObjectOutputStream(new BufferedOutputStream(
           new FileOutputStream(structureFile)));
       os.writeObject(docidMap);
@@ -122,14 +126,14 @@ public class CorpusAnalyzerPagerank extends CorpusAnalyzer {
   }
 
   private void deleteExistingFiles() {
-    File newfile = new File(_options._indexPrefix + "/pageRank");
+    File newfile = new File(_options._miningPrefix);
     if (!newfile.exists() || !newfile.isDirectory()) {
       newfile.mkdir();
     }
     if (newfile.isDirectory()) {
       File[] files = newfile.listFiles();
       for (File file : files) {
-        if (file.getName().matches(".*wiki\\.graph.*")) {
+        if (file.getName().matches(".*pageRankGraph.*")) {
           file.delete();
         }
       }
@@ -153,8 +157,6 @@ public class CorpusAnalyzerPagerank extends CorpusAnalyzer {
   @Override
   public void compute() throws IOException {
     System.out.println("Computing using " + this.getClass().getName());
-    String graphFile = _options._indexPrefix + "/pageRank/wiki.graph";
-    String structureFile = _options._indexPrefix + "/pageRank/wiki.graph.structure";
     DataInputStream reader = new DataInputStream(new BufferedInputStream(
         new FileInputStream(graphFile)));
     Map<Integer, Set<Integer>> corpusGraph = new HashMap<Integer, Set<Integer>>();
@@ -223,7 +225,6 @@ public class CorpusAnalyzerPagerank extends CorpusAnalyzer {
       itr--;
     }
    
-    String pageRankFile = _options._indexPrefix + "/pageRank/wiki.pageRank";    
     DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
         new FileOutputStream(pageRankFile)));
     writer.writeInt(pageRank.size());
@@ -244,7 +245,6 @@ public class CorpusAnalyzerPagerank extends CorpusAnalyzer {
   @Override
   public Object load() throws IOException {
     System.out.println("Loading using " + this.getClass().getName());
-    String pageRankFile = _options._indexPrefix + "/pageRank/wiki.pageRank";
     Map<String, Float> pageRank = new HashMap<String, Float>();
     DataInputStream reader = new DataInputStream(new BufferedInputStream(
         new FileInputStream(pageRankFile)));

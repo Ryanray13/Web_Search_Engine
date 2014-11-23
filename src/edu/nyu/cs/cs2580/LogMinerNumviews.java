@@ -3,14 +3,13 @@ package edu.nyu.cs.cs2580;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -23,10 +22,8 @@ import edu.nyu.cs.cs2580.SearchEngine.Options;
  */
 public class LogMinerNumviews extends LogMiner {
 
-  // TODO: put into mining dir?
-  private String outputFile = _options._indexPrefix + "/wiki/numViews";
-
-  // private String outputFile = _options._mininigPrefix + "/wiki/numViews";
+  private String numViewsFile =
+      _options._miningPrefix + "/numViewsResult";
 
   public LogMinerNumviews(Options options) {
     super(options);
@@ -46,7 +43,7 @@ public class LogMinerNumviews extends LogMiner {
    * @throws IOException
    */
   @Override
-  public void compute() throws IOException {
+  public void compute() throws IOException, NumberFormatException {
     System.out.println("Computing using " + this.getClass().getName());
     deleteExistingFiles();
     Set<String> redirects = new HashSet<String>();
@@ -86,37 +83,20 @@ public class LogMinerNumviews extends LogMiner {
             if (redirects.contains(docName)) {
               docName = docName + ".html";
             }
-            try {
-              numViews.put(docName,
-                  numViews.get(docName) + Integer.parseInt(docNum));
-            } catch (Exception e) {
-              continue;
-            }
+            numViews.put(docName, 
+                numViews.get(docName) + Integer.parseInt(docNum));
           }
           reader.close();
         }
 
-        File outdir = new File(_options._indexPrefix + "/wiki");
-        if (!outdir.exists() || !outdir.isDirectory()) {
-          outdir.mkdir();
-        }
-
         DataOutputStream writer = new DataOutputStream(
-            new BufferedOutputStream(new FileOutputStream(outputFile)));
+            new BufferedOutputStream(new FileOutputStream(numViewsFile)));
         writer.writeInt(numViews.size());
         for (String docName : numViews.keySet()) {
           writer.writeUTF(docName);
           writer.writeInt(numViews.get(docName));
         }
         writer.close();
-        System.out.println("write num size: " + numViews.size());
-
-        ObjectOutputStream os = new ObjectOutputStream(
-            new BufferedOutputStream(new FileOutputStream(
-                _options._indexPrefix + "/numviews/wiki.num")));
-        os.writeObject(numViews);
-        os.close();
-
       }
     }
   }
@@ -134,27 +114,26 @@ public class LogMinerNumviews extends LogMiner {
   @Override
   public Object load() throws IOException {
     System.out.println("Loading using " + this.getClass().getName());
-    ObjectInputStream is = new ObjectInputStream(new BufferedInputStream(
-        new FileInputStream(_options._indexPrefix + "/numviews/wiki.num")));
-    Object obj = null;
-    try {
-      obj = is.readObject();
-    } catch (ClassNotFoundException e) {
-      e.printStackTrace();
+    Map<String, Float> numViews = new HashMap<String, Float>();
+    DataInputStream reader = new DataInputStream(new BufferedInputStream(
+        new FileInputStream(numViewsFile)));
+    int numViewsSize = reader.readInt();
+    for (int i = 0; i < numViewsSize; i++) {
+      numViews.put(reader.readUTF(), reader.readFloat());
     }
-    is.close();
-    return obj;
+    reader.close();
+    return numViews;
   }
-  
+
   private void deleteExistingFiles() {
-    File newfile = new File(_options._indexPrefix + "/numviews");
+    File newfile = new File(_options._miningPrefix);
     if (!newfile.exists() || !newfile.isDirectory()) {
       newfile.mkdir();
     }
     if (newfile.isDirectory()) {
       File[] files = newfile.listFiles();
       for (File file : files) {
-        if (file.getName().matches(".*wiki\\.num.*")) {
+        if (file.getName().matches(".*numViews.*")) {
           file.delete();
         }
       }
