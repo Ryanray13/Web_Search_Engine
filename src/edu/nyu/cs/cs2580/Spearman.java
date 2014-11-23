@@ -73,44 +73,20 @@ public class Spearman {
     int size = reader.readInt();
     for (int i = 0; i < size ; i++) {
       String docName = reader.readUTF();
-      if (!docName.startsWith(".")) {
-        Integer docid = docidMap.get(docName);
-        if (docid == null) {
-        }
-        Check((docid != null), "Document does not exist in both files " + docid + ",");
-        idValMap.put(docid, (float)reader.readInt());
-      } else {
-        //System.out.println("here");
-        reader.readInt();
-      }
+      Integer docid = docidMap.get(docName);
+      Check((docid != null), "Document does not exist in both files " + docid + ",");
+      idValMap.put(docid, (float)reader.readInt());
     }
     reader.close();
     return idValMap;
-  }
-
-  private static List<Float> processFile(String path) throws IOException,
-      NumberFormatException {
-    BufferedReader reader = new BufferedReader(new FileReader(path));
-    List<Float> result = new ArrayList<Float>();
-    try {
-      String line = null;
-      while ((line = reader.readLine()) != null) {
-        result.add(Float.parseFloat(line));
-      }
-    } finally {
-      reader.close();
-    }
-    return result;
   }
 
   private static double calcSpearmanCorrelation (
       Map<Integer, Float> pagerankMap, Map<Integer, Float> numviewMap){
     double result = 0.0;
     int n = pagerankMap.size();
-
     List<Integer> pageRanksRanks = getRanks(sortByValue(pagerankMap));
     List<Integer> numViewsRanks = getRanks(sortByValue(numviewMap));
-
     double pageranksAvg = getAverage(pageRanksRanks);
     double numviewsAvg = getAverage(numViewsRanks);
 
@@ -124,9 +100,8 @@ public class Spearman {
       sumDiffPageRanks += diff1 * diff1;
       sumDiffNumViews += diff2 * diff2;
     }
-
     if (sumDiffPageRanks * sumDiffNumViews == 0) {
-      result = -1;
+      result = 0;
     } else {
       result = sumMulti / (Math.sqrt(sumDiffPageRanks * sumDiffNumViews));
     }
