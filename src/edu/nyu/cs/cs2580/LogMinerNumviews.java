@@ -117,12 +117,12 @@ public class LogMinerNumviews extends LogMiner {
   @Override
   public Object load() throws IOException {
     System.out.println("Loading using " + this.getClass().getName());
-    Map<String, Float> numViews = new HashMap<String, Float>();
+    Map<String, Integer> numViews = new HashMap<String, Integer>();
     DataInputStream reader = new DataInputStream(new BufferedInputStream(
         new FileInputStream(numViewsFile)));
     int numViewsSize = reader.readInt();
     for (int i = 0; i < numViewsSize; i++) {
-      numViews.put(reader.readUTF(), reader.readFloat());
+      numViews.put(reader.readUTF(), reader.readInt());
     }
     reader.close();
     return numViews;
