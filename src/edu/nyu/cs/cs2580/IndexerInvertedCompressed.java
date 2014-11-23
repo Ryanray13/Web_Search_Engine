@@ -18,11 +18,9 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.Set;
 import java.util.Vector;
 
 import org.jsoup.Jsoup;
@@ -47,7 +45,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   private transient List<Integer> _diskLength = new ArrayList<Integer>();
   // disk list offset
   private transient Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
-  private transient Set<String> docTermVector = new HashSet<String>();
+  private transient Map<String, Integer> docTermMap = new HashMap<String, Integer>();
 
   // Cache current running query
   private transient String currentQuery = "";
@@ -206,6 +204,12 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     List<Integer> list = null;
     while (s.hasNext()) {
       String term = s.next();
+      if (docTermMap.containsKey(term)) {
+        docTermMap.put(term, docTermMap.get(term) + 1);
+      } else {
+        docTermMap.put(term, 1);
+      }
+
       if (_diskIndex.containsKey(term) && _postingLists.containsKey(term)) {
         list = _postingLists.get(term);
         list.add(docid);
@@ -219,9 +223,6 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
         _postingLists.put(term, list);
       }
       list.add(offset);
-      if (!docTermVector.contains(term)) {
-        docTermVector.add(term);
-      }
       totalTermFrequency++;
       offset++;
     }
@@ -229,16 +230,17 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     try {
       DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
           new FileOutputStream(docTermFile + ".temp", true)));
-      for (String str : docTermVector) {
+      for (String str : docTermMap.keySet()) {
         writer.writeUTF(str);
+        writer.writeInt(docTermMap.get(str));
       }
       writer.close();
     } catch (Exception e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
     }
-    _docTermOffset.add(docTermVector.size());
-    docTermVector.clear();
+    _docTermOffset.add(docTermMap.size());
+    docTermMap.clear();
   }
 
   private void writeMapToDisk() throws IOException {
@@ -437,6 +439,10 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
         for (byte byt : tempList) {
           docTermList.add(byt);
         }
+        tempList = vByte(reader.readInt());
+        for (byte byt : tempList) {
+          docTermList.add(byt);
+        }
       }
       for (Byte byt : docTermList) {
         writer.writeByte(byt);
@@ -473,7 +479,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     this._diskLength = null;
     this._pageRanks = null;
     this._numViews = null;
-    this.docTermVector = null;
+    this.docTermMap = null;
 
     cacheIndex = new HashMap<String, Integer>();
     DataInputStream reader = new DataInputStream(new BufferedInputStream(
@@ -804,7 +810,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
       if (docid == list.get(cache)) {
         result++;
       }
-      if (list.get(cache) >= docid) {
+      if (list.get(cache) > docid) {
         break;
       }
     }
@@ -817,14 +823,15 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   }
 
   @Override
-  public List<String> getDocTermList(int docid) {
+  public Map<String, Integer> getDocTermMap(int docid) {
     int offset = 0;
     if (docid != 0) {
       offset = _docTermOffset.get(docid - 1);
     }
+
     int size = _docTermOffset.get(docid) - offset;
     List<Byte> byteList = new ArrayList<Byte>();
-    List<String> list = new ArrayList<String>();
+    Map<String, Integer> map = new HashMap<String, Integer>();
     try {
       RandomAccessFile raf = new RandomAccessFile(docTermFile, "r");
       DataInputStream reader = new DataInputStream(new BufferedInputStream(
@@ -834,14 +841,14 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
         byteList.add(reader.readByte());
       }
       List<Integer> termList = decodeByte(byteList);
-      for (Integer value : termList) {
-        list.add(_termList.get(value));
+      for (int i = 0; i < termList.size(); i += 2) {
+        map.put(_termList.get(termList.get(i)), termList.get(i + 1));
       }
       raf.close();
       reader.close();
     } catch (Exception e) {
       e.printStackTrace();
     }
-    return list;
+    return map;
   }
 }

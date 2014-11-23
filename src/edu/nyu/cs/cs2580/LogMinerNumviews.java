@@ -22,8 +22,7 @@ import edu.nyu.cs.cs2580.SearchEngine.Options;
  */
 public class LogMinerNumviews extends LogMiner {
 
-  private String numViewsFile =
-      _options._miningPrefix + "/numViewsResult";
+  private String numViewsFile = _options._miningPrefix + "/numViewsResult";
 
   public LogMinerNumviews(Options options) {
     super(options);
@@ -43,7 +42,7 @@ public class LogMinerNumviews extends LogMiner {
    * @throws IOException
    */
   @Override
-  public void compute() throws IOException, NumberFormatException {
+  public void compute() throws IOException{
     System.out.println("Computing using " + this.getClass().getName());
     deleteExistingFiles();
     Set<String> redirects = new HashSet<String>();
@@ -83,8 +82,12 @@ public class LogMinerNumviews extends LogMiner {
             if (redirects.contains(docName)) {
               docName = docName + ".html";
             }
-            numViews.put(docName, 
-                numViews.get(docName) + Integer.parseInt(docNum));
+            try {
+              numViews.put(docName,
+                  numViews.get(docName) + Integer.parseInt(docNum));
+            } catch (Exception e) {
+              continue;
+            }
           }
           reader.close();
         }
@@ -127,9 +130,6 @@ public class LogMinerNumviews extends LogMiner {
 
   private void deleteExistingFiles() {
     File newfile = new File(_options._miningPrefix);
-    if (!newfile.exists() || !newfile.isDirectory()) {
-      newfile.mkdir();
-    }
     if (newfile.isDirectory()) {
       File[] files = newfile.listFiles();
       for (File file : files) {

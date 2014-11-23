@@ -127,13 +127,10 @@ public class CorpusAnalyzerPagerank extends CorpusAnalyzer {
 
   private void deleteExistingFiles() {
     File newfile = new File(_options._miningPrefix);
-    if (!newfile.exists() || !newfile.isDirectory()) {
-      newfile.mkdir();
-    }
     if (newfile.isDirectory()) {
       File[] files = newfile.listFiles();
       for (File file : files) {
-        if (file.getName().matches(".*pageRankGraph.*")) {
+        if (file.getName().matches(".*pageRank.*")) {
           file.delete();
         }
       }

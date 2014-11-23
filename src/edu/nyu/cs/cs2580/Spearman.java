@@ -85,8 +85,8 @@ public class Spearman {
       Map<Integer, Float> pagerankMap, Map<Integer, Float> numviewMap){
     double result = 0.0;
     int n = pagerankMap.size();
-    List<Integer> pageRanksRanks = getRanks(sortByValue(pagerankMap));
-    List<Integer> numViewsRanks = getRanks(sortByValue(numviewMap));
+    Map<Integer, Integer> pageRanksRanks = getRanks(sortByValue(pagerankMap));
+    Map<Integer, Integer> numViewsRanks = getRanks(sortByValue(numviewMap));
     double pageranksAvg = getAverage(pageRanksRanks);
     double numviewsAvg = getAverage(numViewsRanks);
 
@@ -117,25 +117,21 @@ public class Spearman {
   }
 
 
-  private static List<Integer> getRanks(TreeMap<Integer, Float> map) {
+  private static Map<Integer, Integer> getRanks(TreeMap<Integer, Float> map) {
     int rank = 1;
-    List<Integer> result = new ArrayList<Integer>();
-    Map<Integer, Integer> sortedMap = new TreeMap<Integer, Integer>();
-    for (Map.Entry<Integer, Float> entry : map.entrySet()) {
-      sortedMap.put(entry.getKey(), rank);
+    Map<Integer, Integer> result = new HashMap<Integer, Integer>();
+    for (Integer key : map.keySet()) {
+      result.put(key, rank);
       rank++;
-    }
-    for (Map.Entry<Integer, Integer> entry : sortedMap.entrySet()) {
-      result.add(entry.getValue());
     }
     return result;
   }
 
-  private static double getAverage(List<Integer> list) {
-    int n = list.size();
+  private static double getAverage(Map<Integer, Integer> map) {
+    int n = map.size();
     double sum = 0.0;
-    for (Integer value : list) {
-      sum += value;
+    for (Integer value : map.keySet()) {
+      sum += map.get(value);
     }
     return (n == 0) ? 0 : (sum / n);
   }

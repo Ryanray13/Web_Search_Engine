@@ -2,34 +2,36 @@ package edu.nyu.cs.cs2580;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
 import java.util.Vector;
 
 public class PseudoRelevanceFeedback {
-  
+
   private Indexer _indexer;
   private int _numterms;
   private Vector<ScoredDocument> _docs;
   private Query _query;
   private Set<String> stopWords;
-  
-  class FrequentTerm implements Comparable<FrequentTerm>{
+
+  class FrequentTerm implements Comparable<FrequentTerm> {
     private String _term;
     private double _probability;
-    
-    FrequentTerm(String term, double prob){ 
+
+    FrequentTerm(String term, double prob) {
       _term = term;
       _probability = prob;
     }
-    
+
     public String toString() {
       return _term + "\t" + _probability;
     }
-    
+
     @Override
     public int compareTo(FrequentTerm o) {
       if (this._probability == o._probability) {
@@ -38,8 +40,9 @@ public class PseudoRelevanceFeedback {
       return (this._probability > o._probability) ? 1 : -1;
     }
   }
-  
-  public PseudoRelevanceFeedback(Vector<ScoredDocument> docs, Indexer indexer, int numterms, Query query){
+
+  public PseudoRelevanceFeedback(Vector<ScoredDocument> docs, Indexer indexer,
+      int numterms, Query query) {
     _docs = docs;
     _indexer = indexer;
     _numterms = numterms;
@@ -69,7 +72,6 @@ public class PseudoRelevanceFeedback {
     stopWords.add("retrieved");
     stopWords.add("or");
     stopWords.add("-");
-    stopWords.add("¨C");
     stopWords.add("an");
     stopWords.add("be");
     stopWords.add("which");
@@ -96,32 +98,31 @@ public class PseudoRelevanceFeedback {
     stopWords.add("no");
     stopWords.add("they");
   }
-  
-  public StringBuffer compute(){
-    Set<String> termSet = new HashSet<String>();
-    List<Integer> docidList = new ArrayList<Integer>();
+
+  public StringBuffer compute() {
+    Map<String, Integer> termMap = new HashMap<String, Integer>();
     Queue<FrequentTerm> rankQueue = new PriorityQueue<FrequentTerm>();
     Vector<String> queryTerms = ((QueryPhrase) _query).getTermVector();
     int totalTerms = 0;
-    for(ScoredDocument doc : _docs){
+    for (ScoredDocument doc : _docs) {
       int docid = doc.getDocid();
-      docidList.add(docid);
-      Document document =  _indexer.getDoc(docid);
-      Map<String, Integer> termMap = _indexer.getDocTermMap(docid);
-      for(String term : termList){
-        if(!termSet.contains(term) && !queryTerms.contains(term) && !stopWords.contains(term)){
-          termSet.add(term);
+      Document document = _indexer.getDoc(docid);
+      Map<String, Integer> docTermMap = _indexer.getDocTermMap(docid);
+      for (String term : docTermMap.keySet()) {
+        if (!queryTerms.contains(term) && !stopWords.contains(term)) {
+          if (termMap.containsKey(term)) {
+            termMap.put(term, docTermMap.get(term) + termMap.get(term));
+          } else {
+            termMap.put(term, docTermMap.get(term));
+          }
         }
       }
-      totalTerms += ((DocumentIndexed)document).getLength();
+      totalTerms += ((DocumentIndexed) document).getLength();
     }
-    Collections.sort(docidList);
-    for(String term : termSet){
-      double prob = 0;
-      for(int id : docidList){
-        prob += _indexer.documentTermFrequency(term, id);
-      }
-      rankQueue.add(new FrequentTerm(term, prob/totalTerms));
+
+    for (String term : termMap.keySet()) {
+      rankQueue.add(new FrequentTerm(term, termMap.get(term) * 1.0
+          / totalTerms));
       if (rankQueue.size() > _numterms) {
         rankQueue.poll();
       }
@@ -134,19 +135,19 @@ public class PseudoRelevanceFeedback {
     Collections.sort(results, Collections.reverseOrder());
     normalize(results);
     StringBuffer response = new StringBuffer();
-    for(FrequentTerm fterm : results){
+    for (FrequentTerm fterm : results) {
       response.append(fterm.toString());
       response.append('\n');
     }
     return response;
   }
-  
-  private void normalize(List<FrequentTerm> terms){
+
+  private void normalize(List<FrequentTerm> terms) {
     double normFactor = 0;
-    for(FrequentTerm fterm : terms){
-      normFactor += fterm._probability ;
+    for (FrequentTerm fterm : terms) {
+      normFactor += fterm._probability;
     }
-    for(FrequentTerm fterm : terms){
+    for (FrequentTerm fterm : terms) {
       fterm._probability = fterm._probability / normFactor;
     }
   }

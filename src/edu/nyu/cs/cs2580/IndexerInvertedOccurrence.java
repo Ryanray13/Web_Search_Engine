@@ -18,11 +18,9 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.Set;
 import java.util.Vector;
 
 import org.jsoup.Jsoup;
@@ -48,7 +46,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
   private transient List<Integer> _diskLength = new ArrayList<Integer>();
   // disk list offset
   private transient Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
-  private transient Set<String> docTermVector = new HashSet<String>();
+  private transient Map<String, Integer> docTermMap = new HashMap<String, Integer>();
 
   // Cache current running query
   private transient String currentQuery = "";
@@ -203,20 +201,24 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
   // Constructing the posting list
   private void indexDocument(String document, int docid) {
     int offset = 0;
-    // Set<String> docTermVector = new HashSet<String>();
+    // Set<String> docTermMap = new HashSet<String>();
     Scanner s = new Scanner(document);
     List<Integer> list = null;
     while (s.hasNext()) {
       String term = s.next();
+      if (docTermMap.containsKey(term)) {
+        docTermMap.put(term, docTermMap.get(term) + 1);
+      } else {
+        docTermMap.put(term, 1);
+      }
+
       if (_diskIndex.containsKey(term) && _postingLists.containsKey(term)) {
         list = _postingLists.get(term);
         list.add(docid);
-        docTermVector.add(term);
       } else {
         // Encounter a new term, add to posting lists
         list = new ArrayList<Integer>();
         list.add(docid);
-        docTermVector.add(term);
         if (!_diskIndex.containsKey(term)) {
           _diskIndex.put(term, 0);
         }
@@ -230,8 +232,9 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     try {
       DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
           new FileOutputStream(docTermFile + ".temp", true)));
-      for (String str : docTermVector) {
+      for (String str : docTermMap.keySet()) {
         writer.writeUTF(str);
+        writer.writeInt(docTermMap.get(str));
       }
       writer.close();
     } catch (Exception e) {
@@ -242,8 +245,8 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     if (_docTermOffset.size() != 0) {
       preOffset = _docTermOffset.get(_docTermOffset.size() - 1);
     }
-    _docTermOffset.add(docTermVector.size() + preOffset);
-    docTermVector.clear();
+    _docTermOffset.add(docTermMap.size() + preOffset);
+    docTermMap.clear();
   }
 
   private void writeMapToDisk() throws IOException {
@@ -321,7 +324,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
           term = keyList.get(memIndex);
         }
       }
-     
+
       writer.writeInt(diskList.size());
       for (Integer value : diskList) {
         writer.writeInt(value);
@@ -348,6 +351,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     int size = _docTermOffset.get(_docTermOffset.size() - 1);
     for (int i = 0; i < size; i++) {
       writer.writeInt(_diskIndex.get(reader.readUTF()));
+      writer.writeInt(reader.readInt());
     }
     reader.close();
     writer.close();
@@ -377,7 +381,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     this._diskLength = null;
     this._pageRanks = null;
     this._numViews = null;
-    this.docTermVector = null;
+    this.docTermMap = null;
 
     cacheIndex = new HashMap<String, Integer>();
     DataInputStream reader = new DataInputStream(new BufferedInputStream(
@@ -555,7 +559,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     if (cache > 0) {
       int current = list.get(cache);
       int i = cache;
-      while ( i>=0 && list.get(i) == current) {
+      while (i >= 0 && list.get(i) == current) {
         i = i - 2;
       }
       if (list.get(i) > docid) {
@@ -683,12 +687,12 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     if (cache > 0) {
       int current = list.get(cache);
       int i = cache;
-      while ( i>=0 && list.get(i) == current) {
+      while (i >= 0 && list.get(i) == current) {
         i = i - 2;
       }
       if (list.get(i) >= docid) {
         cache = 0;
-      }else if (list.get(i) == docid) {
+      } else if (list.get(i) == docid) {
         while (i >= 0 && list.get(i) == docid) {
           i = i - 2;
         }
@@ -716,26 +720,26 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
   }
 
   @Override
-  public List<String> getDocTermList(int docid) {
+  public Map<String, Integer> getDocTermMap(int docid) {
     int offset = 0;
     if (docid != 0) {
       offset = _docTermOffset.get(docid - 1);
     }
     int size = _docTermOffset.get(docid) - offset;
-    List<String> list = new ArrayList<String>();
+    Map<String, Integer> map = new HashMap<String, Integer>();
     try {
       RandomAccessFile raf = new RandomAccessFile(docTermFile, "r");
       DataInputStream reader = new DataInputStream(new BufferedInputStream(
           new FileInputStream(raf.getFD())));
-      raf.seek(offset * 4);
+      raf.seek(offset * 8);
       for (int i = 0; i < size; i++) {
-        list.add(_termList.get(reader.readInt()));
+        map.put(_termList.get(reader.readInt()), reader.readInt());
       }
       raf.close();
       reader.close();
     } catch (Exception e) {
       e.printStackTrace();
     }
-    return list;
+    return map;
   }
 }

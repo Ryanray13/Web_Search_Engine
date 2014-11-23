@@ -1,8 +1,6 @@
 package edu.nyu.cs.cs2580;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Vector;
@@ -31,15 +29,15 @@ public class RankerFavorite extends Ranker {
     Queue<ScoredDocument> rankQueue = new PriorityQueue<ScoredDocument>();
     Document doc = null;
     int docid = -1;
-    
+
     while ((doc = _indexer.nextDoc(query, docid)) != null) {
       ScoredDocument sdoc = scoreDocument(query, doc);
-      if(sdoc != null){
+      if (sdoc != null) {
         rankQueue.add(sdoc);
         if (rankQueue.size() > numResults) {
           rankQueue.poll();
         }
-      }      
+      }
       docid = doc._docid;
     }
 
@@ -71,10 +69,10 @@ public class RankerFavorite extends Ranker {
         score += Math.log(probability) / LOG2_BASE;
       }
     }
-    if(score == 0.0){
+    if (score == 0.0) {
       return null;
-    }else{
+    } else {
       return new ScoredDocument(doc, score);
-    }   
+    }
   }
 }

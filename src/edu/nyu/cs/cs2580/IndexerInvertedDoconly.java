@@ -18,11 +18,9 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.Set;
 import java.util.Vector;
 
 import edu.nyu.cs.cs2580.SearchEngine.Options;
@@ -217,14 +215,14 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
         } else {
           list.add((docid));
           list.add((1));
-          docTermMap.put(term,1);
+          docTermMap.put(term, 1);
         }
       } else {
         // Encounter a new term, add to posting lists
         list = new ArrayList<Integer>();
         list.add((docid));
         list.add((1));
-
+        docTermMap.put(term, 1);
         if (!_diskIndex.containsKey(term)) {
           _diskIndex.put(term, 0);
         }
@@ -606,18 +604,18 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   }
 
   @Override
-  public Map<String, Integer> getDocTermList(int docid) {
+  public Map<String, Integer> getDocTermMap(int docid) {
     int offset = 0;
     if (docid != 0) {
       offset = _docTermOffset.get(docid - 1);
     }
-    int size = (_docTermOffset.get(docid) - offset)/2;
+    int size = _docTermOffset.get(docid) - offset;
     Map<String, Integer> map = new HashMap<String, Integer>();
     try {
       RandomAccessFile raf = new RandomAccessFile(docTermFile, "r");
       DataInputStream reader = new DataInputStream(new BufferedInputStream(
           new FileInputStream(raf.getFD())));
-      raf.seek(offset * 4);
+      raf.seek(offset * 8);
       for (int i = 0; i < size; i++) {
         map.put(_termList.get(reader.readInt()), reader.readInt());
       }
