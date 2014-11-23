@@ -1,37 +1,96 @@
 package edu.nyu.cs.cs2580;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.ObjectInputStream.GetField;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import edu.nyu.cs.cs2580.Spearman.IdValPair;
+
 public class Spearman {
+  
+  private static String PATH_TO_PAGERANKS = "";
+  private static String PATH_TO_NUMVIEWS = "";
+
+  private List<IdValPair> pageRanks = new ArrayList<IdValPair>();
+  private List<IdValPair> numViews = new ArrayList<IdValPair>();
+  private Map<String, Integer> docidMap = new HashMap<String, Integer>();
+  
+  class IdValPair{
+    private int docid;
+    private float value;
+    
+    public IdValPair (int id, float val) {
+      docid = id;
+      value = val;
+    }
+    
+    public int getId() {
+      return docid;
+    }
+    
+    public void setVal(float val) {
+      value = val;
+    }
+    
+    public float getVal() {
+      return value;
+    }
+    
+    public String toString() {
+      return docid + "=" + value;
+    }
+  }
 
   public static void main(String[] args) {
     try {
+      
       parseCommand(args);
-      Map<Integer, Float> pageRanks = processPageRank(PATH_TO_PAGERANKS);
-      Map<Integer, Float> numViews = processNumViews(PATH_TO_NUMVIEWS);
+     
+      double result = new Spearman().calculate();
       
+      System.out.println(result);
       
-      // They should have the same length
-      Check(pageRanks.size() == numViews.size(),
-          "PageRanks and NumViews should have the same number of documents");
-      // calculate the Spearman
-      double spearman = calcSpearmanCorrelation(pageRanks, numViews);
-      // output the result
-      System.out.println(spearman);
     } catch (Exception e) {
+
       System.err.println(e.getMessage());
+
     }
+  }
+  
+
+  private double calculate() throws IOException {
+    
+    processPageRank(PATH_TO_PAGERANKS);
+    processNumViews(PATH_TO_NUMVIEWS);
+    
+    Check(pageRanks.size() == numViews.size(),
+        "PageRanks and NumViews should have the same number of documents");
+    
+    Collections.sort(pageRanks, new ValComparator());
+    Collections.sort(numViews, new ValComparator());
+    
+    
+    System.out.println(pageRanks);
+    System.out.println(numViews);
+    List<IdValPair> pagerankRanks = assignRanks(pageRanks);
+    List<IdValPair> numviewRanks = assignRanks(numViews);
+    
+    Collections.sort(pagerankRanks, new IdComparator());
+    Collections.sort(numviewRanks, new IdComparator());
+    
+    double spearman = calcSpearmanCorrelation(pagerankRanks, numviewRanks);
+
+    return spearman;
   }
 
   private static void Check(boolean condition, String msg) {
@@ -47,55 +106,50 @@ public class Spearman {
     PATH_TO_PAGERANKS = args[0];
     PATH_TO_NUMVIEWS = args[1];
   }
-
   
-  private static Map<Integer, Float> processPageRank(String filename) 
-      throws IOException {
-    Map<Integer, Float> idValMap = new HashMap<Integer, Float>();
-    DataInputStream reader = new DataInputStream(new BufferedInputStream(
-        new FileInputStream(filename)));
+  private void processPageRank(String filename) throws IOException {
+    DataInputStream reader = new DataInputStream(
+        new BufferedInputStream( new FileInputStream(filename) ));
     int size = reader.readInt();
     int docid = 0;
     for (int i = 0; i < size ; i++) {
       docidMap.put(reader.readUTF(), docid);
-      idValMap.put(docid, reader.readFloat());
+      pageRanks.add(new IdValPair(docid, reader.readFloat()));
       docid++;
     }
     reader.close();
-    return idValMap;
   }
   
-  private static Map<Integer, Float> processNumViews(String filename) 
-      throws IOException {
-    Map<Integer, Float> idValMap = new HashMap<Integer, Float>();
-    DataInputStream reader = new DataInputStream(new BufferedInputStream(
-        new FileInputStream(filename)));
+  private void processNumViews(String filename) throws IOException {
+    DataInputStream reader = new DataInputStream(
+        new BufferedInputStream( new FileInputStream(filename) ));
     int size = reader.readInt();
     for (int i = 0; i < size ; i++) {
       String docName = reader.readUTF();
       Integer docid = docidMap.get(docName);
-      Check((docid != null), "Document does not exist in both files " + docid + ",");
-      idValMap.put(docid, (float)reader.readInt());
+      //Check((docid != null), "Document does not exist in both files " + docid + ",");
+      if (docid == null) {
+        reader.readInt();
+      } else {
+        numViews.add(new IdValPair(docid, (float)reader.readInt()));
+      }
     }
     reader.close();
-    return idValMap;
   }
 
-  private static double calcSpearmanCorrelation (
-      Map<Integer, Float> pagerankMap, Map<Integer, Float> numviewMap){
+  private double calcSpearmanCorrelation (
+      List<IdValPair> pagerankRanks, List<IdValPair> numviewRanks){
     double result = 0.0;
-    int n = pagerankMap.size();
-    Map<Integer, Integer> pageRanksRanks = getRanks(sortByValue(pagerankMap));
-    Map<Integer, Integer> numViewsRanks = getRanks(sortByValue(numviewMap));
-    double pageranksAvg = getAverage(pageRanksRanks);
-    double numviewsAvg = getAverage(numViewsRanks);
+    double pageranksAvg = getAverage(pagerankRanks);
+    double numviewsAvg = getAverage(numviewRanks);
 
+    int n = pagerankRanks.size();
     double sumMulti = 0.0;
     double sumDiffPageRanks = 0;
     double sumDiffNumViews = 0;
     for (int i = 0; i < n; i++) {
-      double diff1 = pageRanksRanks.get(i) - pageranksAvg;
-      double diff2 = numViewsRanks.get(i) - numviewsAvg;
+      double diff1 = pagerankRanks.get(i).getVal() - pageranksAvg;
+      double diff2 = numviewRanks.get(i).getVal() - numviewsAvg;
       sumMulti += diff1 * diff2;
       sumDiffPageRanks += diff1 * diff1;
       sumDiffNumViews += diff2 * diff2;
@@ -108,52 +162,35 @@ public class Spearman {
     return result;
   }
 
-
-  private static TreeMap<Integer, Float> sortByValue(Map<Integer, Float> map) {
-    ValueComparator vc = new ValueComparator(map);
-    TreeMap<Integer, Float> sortedMap = new TreeMap<Integer, Float>(vc);
-    sortedMap.putAll(map);
-    return sortedMap;
-  }
-
-
-  private static Map<Integer, Integer> getRanks(TreeMap<Integer, Float> map) {
+  private List<IdValPair> assignRanks(List<IdValPair> pairs) {
+    List<IdValPair> result = new ArrayList<IdValPair>();
     int rank = 1;
-    Map<Integer, Integer> result = new HashMap<Integer, Integer>();
-    for (Integer key : map.keySet()) {
-      result.put(key, rank);
+    for (IdValPair pair : pairs) {
+      result.add(new IdValPair(pair.getId(), rank));
       rank++;
     }
     return result;
   }
 
-  private static double getAverage(Map<Integer, Integer> map) {
-    int n = map.size();
+  private double getAverage(List<IdValPair> pagerankRanks) {
+    int n = pagerankRanks.size();
     double sum = 0.0;
-    for (Integer value : map.keySet()) {
-      sum += map.get(value);
+    for (IdValPair pair : pagerankRanks) {
+      sum += pair.getVal();
     }
     return (n == 0) ? 0 : (sum / n);
   }
 
-  private static String PATH_TO_PAGERANKS = "";
-  private static String PATH_TO_NUMVIEWS = "";
-  private static Map<String, Integer> docidMap = new HashMap<String, Integer>();
-}
-
-class ValueComparator implements Comparator<Integer> {
-
-  Map<Integer, Float> map;
-
-  public ValueComparator(Map<Integer, Float> base) {
-    this.map = base;
+  class IdComparator implements Comparator<IdValPair> {
+    public int compare(IdValPair p1, IdValPair p2) {
+      return (p1.getId() >= p2.getId()) ? 1 : -1;
+    }
   }
 
-  public int compare(Integer a, Integer b) {
-    if (map.get(a) >= map.get(b)) {
-      return -1;
-    } else {
-      return 1;
+  class ValComparator implements Comparator<IdValPair> {
+    public int compare(IdValPair p1, IdValPair p2) {
+      return (p1.getVal() < p2.getVal()) ? 1 : -1;
     }
   }
 }
+
