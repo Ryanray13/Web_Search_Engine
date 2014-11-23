@@ -48,7 +48,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   private transient List<Integer> _diskLength = new ArrayList<Integer>();
   // disk list offset
   private transient Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
-  private transient Set<String> docTermVector = new HashSet<String>();
+  private transient Map<String, Integer> docTermMap = new HashMap<String, Integer>();
 
   // Cache current running query
   private transient String currentQuery = "";
@@ -206,16 +206,18 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     List<Integer> list = null;
     while (s.hasNext()) {
       String term = s.next();
+
       if (_diskIndex.containsKey(term) && _postingLists.containsKey(term)) {
         list = _postingLists.get(term);
         int lastIndex = list.size() - 1;
         if (list.get(lastIndex - 1) == docid) {
           int oldCount = list.get(lastIndex);
           list.set(lastIndex, (oldCount + 1));
-
+          docTermMap.put(term, oldCount + 1);
         } else {
           list.add((docid));
           list.add((1));
+          docTermMap.put(term,1);
         }
       } else {
         // Encounter a new term, add to posting lists
@@ -228,17 +230,15 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
         }
         _postingLists.put(term, list);
       }
-      if (!docTermVector.contains(term)) {
-        docTermVector.add(term);
-      }
       totalTermFrequency++;
     }
     s.close();
     try {
       DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
           new FileOutputStream(docTermFile + ".temp", true)));
-      for (String str : docTermVector) {
+      for (String str : docTermMap.keySet()) {
         writer.writeUTF(str);
+        writer.writeInt(docTermMap.get(str));
       }
       writer.close();
     } catch (Exception e) {
@@ -249,8 +249,8 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     if (_docTermOffset.size() != 0) {
       preOffset = _docTermOffset.get(_docTermOffset.size() - 1);
     }
-    _docTermOffset.add(docTermVector.size() + preOffset);
-    docTermVector.clear();
+    _docTermOffset.add(docTermMap.size() + preOffset);
+    docTermMap.clear();
   }
 
   private void writeMapToDisk() throws IOException {
@@ -353,6 +353,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     int size = _docTermOffset.get(_docTermOffset.size() - 1);
     for (int i = 0; i < size; i++) {
       writer.writeInt(_diskIndex.get(reader.readUTF()));
+      writer.writeInt(reader.readInt());
     }
     reader.close();
     writer.close();
@@ -382,7 +383,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     this._diskLength = null;
     this._pageRanks = null;
     this._numViews = null;
-    this.docTermVector = null;
+    this.docTermMap = null;
 
     DataInputStream reader = new DataInputStream(new BufferedInputStream(
         new FileInputStream(diskIndexFile)));
@@ -605,26 +606,26 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   }
 
   @Override
-  public List<String> getDocTermList(int docid) {
+  public Map<String, Integer> getDocTermList(int docid) {
     int offset = 0;
     if (docid != 0) {
       offset = _docTermOffset.get(docid - 1);
     }
-    int size = _docTermOffset.get(docid) - offset;
-    List<String> list = new ArrayList<String>();
+    int size = (_docTermOffset.get(docid) - offset)/2;
+    Map<String, Integer> map = new HashMap<String, Integer>();
     try {
       RandomAccessFile raf = new RandomAccessFile(docTermFile, "r");
       DataInputStream reader = new DataInputStream(new BufferedInputStream(
           new FileInputStream(raf.getFD())));
       raf.seek(offset * 4);
       for (int i = 0; i < size; i++) {
-        list.add(_termList.get(reader.readInt()));
+        map.put(_termList.get(reader.readInt()), reader.readInt());
       }
       raf.close();
       reader.close();
     } catch (Exception e) {
       e.printStackTrace();
     }
-    return list;
+    return map;
   }
 }

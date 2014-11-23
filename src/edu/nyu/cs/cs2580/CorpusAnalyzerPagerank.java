@@ -190,14 +190,14 @@ public class CorpusAnalyzerPagerank extends CorpusAnalyzer {
       corpusGraphTrans.put(docid, inSet);
     }
     
-    float dampingFactor =  (1-LAMBDA) / graphSize ;
+    float dampingFactor =  LAMBDA / graphSize ;
     Map<Integer,Float> pageRank = new HashMap<Integer, Float>();
     for(Integer docid : corpusGraphTrans.keySet()){
       float score = 0.0f;
       Set<Integer> inSet = corpusGraphTrans.get(docid);
       for(Integer i: corpusGraphTrans.keySet()){
         if(inSet.contains(i)){
-          score += LAMBDA / corpusGraph.get(i).size();
+          score +=  (1-LAMBDA)/ corpusGraph.get(i).size();
         }
         score += dampingFactor;
       }
@@ -213,7 +213,7 @@ public class CorpusAnalyzerPagerank extends CorpusAnalyzer {
         for(Integer i: corpusGraphTrans.keySet()){
           float matrixValue = dampingFactor;
           if(inSet.contains(i)){
-            matrixValue += LAMBDA / corpusGraph.get(i).size();
+            matrixValue += (1-LAMBDA) / corpusGraph.get(i).size();
           }
           score += matrixValue * pageRank.get(i) ;
         }

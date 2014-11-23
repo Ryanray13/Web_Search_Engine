@@ -23,9 +23,10 @@ import edu.nyu.cs.cs2580.SearchEngine.Options;
  */
 public class LogMinerNumviews extends LogMiner {
 
-  //TODO: put into mining dir?
+  // TODO: put into mining dir?
   private String outputFile = _options._indexPrefix + "/wiki/numViews";
-  //private String outputFile = _options._mininigPrefix + "/wiki/numViews";
+
+  // private String outputFile = _options._mininigPrefix + "/wiki/numViews";
 
   public LogMinerNumviews(Options options) {
     super(options);
@@ -47,6 +48,7 @@ public class LogMinerNumviews extends LogMiner {
   @Override
   public void compute() throws IOException {
     System.out.println("Computing using " + this.getClass().getName());
+    deleteExistingFiles();
     Set<String> redirects = new HashSet<String>();
     Set<String> docs = new HashSet<String>();
     Map<String, Integer> numViews = new HashMap<String, Integer>();
@@ -59,10 +61,12 @@ public class LogMinerNumviews extends LogMiner {
       }
 
       for (File file : allFiles) {
-        if (docs.contains(file.getName() + ".html")) {
-          redirects.add(file.getName());
-        }else{
-          numViews.put(file.getName(), 0);
+        if (isValidDocument(file)) {
+          if (docs.contains(file.getName() + ".html")) {
+            redirects.add(file.getName());
+          } else {
+            numViews.put(file.getName(), 0);
+          }
         }
       }
       File logDir = new File(_options._logPrefix);
@@ -79,47 +83,46 @@ public class LogMinerNumviews extends LogMiner {
             String docNum = logLine[2];
             if (!docs.contains(docName))
               continue;
-            if (redirects.contains(docName)){
+            if (redirects.contains(docName)) {
               docName = docName + ".html";
-            }        
+            }
             try {
-              numViews.put(docName, numViews.get(docName) + Integer.parseInt(docNum));
+              numViews.put(docName,
+                  numViews.get(docName) + Integer.parseInt(docNum));
             } catch (Exception e) {
               continue;
             }
           }
           reader.close();
         }
-        
+
         File outdir = new File(_options._indexPrefix + "/wiki");
         if (!outdir.exists() || !outdir.isDirectory()) {
           outdir.mkdir();
         }
-        
-        DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
-            new FileOutputStream(outputFile)));
+
+        DataOutputStream writer = new DataOutputStream(
+            new BufferedOutputStream(new FileOutputStream(outputFile)));
         writer.writeInt(numViews.size());
-        for (String docName: numViews.keySet()) {
+        for (String docName : numViews.keySet()) {
           writer.writeUTF(docName);
           writer.writeInt(numViews.get(docName));
         }
-        writer.close(); 
+        writer.close();
         System.out.println("write num size: " + numViews.size());
 
-        File dir = new File(_options._indexPrefix + "/numviews");
-        if (!dir.exists() || !dir.isDirectory()) {
-          dir.mkdir();
-        }
         ObjectOutputStream os = new ObjectOutputStream(
             new BufferedOutputStream(new FileOutputStream(
                 _options._indexPrefix + "/numviews/wiki.num")));
         os.writeObject(numViews);
         os.close();
 
-         
-
       }
     }
+  }
+
+  protected static boolean isValidDocument(File file) {
+    return !file.getName().startsWith("."); // Remove hidden files.
   }
 
   /**
@@ -141,5 +144,20 @@ public class LogMinerNumviews extends LogMiner {
     }
     is.close();
     return obj;
+  }
+  
+  private void deleteExistingFiles() {
+    File newfile = new File(_options._indexPrefix + "/numviews");
+    if (!newfile.exists() || !newfile.isDirectory()) {
+      newfile.mkdir();
+    }
+    if (newfile.isDirectory()) {
+      File[] files = newfile.listFiles();
+      for (File file : files) {
+        if (file.getName().matches(".*wiki\\.num.*")) {
+          file.delete();
+        }
+      }
+    }
   }
 }

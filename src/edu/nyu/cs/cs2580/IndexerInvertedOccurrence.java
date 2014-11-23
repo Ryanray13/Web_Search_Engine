@@ -211,19 +211,18 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
       if (_diskIndex.containsKey(term) && _postingLists.containsKey(term)) {
         list = _postingLists.get(term);
         list.add(docid);
+        docTermVector.add(term);
       } else {
         // Encounter a new term, add to posting lists
         list = new ArrayList<Integer>();
         list.add(docid);
+        docTermVector.add(term);
         if (!_diskIndex.containsKey(term)) {
           _diskIndex.put(term, 0);
         }
         _postingLists.put(term, list);
       }
       list.add(offset);
-      if (!docTermVector.contains(term)) {
-        docTermVector.add(term);
-      }
       totalTermFrequency++;
       offset++;
     }
@@ -322,6 +321,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
           term = keyList.get(memIndex);
         }
       }
+     
       writer.writeInt(diskList.size());
       for (Integer value : diskList) {
         writer.writeInt(value);

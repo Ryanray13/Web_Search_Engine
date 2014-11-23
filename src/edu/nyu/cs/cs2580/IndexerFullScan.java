@@ -238,7 +238,7 @@ class IndexerFullScan extends Indexer implements Serializable {
   }
 
   @Override
-  public List<String> getDocTermList(int docid) {
+  public Map<String, Integer> getDocTermList(int docid) {
     // TODO Auto-generated method stub
     return null;
   }

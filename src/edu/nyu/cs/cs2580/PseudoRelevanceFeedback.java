@@ -49,7 +49,7 @@ public class PseudoRelevanceFeedback {
     stopWords.add("of");
     stopWords.add("and");
     stopWords.add("in");
-    stopWords.add("athe");
+    stopWords.add("&");
     stopWords.add("to");
     stopWords.add("^");
     stopWords.add("is");
@@ -69,6 +69,7 @@ public class PseudoRelevanceFeedback {
     stopWords.add("retrieved");
     stopWords.add("or");
     stopWords.add("-");
+    stopWords.add("¨C");
     stopWords.add("an");
     stopWords.add("be");
     stopWords.add("which");
@@ -106,7 +107,7 @@ public class PseudoRelevanceFeedback {
       int docid = doc.getDocid();
       docidList.add(docid);
       Document document =  _indexer.getDoc(docid);
-      List<String> termList = _indexer.getDocTermList(docid);
+      Map<String, Integer> termMap = _indexer.getDocTermMap(docid);
       for(String term : termList){
         if(!termSet.contains(term) && !queryTerms.contains(term) && !stopWords.contains(term)){
           termSet.add(term);

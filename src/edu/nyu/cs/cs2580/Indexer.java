@@ -1,7 +1,7 @@
 package edu.nyu.cs.cs2580;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Map;
 
 import edu.nyu.cs.cs2580.SearchEngine.Options;
 
@@ -134,7 +134,7 @@ public abstract class Indexer {
   public abstract int documentTermFrequency(String term, int docid);
   
   //Given a docid, get the list of term the document has
-  public abstract List<String> getDocTermList(int docid);
+  public abstract Map<String, Integer> getDocTermMap(int docid);
 
   /**
    * All Indexers must be created through this factory class based on the
