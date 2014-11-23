@@ -39,14 +39,14 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
   private static final transient int PARTIAL_SIZE = 205;
 
   /** ---- Private instances ---- */
-  private transient Map<String, List<Integer>> _postingLists = new HashMap<String, List<Integer>>();
-  private transient Map<String, Integer> cacheIndex = null;
+  private transient Map<Integer, List<Integer>> _postingLists = new HashMap<Integer, List<Integer>>();
+  private transient Map<Integer, Integer> cacheIndex = null;
   private transient Map<String, Integer> _numViews = new HashMap<String, Integer>();
   private transient Map<String, Float> _pageRanks = new HashMap<String, Float>();
   private transient List<Integer> _diskLength = new ArrayList<Integer>();
   // disk list offset
   private transient Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
-  private transient Map<String, Integer> docTermMap = new HashMap<String, Integer>();
+  private transient Map<Integer, Integer> docTermMap = new HashMap<Integer, Integer>();
 
   // Cache current running query
   private transient String currentQuery = "";
@@ -120,9 +120,13 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     } else {
       throw new IOException("Corpus prefix is not a direcroty");
     }
+    writeMapToDisk() ;
+    _postingLists.clear();
+    long start2 = System.currentTimeMillis();
     writeIndexToDisk();
     _totalTermFrequency = totalTermFrequency;
-    System.out.println(System.currentTimeMillis() - start);
+    System.out.println(start2 - start);
+    System.out.println(System.currentTimeMillis() - start2);
     System.out.println("Indexed " + Integer.toString(_numDocs) + " docs with "
         + Long.toString(_totalTermFrequency) + " terms.");
   }
@@ -133,10 +137,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     if (newfile.isDirectory()) {
       File[] files = newfile.listFiles();
       for (File file : files) {
-        if (file.getName().matches(".*wiki.*\\.list")
-            || file.getName().matches(".*wiki.*\\.idx")
-            || file.getName().matches(".*wiki.*\\.docterm")
-            || file.getName().matches(".*wiki.*\\.object")) {
+        if (file.getName().matches(".*wiki.*")) {
           file.delete();
         }
       }
@@ -201,28 +202,27 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
   // Constructing the posting list
   private void indexDocument(String document, int docid) {
     int offset = 0;
-    // Set<String> docTermMap = new HashSet<String>();
     Scanner s = new Scanner(document);
     List<Integer> list = null;
     while (s.hasNext()) {
       String term = s.next();
-      if (docTermMap.containsKey(term)) {
-        docTermMap.put(term, docTermMap.get(term) + 1);
-      } else {
-        docTermMap.put(term, 1);
-      }
-
-      if (_diskIndex.containsKey(term) && _postingLists.containsKey(term)) {
-        list = _postingLists.get(term);
+      if (_diskIndex.containsKey(term) && _postingLists.containsKey(_diskIndex.get(term))) {
+        list = _postingLists.get(_diskIndex.get(term));
         list.add(docid);
       } else {
         // Encounter a new term, add to posting lists
         list = new ArrayList<Integer>();
         list.add(docid);
         if (!_diskIndex.containsKey(term)) {
-          _diskIndex.put(term, 0);
+          _diskIndex.put(term, _diskIndex.size());
+          _termList.add(term);
         }
-        _postingLists.put(term, list);
+        _postingLists.put(_diskIndex.get(term), list);
+      }
+      if (docTermMap.containsKey(_diskIndex.get(term))) {
+        docTermMap.put(_diskIndex.get(term), docTermMap.get(_diskIndex.get(term)) + 1);
+      } else {
+        docTermMap.put(_diskIndex.get(term), 1);
       }
       list.add(offset);
       totalTermFrequency++;
@@ -231,10 +231,10 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     s.close();
     try {
       DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
-          new FileOutputStream(docTermFile + ".temp", true)));
-      for (String str : docTermMap.keySet()) {
-        writer.writeUTF(str);
-        writer.writeInt(docTermMap.get(str));
+          new FileOutputStream(docTermFile, true)));
+      for (Integer key : docTermMap.keySet()) {
+        writer.writeInt(key);
+        writer.writeInt(docTermMap.get(key));
       }
       writer.close();
     } catch (Exception e) {
@@ -253,13 +253,13 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     String outputFile = _options._indexPrefix + "/wikipart"
         + String.valueOf(partNumber) + ".list";
 
-    List<String> keyList = new ArrayList<String>(_postingLists.keySet());
+    List<Integer> keyList = new ArrayList<Integer>(_postingLists.keySet());
     Collections.sort(keyList);
     DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
         new FileOutputStream(outputFile)));
-    for (String key : keyList) {
+    for (Integer key : keyList) {
       List<Integer> termList = _postingLists.get(key);
-      writer.writeUTF(key);
+      writer.writeInt(key);
       writer.writeInt(termList.size());
       for (Integer value : termList) {
         writer.writeInt(value);
@@ -284,44 +284,30 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     DataOutputStream writer2 = new DataOutputStream(new BufferedOutputStream(
         new FileOutputStream(diskIndexFile)));
 
-    List<String> keyList = new ArrayList<String>(_postingLists.keySet());
-    List<String> dictionaryList = new ArrayList<String>(_diskIndex.keySet());
+    List<Integer> dictionaryList = new ArrayList<Integer>(_diskIndex.values());
     Collections.sort(dictionaryList);
-    _termList = dictionaryList;
-    Collections.sort(keyList);
     List<Integer> diskList = new ArrayList<Integer>();
     int[] index = new int[partNumber];
-    String[] diskTerms = new String[partNumber];
+    int[] diskTerms = new int[partNumber];
     int[] termSizes = new int[partNumber];
-    String term;
-    int memIndex = 0;
     int offset = 0;
-    term = keyList.get(memIndex);
     for (int i = 0; i < partNumber; i++) {
-      diskTerms[i] = readers[i].readUTF();
+      diskTerms[i] = readers[i].readInt();
       termSizes[i] = readers[i].readInt();
     }
     int j = 0;
     int k = 0;
     for (int i = 0; i < dictionaryList.size(); i++) {
       for (j = 0; j < partNumber; j++) {
-        if (diskTerms[j].equals(dictionaryList.get(i))) {
+        if (diskTerms[j]== dictionaryList.get(i)) {
           for (k = 0; k < termSizes[j]; k++) {
             diskList.add(readers[j].readInt());
           }
           index[j]++;
           if (index[j] < _diskLength.get(j)) {
-            diskTerms[j] = readers[j].readUTF();
+            diskTerms[j] = readers[j].readInt();
             termSizes[j] = readers[j].readInt();
           }
-        }
-      }
-      if (term.equals(dictionaryList.get(i))) {
-        List<Integer> termList = _postingLists.get(term);
-        diskList.addAll(termList);
-        memIndex++;
-        if (memIndex < keyList.size()) {
-          term = keyList.get(memIndex);
         }
       }
 
@@ -329,7 +315,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
       for (Integer value : diskList) {
         writer.writeInt(value);
       }
-      _diskIndex.put(dictionaryList.get(i), i);
+
       writer2.writeInt(offset);
       offset += (diskList.size() + 1);
       diskList.clear();
@@ -341,21 +327,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
       readers[j].close();
       inputFiles[j].delete();
     }
-
     _postingLists.clear();
-    File tempFile = new File(docTermFile + ".temp");
-    DataInputStream reader = new DataInputStream(new BufferedInputStream(
-        new FileInputStream(tempFile)));
-    writer = new DataOutputStream(new BufferedOutputStream(
-        new FileOutputStream(docTermFile)));
-    int size = _docTermOffset.get(_docTermOffset.size() - 1);
-    for (int i = 0; i < size; i++) {
-      writer.writeInt(_diskIndex.get(reader.readUTF()));
-      writer.writeInt(reader.readInt());
-    }
-    reader.close();
-    writer.close();
-    tempFile.delete();
 
     ObjectOutputStream os = new ObjectOutputStream(new BufferedOutputStream(
         new FileOutputStream(indexFile)));
@@ -383,7 +355,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     this._numViews = null;
     this.docTermMap = null;
 
-    cacheIndex = new HashMap<String, Integer>();
+    cacheIndex = new HashMap<Integer, Integer>();
     DataInputStream reader = new DataInputStream(new BufferedInputStream(
         new FileInputStream(diskIndexFile)));
     for (String str : _termList) {
@@ -443,8 +415,8 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     Vector<String> terms = ((QueryPhrase) query).getTermVector();
     for (String term : terms) {
       if (_diskIndex.containsKey(term)) {
-        if (!_postingLists.containsKey(term)) {
-          _postingLists.put(term, getTermList(term));
+        if (!_postingLists.containsKey(_diskIndex.get(term))) {
+          _postingLists.put(_diskIndex.get(term), getTermList(term));
           if (_postingLists.size() >= CACHE_SIZE) {
             return;
           }
@@ -464,8 +436,8 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     if (!_diskIndex.containsKey(term)) {
       return null;
     }
-    if (_postingLists.containsKey(term)) {
-      return _postingLists.get(term);
+    if (_postingLists.containsKey(_diskIndex.get(term))) {
+      return _postingLists.get(_diskIndex.get(term));
     } else {
       return getTermListFromDisk(term);
     }
@@ -489,7 +461,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     } catch (Exception e) {
       e.printStackTrace();
     }
-    cacheIndex.put(term, 0);
+    cacheIndex.put(_diskIndex.get(term), 0);
     return list;
   }
 
@@ -544,7 +516,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
   private int next(String term, int docid) {
 
     List<Integer> list = getTermList(term);
-    int cache = cacheIndex.get(term);
+    int cache = cacheIndex.get(_diskIndex.get(term));
     if (list == null) {
       return -1;
     }
@@ -552,7 +524,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
       return -1;
     }
     if (list.get(0) > docid) {
-      cacheIndex.put(term, 0);
+      cacheIndex.put(_diskIndex.get(term), 0);
       return list.get(0);
     }
 
@@ -569,7 +541,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     while (list.get(cache) <= docid) {
       cache = cache + 2;
     }
-    cacheIndex.put(term, cache);
+    cacheIndex.put(_diskIndex.get(term), cache);
     return list.get(cache);
   }
 
@@ -613,7 +585,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
       return -1;
     }
 
-    int cache = cacheIndex.get(word);
+    int cache = cacheIndex.get(_diskIndex.get(word));
     int p = 0;
     while (list.get(cache) == docid) {
       p = list.get(cache + 1);
@@ -660,9 +632,9 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     // check whether the term is in postingLists, if not load from disk
     List<Integer> list = null;
     int cache = 0;
-    if (_postingLists.containsKey(term)) {
-      list = _postingLists.get(term);
-      cache = cacheIndex.get(term);
+    if (_postingLists.containsKey(_diskIndex.get(term))) {
+      list = _postingLists.get(_diskIndex.get(term));
+      cache = cacheIndex.get(_diskIndex.get(term));
     } else {
       if (!currentTerm.equals(term)) {
         list = getTermList(term);
@@ -711,8 +683,8 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
         break;
       }
     }
-    if (_postingLists.containsKey(term)) {
-      cacheIndex.put(term, cache);
+    if (_postingLists.containsKey(_diskIndex.get(term))) {
+      cacheIndex.put(_diskIndex.get(term), cache);
     } else {
       cacheTermListIndex = cache;
     }
