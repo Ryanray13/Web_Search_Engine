@@ -28,9 +28,8 @@ Change in the parent directory of src first and then,
 2.1.1
 
 # Part 3: Comparing PageRank and NumViews
-Please run (change in src directory and then):
   
-  $ java edu.nyu.cs.cs2580.Spearman ../data/mining/pageRankResult ../data/mining/numViewsResult
+  $ java -cp src edu.nyu.cs.cs2580.Spearman data/mining/pageRankResult data/mining/numViewsResult
 
 
 3.1 The Spearman correlation is ...
@@ -43,7 +42,18 @@ Please run (change in src directory and then):
      
 4.2 
 
-  $ java -cp src edu.nyu.cs.cs2580.Bhattacharyya <PATH-TO-PRF-OUTPUT> <PATH-TO-OUTPUT>
+  #!/bin/bash
+  rm -f prf*.tsv
+  i=0
+  while read -r line
+  do
+  i=$(( i + 1 ))
+  prfout=data/prf/prf-$i.tsv
+  curl "http://localhost:25801/prf?query="${line}"&ranker=favorite&numdocs=10&numterms=5" > $prfout
+  echo $line:$prfout >> prf.tsv
+  done < queries.tsv
+
+  $ java -cp src edu.nyu.cs.cs2580.Bhattacharyya prf.tsv qsim.tsv
 
 FYI:
 When parsing phrase(words with quotes), I only parse phrase with space i.e. ["new york" city] will be parsed in to 
