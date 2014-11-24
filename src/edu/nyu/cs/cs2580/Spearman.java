@@ -163,10 +163,10 @@ public class Spearman {
     return result;
   }
 
-  private double getAverage(List<IdValPair> pagerankRanks) {
-    int n = pagerankRanks.size();
+  private double getAverage(List<IdValPair> pairs) {
+    int n = pairs.size();
     double sum = 0.0;
-    for (IdValPair pair : pagerankRanks) {
+    for (IdValPair pair : pairs) {
       sum += pair.getVal();
     }
     return (n == 0) ? 0 : (sum / n);
