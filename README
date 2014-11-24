@@ -1,15 +1,49 @@
-For RankerFavorite it is a QL ranker.
-We use jsoup (which sholud be at the same level as src) library to parse html, thus
-For compile:
-javac -cp jsoup.jar src/edu/nyu/cs/cs2580/*.java
+Homework 3 
+-------------------------------------------
+By : Group 01 
+     Fei Guan, Jingxin Zhu, Wuping Lei
+     
+# Part 1: Compile and run:
 
-For constructing the index
-java -cp src:jsoup.jar edu.nyu.cs.cs2580.SearchEngine --mode=index --options=conf/engine.conf
-After constructing, in data/index, it should appear many files one is wiki.idx, and many wikiIndexPart*.idx and
-wikipart*.list files, all serve as index on disk.
+Change in the parent directory of src first and then, 
+1.1 To compile,
 
-For running the server
-java -cp src:jsoup.jar -Xmx512m edu.nyu.cs.cs2580.SearchEngine  --mode=serve --port=258XX --options=conf/engine.conf
+  $ javac -cp jsoup.jar src/edu/nyu/cs/cs2580/*.java
+  
+1.2.1 Run mining mode :
+
+  $ java -cp jsoup.jar:src edu/nyu/cs/cs2580/SearchEngine --mode=mining --options=conf/engine.conf
+
+1.2.2 Run index mode:
+
+  $ java -cp jsoup.jar:src edu/nyu/cs/cs2580/SearchEngine --mode=index --options=conf/engine.conf
+  
+1.2.3 Run server mode:
+
+  $ java -cp jsoup.jar:src edu/nyu/cs/cs2580/SearchEngine --mode=serve --port=25801 --options=conf/engine.conf
+  
+     
+# Part 2: Computing Document Qualities
+
+2.1.1
+
+# Part 3: Comparing PageRank and NumViews
+Please run (change in src directory and then):
+  
+  $ java edu.nyu.cs.cs2580.Spearman ../data/mining/pageRankResult ../data/mining/numViewsResult
+
+
+3.1 The Spearman correlation is ...
+
+# Part 4:
+                0.9      0.1     Lambda
+         1   0.45328   0.45328
+         2   0.44927   0.45224
+     Iteration
+     
+4.2 
+
+  $ java -cp src edu.nyu.cs.cs2580.Bhattacharyya <PATH-TO-PRF-OUTPUT> <PATH-TO-OUTPUT>
 
 FYI:
 When parsing phrase(words with quotes), I only parse phrase with space i.e. ["new york" city] will be parsed in to 
