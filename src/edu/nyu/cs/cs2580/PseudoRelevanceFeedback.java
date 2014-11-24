@@ -18,6 +18,7 @@ public class PseudoRelevanceFeedback {
   private Vector<ScoredDocument> _docs;
   private Query _query;
   private Set<String> stopWords;
+  private boolean _includeQueyTerms;
 
   class FrequentTerm implements Comparable<FrequentTerm> {
     private String _term;
@@ -42,11 +43,12 @@ public class PseudoRelevanceFeedback {
   }
 
   public PseudoRelevanceFeedback(Vector<ScoredDocument> docs, Indexer indexer,
-      int numterms, Query query) {
+      int numterms, boolean includeQuey, Query query) {
     _docs = docs;
     _indexer = indexer;
     _numterms = numterms;
     _query = query;
+    _includeQueyTerms = includeQuey;
     stopWords = new HashSet<String>();
     stopWords.add("the");
     stopWords.add("of");
@@ -72,7 +74,6 @@ public class PseudoRelevanceFeedback {
     stopWords.add("retrieved");
     stopWords.add("or");
     stopWords.add("-");
-    stopWords.add("¨C");
     stopWords.add("/");
     stopWords.add("an");
     stopWords.add("be");
@@ -114,11 +115,21 @@ public class PseudoRelevanceFeedback {
       Document document = _indexer.getDoc(docid);
       Map<String, Integer> docTermMap = _indexer.getDocTermMap(docid);
       for (String term : docTermMap.keySet()) {
-        if ( !stopWords.contains(term)) {
-          if (termMap.containsKey(term)) {
-            termMap.put(term, docTermMap.get(term) + termMap.get(term));
-          } else {
-            termMap.put(term, docTermMap.get(term));
+        if (_includeQueyTerms) {
+          if (!stopWords.contains(term)) {
+            if (termMap.containsKey(term)) {
+              termMap.put(term, docTermMap.get(term) + termMap.get(term));
+            } else {
+              termMap.put(term, docTermMap.get(term));
+            }
+          }
+        } else {
+          if (!stopWords.contains(term) && !queryTerms.contains(term)) {
+            if (termMap.containsKey(term)) {
+              termMap.put(term, docTermMap.get(term) + termMap.get(term));
+            } else {
+              termMap.put(term, docTermMap.get(term));
+            }
           }
         }
       }

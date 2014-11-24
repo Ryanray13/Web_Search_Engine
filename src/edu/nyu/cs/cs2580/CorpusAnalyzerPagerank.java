@@ -25,8 +25,8 @@ public class CorpusAnalyzerPagerank extends CorpusAnalyzer {
     super(options);
   }
 
-  private static final float LAMBDA = 0.9f;
-  private static final int ITERATION = 1;
+  private static final float LAMBDA = 0.1f;
+  private static final int ITERATION = 2;
 
   private Map<Integer, Set<Integer>> corpusGraph;
   private Map<Integer, String> docidMap;
@@ -187,9 +187,8 @@ public class CorpusAnalyzerPagerank extends CorpusAnalyzer {
       pageRank.put(key, 1.0f);
       tempPR.put(key, 0.0f);
     }
-    float sum = corpusGraph.size();
+
     for (int iter = 0; iter < ITERATION; iter++) {
-      float tempSum = 0.0f;
       for (Integer id : pageRank.keySet()) {
         Set<Integer> outlinks = corpusGraph.get(id);
         for (Integer key : outlinks)
@@ -197,15 +196,11 @@ public class CorpusAnalyzerPagerank extends CorpusAnalyzer {
               tempPR.get(key) + pageRank.get(id) / outlinks.size());
       }
       for (Integer key : tempPR.keySet()) {
-
-        float value =  (1-LAMBDA) * tempPR.get(key) + LAMBDA * sum / corpusGraph.size();
-        tempSum += value;
-        pageRank.put(key,value);
+        pageRank.put(key,(1-LAMBDA) * tempPR.get(key) + LAMBDA);
       }
       for (Integer key : tempPR.keySet()) {
         tempPR.put(key, 0.0f);
       }
-      sum = tempSum;
     }
     
     DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(

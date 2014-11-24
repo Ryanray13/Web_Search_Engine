@@ -17,7 +17,7 @@ public class RankerComprehensive extends Ranker {
   private static final double LOG2_BASE = Math.log(2.0);
   private static final double LAMBDA = 0.5;
   private static final double BASE_BETA = 0.65;
-  private static final double PAGERANK_BETA = 0.20;
+  private static final double PAGERANK_BETA = 0.2;
   private static final double NUMVIEW_BETA = 0.15;
 
   public RankerComprehensive(Options options, CgiArguments arguments,
@@ -72,8 +72,10 @@ public class RankerComprehensive extends Ranker {
       }
     }
 
-    score = BASE_BETA * score + PAGERANK_BETA * Math.log(doc.getPageRank()+1) / LOG2_BASE
-        + NUMVIEW_BETA * Math.log(doc.getNumViews()+1) / LOG2_BASE;
+    if(score != 0.0){
+      score = BASE_BETA * score + PAGERANK_BETA * Math.sqrt(doc.getPageRank()+1) 
+          + NUMVIEW_BETA * Math.log(doc.getNumViews()+1) / LOG2_BASE;
+    }
     if (score == 0.0) {
       return null;
     } else {

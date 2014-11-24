@@ -33,6 +33,8 @@ class QueryHandler implements HttpHandler {
     private int _numResults = 10;
 
     private int _numTerms = 5;
+    
+    private boolean _includeQueryTerms = true;
 
     // The type of the ranker we will be using.
     public enum RankerType {
@@ -86,10 +88,19 @@ class QueryHandler implements HttpHandler {
         } else if (key.equals("numterms")) {
           try {
             _numTerms = Integer.parseInt(val);
-            ;
           } catch (IllegalArgumentException e) {
             // Ignored, search engine should never fail upon invalid user input.
-          }
+          }        
+        }else if (key.equals("includequery")) {
+          try {
+            if(val.equalsIgnoreCase("true")){
+              _includeQueryTerms = true;
+            }else if(val.equalsIgnoreCase("false")){
+              _includeQueryTerms = false;
+            }
+          } catch (IllegalArgumentException e) {
+            // Ignored, search engine should never fail upon invalid user input.
+          }        
         }
 
       } // End of iterating over params
@@ -205,9 +216,9 @@ class QueryHandler implements HttpHandler {
       respondWithMsg(exchange, response.toString());
       System.out.println("Finished query: " + cgiArgs._query);
     } else {
-      PseudoRelevanceFeedback pfg = new PseudoRelevanceFeedback(scoredDocs,
-          _indexer, cgiArgs._numTerms, processedQuery);
-      respondWithMsg(exchange, pfg.compute().toString());
+      PseudoRelevanceFeedback prf = new PseudoRelevanceFeedback(scoredDocs,
+          _indexer, cgiArgs._numTerms, cgiArgs._includeQueryTerms, processedQuery);
+      respondWithMsg(exchange, prf.compute().toString());
       System.out.println("Finished Expansion: " + cgiArgs._query);
     }
   }

@@ -38,9 +38,19 @@ Change in the parent directory of src first and then,
          2      0.4507496821652745    0.4537042608511672
      Iteration
 
+3.2 Best argument for pageRank:
+The Best lambda is 0.1 (for damping factor) and 2 iterations since more iteration will be more reflect 
+the theoretical true value of the document quality.
+
 # Part 4:
 4.1  To run pseudo-relevance feedback (server must be on): 
+  
   curl "http://localhost:25801/prf?query=google&ranker=favorite&numdocs=10&numterms=5"
+  
+  By default, numdocs is 10 and numterms is 5. The expansion terms returned would include query itself, 
+  if we want expansion terms without query terms modify the query string as:
+  
+  curl "http://localhost:25801/prf?query=google&ranker=favorite&numdocs=10&numterms=5&includequery=false"
   
 4.2 
   #!/bin/bash
@@ -59,12 +69,17 @@ Change in the parent directory of src first and then,
   Run above script as : ./prf 10 5. First argument is numdocs and second argument is numterms
   All the expansion words will be store in $prfout directory (as data/prf/prf-$i.tsv in script). 
 
-FYI:
+Ranker:
+Implement comprehensive ranker. The Betas for each features are 0.65 for term feature(QL score) and 0.2 for pageRank
+and 0.15 for numViews. Notice that I do a squre root of pageRank and log for numViews other they will be dominant. And
+since 2 iterations the matrix will be close to equilibrium thus I do a squre root.
+
 Index:
 We modify the base class of Index adding a method in order to calculate PRF.  Given a docid, it returns all the uniq
 terms the document has and the corresponding frequency. 
   
   public abstract Map<String, Integer> getDocTermMap(int docid);
+
 
 Query Parse:
 When parsing phrase(words with quotes), I only parse phrase with space i.e. ["new york" city] will be parsed in to 
