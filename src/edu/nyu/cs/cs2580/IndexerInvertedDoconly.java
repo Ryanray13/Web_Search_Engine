@@ -578,6 +578,9 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     if (list == null) {
       return 0;
     } else {
+      if (list.get(list.size() - 2) < docid) {
+        return 0;
+      }
       int result = binarySearchForDoc(list, 0, list.size() - 1, docid);
       if (result == -1) {
         return 0;

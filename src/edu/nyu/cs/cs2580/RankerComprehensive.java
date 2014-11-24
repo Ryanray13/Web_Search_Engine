@@ -72,9 +72,8 @@ public class RankerComprehensive extends Ranker {
       }
     }
 
-
     score = BASE_BETA * score + PAGERANK_BETA * doc.getPageRank()
-        + NUMVIEW_BETA * Math.log(doc.getNumViews()) / LOG2_BASE;
+        + NUMVIEW_BETA * Math.log(doc.getNumViews()+1) / LOG2_BASE;
     if (score == 0.0) {
       return null;
     } else {

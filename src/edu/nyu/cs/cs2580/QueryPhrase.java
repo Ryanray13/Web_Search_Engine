@@ -23,17 +23,13 @@ public class QueryPhrase extends Query {
     }
 
     this._tokens.clear();
-    Stemmer stemmer = new Stemmer();
-    stemmer.add(_query.toLowerCase().toCharArray(), _query.length());
-    stemmer.stemWithStep1();
-    String stemedQuery = stemmer.toString();
     boolean quote = false;
-    int len = stemedQuery.length();
+    int len = _query.length();
     int p1 = 0;
     int p2 = 0;
     char ch;
     while (p2 < len) {
-      ch = stemedQuery.charAt(p2);
+      ch = _query.charAt(p2);
       if (ch == '"') {
         if (p2 == 0) {
           p1 = 1;
@@ -41,16 +37,16 @@ public class QueryPhrase extends Query {
         } else if (p2 == len - 1) {
           if (quote == true) {
             quote = false;
-            _tokens.add(stemedQuery.substring(p1, p2).trim());
+            putPhraseIntoVector(_query.substring(p1, p2).trim());
             p1 = p2 + 1;
           }
         } else {
-          if (quote && stemedQuery.charAt(p2 + 1) == ' ') {
+          if (quote && _query.charAt(p2 + 1) == ' ') {
             quote = false;
-            _tokens.add(stemedQuery.substring(p1, p2).trim());
+            putPhraseIntoVector(_query.substring(p1, p2).trim());
             p1 = p2 + 1;
-          } else if (!quote && stemedQuery.charAt(p2 - 1) == ' ') {
-            putIntoVector(stemedQuery.substring(p1, p2).trim());
+          } else if (!quote && _query.charAt(p2 - 1) == ' ') {
+            putTermIntoVector(_query.substring(p1, p2).trim());
             quote = true;
             p1 = p2 + 1;
           }
@@ -59,16 +55,20 @@ public class QueryPhrase extends Query {
       ++p2;
     }
     if (p1 < p2) {
-      if (stemedQuery.charAt(p2 - 1) == '"') {
-        putIntoVector(stemedQuery.substring(p1, p2 - 1).trim());
+      if (_query.charAt(p2 - 1) == '"') {
+        putTermIntoVector(_query.substring(p1, p2 - 1).trim());
       } else {
-        putIntoVector(stemedQuery.substring(p1, p2).trim());
+        putTermIntoVector(_query.substring(p1, p2).trim());
       }
     }
   }
 
-  private void putIntoVector(String str) {
-    if (str.isEmpty()) {
+  private void putTermIntoVector(String str) {
+    Stemmer stemmer = new Stemmer();
+    stemmer.add(str.toCharArray(), str.length());
+    stemmer.stemWithStep1();
+    String stemStr = stemmer.toString();
+    if (stemStr.isEmpty()) {
       return;
     }
     Scanner s = new Scanner(str);
@@ -79,10 +79,18 @@ public class QueryPhrase extends Query {
     s.close();
   }
   
+  private void putPhraseIntoVector(String str){
+    Stemmer stemmer = new Stemmer();
+    stemmer.add(str.toCharArray(), str.length());
+    stemmer.stemWithStep1();
+    String stemStr = stemmer.toString();
+    _tokens.add(stemStr);
+  }
+  
   public Vector<String> getTermVector(){
     Set<String> result = new HashSet<String>();
     for (String phrase : _tokens) {
-      String[] terms = phrase.trim().split(" +");
+      String[] terms = phrase.split(" +");
       for (String term : terms) {
         if(!result.contains(term)){
           result.add(term);

@@ -52,22 +52,19 @@ public class RankerFavorite extends Ranker {
 
   private ScoredDocument scoreDocument(Query query, Document doc) {
     double score = 0.0;
-    if (((DocumentIndexed) doc).getLength() == 0) {
+    double probability = 0;
+    int length = ((DocumentIndexed) doc).getLength();
+    if (length == 0) {
       return null;
     }
 
-    Vector<String> phrases = query._tokens;
-    for (String phrase : phrases) {
-      double probability = 0;
-      String[] terms = phrase.trim().split(" +");
-      for (String term : terms) {
-        probability = (1 - LAMBDA)
-            * _indexer.documentTermFrequency(term, doc._docid)
-            / ((DocumentIndexed) doc).getLength() + LAMBDA
-            * _indexer.corpusTermFrequency(term)
-            / _indexer._totalTermFrequency;
-        score += Math.log(probability) / LOG2_BASE;
-      }
+    Vector<String> phrases = ((QueryPhrase) query).getTermVector();
+    for (String term : phrases) {
+      probability = (1 - LAMBDA)
+          * _indexer.documentTermFrequency(term, doc._docid)
+          / length + LAMBDA
+          * _indexer.corpusTermFrequency(term) / _indexer._totalTermFrequency;
+      score += Math.log(probability) / LOG2_BASE;
     }
     if (score == 0.0) {
       return null;

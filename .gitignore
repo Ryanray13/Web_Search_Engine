@@ -11,6 +11,7 @@ bin/*
 /bin/
 public/.idea/*
 /data/wiki/*
+/data/mining/*
 /data/index/*
 /results/*
 /dist/*
