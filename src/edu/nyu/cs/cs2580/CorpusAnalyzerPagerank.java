@@ -27,13 +27,15 @@ public class CorpusAnalyzerPagerank extends CorpusAnalyzer {
 
   private static final float LAMBDA = 0.1f;
   private static final int ITERATION = 2;
-  
-  private final String graphFile = 
-      _options._miningPrefix + "/pageRankGraph";
-  private final String structureFile =
-      _options._miningPrefix + "/pageRankGraphStructure";
-  private final String pageRankFile =
-      _options._miningPrefix + "/pageRankResult";
+
+  private Map<Integer, Set<Integer>> corpusGraph;
+  private Map<Integer, String> docidMap;
+
+  private final String graphFile = _options._miningPrefix + "/pageRankGraph";
+  private final String structureFile = _options._miningPrefix
+      + "/pageRankGraphStructure";
+  private final String pageRankFile = _options._miningPrefix
+      + "/pageRankResult";
 
   /**
    * This function processes the corpus as specified inside {@link _options} and
@@ -59,7 +61,7 @@ public class CorpusAnalyzerPagerank extends CorpusAnalyzer {
     deleteExistingFiles();
     System.out.println("Preparing " + this.getClass().getName());
     Map<String, Integer> _documentUrls = new HashMap<String, Integer>();
-    Map<Integer, Set<Integer>> corpusGraph = new HashMap<Integer, Set<Integer>>();
+    corpusGraph = new HashMap<Integer, Set<Integer>>();
     Map<Integer, Integer> redirects = new HashMap<Integer, Integer>();
     int docid = 0;
     File corpusDirectory = new File(_options._corpusPrefix);
@@ -110,10 +112,10 @@ public class CorpusAnalyzerPagerank extends CorpusAnalyzer {
         }
       }
       writer.close();
-      Map<Integer, String> docidMap = new HashMap<Integer, String>();
-      for(String key : _documentUrls.keySet()){
+      docidMap = new HashMap<Integer, String>();
+      for (String key : _documentUrls.keySet()) {
         int id = _documentUrls.get(key);
-        if(!redirects.containsKey(id)){
+        if (!redirects.containsKey(id)) {
           docidMap.put(id, key);
         }
       }
@@ -154,74 +156,53 @@ public class CorpusAnalyzerPagerank extends CorpusAnalyzer {
   @Override
   public void compute() throws IOException {
     System.out.println("Computing using " + this.getClass().getName());
-    DataInputStream reader = new DataInputStream(new BufferedInputStream(
-        new FileInputStream(graphFile)));
-    Map<Integer, Set<Integer>> corpusGraph = new HashMap<Integer, Set<Integer>>();
-    int graphSize = reader.readInt();
-    for(int i = 0; i<graphSize; i++){
-      int docid = reader.readInt();
-      Set<Integer> set = new HashSet<Integer>();
-      int setSize = reader.readInt();
-      for(int j = 0; j<setSize; j++){
-        set.add(reader.readInt());
+    if (corpusGraph == null) {
+      System.out.println("asdf");
+      DataInputStream reader = new DataInputStream(new BufferedInputStream(
+          new FileInputStream(graphFile)));
+      Map<Integer, Set<Integer>> corpusGraph = new HashMap<Integer, Set<Integer>>();
+      int graphSize = reader.readInt();
+      for (int i = 0; i < graphSize; i++) {
+        int docid = reader.readInt();
+        Set<Integer> set = new HashSet<Integer>();
+        int setSize = reader.readInt();
+        for (int j = 0; j < setSize; j++) {
+          set.add(reader.readInt());
+        }
+        corpusGraph.put(docid, set);
       }
-      corpusGraph.put(docid, set);
+      reader.close();
+      ObjectInputStream is = new ObjectInputStream(new BufferedInputStream(
+          new FileInputStream(structureFile)));
+      try {
+        docidMap = (HashMap<Integer, String>) is.readObject();
+      } catch (ClassNotFoundException e) {
+        e.printStackTrace();
+      }
+      is.close();
     }
-    reader.close();      
-    ObjectInputStream is = new ObjectInputStream(new BufferedInputStream(
-        new FileInputStream(structureFile)));
-    Map<Integer, String> docidMap = null;
-    try {
-      docidMap = (HashMap<Integer, String>)is.readObject();
-    } catch (ClassNotFoundException e) {
-      e.printStackTrace();
-    }
-    is.close();
 
-    Map<Integer, Set<Integer>> corpusGraphTrans = new HashMap<Integer, Set<Integer>>();
-    for(Integer docid : corpusGraph.keySet()){
-      Set<Integer> inSet = new HashSet<Integer>();
-      for(Integer id : corpusGraph.keySet()){
-        if(corpusGraph.get(id).contains(docid)){
-          inSet.add(id);
-        }
-      }
-      corpusGraphTrans.put(docid, inSet);
+    Map<Integer, Float> pageRank = new HashMap<Integer, Float>();
+    Map<Integer, Float> nextPR = new HashMap<Integer, Float>();
+    for (Integer key : corpusGraph.keySet()) {
+      pageRank.put(key, 1.0f);
+      nextPR.put(key, 0.0f);
     }
-    
-    float dampingFactor =  LAMBDA / graphSize ;
-    Map<Integer,Float> pageRank = new HashMap<Integer, Float>();
-    for(Integer docid : corpusGraphTrans.keySet()){
-      float score = 0.0f;
-      Set<Integer> inSet = corpusGraphTrans.get(docid);
-      for(Integer i: corpusGraphTrans.keySet()){
-        if(inSet.contains(i)){
-          score +=  (1-LAMBDA)/ corpusGraph.get(i).size();
-        }
-        score += dampingFactor;
+    for (int iter = 0; iter < ITERATION; iter++) {
+      for (Integer id : docidMap.keySet()) {
+        Set<Integer> outlinks = corpusGraph.get(id);
+        for (Integer key : outlinks)
+          nextPR.put(key,
+              nextPR.get(key) + pageRank.get(id) / outlinks.size());
       }
-      pageRank.put(docid, score);
-    }
-    
-    int itr = ITERATION;
-    while(itr > 1){
-      Map<Integer,Float> pageRankTemp = new HashMap<Integer, Float>();
-      for(Integer docid : corpusGraphTrans.keySet()){
-        float score = 0.0f;
-        Set<Integer> inSet = corpusGraphTrans.get(docid);
-        for(Integer i: corpusGraphTrans.keySet()){
-          float matrixValue = dampingFactor;
-          if(inSet.contains(i)){
-            matrixValue += (1-LAMBDA) / corpusGraph.get(i).size();
-          }
-          score += matrixValue * pageRank.get(i) ;
-        }
-        pageRankTemp.put(docid, score);
+      for (Integer key : nextPR.keySet()) {
+        pageRank.put(key, (1-LAMBDA) * nextPR.get(key) + LAMBDA);
       }
-      pageRank = pageRankTemp;
-      itr--;
+      for (Integer key : nextPR.keySet()) {
+        nextPR.put(key, 0.0f);
+      }
     }
-   
+
     DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
         new FileOutputStream(pageRankFile)));
     writer.writeInt(pageRank.size());
@@ -229,8 +210,9 @@ public class CorpusAnalyzerPagerank extends CorpusAnalyzer {
       writer.writeUTF(docidMap.get(docid));
       writer.writeFloat(pageRank.get(docid));
     }
-    writer.close();    
+    writer.close();
     return;
+
   }
 
   /**
