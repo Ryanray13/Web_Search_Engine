@@ -46,7 +46,6 @@ public class RankerCosine extends Ranker {
     int docid = -1;
 
     while ((doc = _indexer.nextDoc(query, docid)) != null) {
-      System.out.println(docid);
       ScoredDocument sdoc = scoreDocument(qvm, doc);
       
       if (sdoc != null) {

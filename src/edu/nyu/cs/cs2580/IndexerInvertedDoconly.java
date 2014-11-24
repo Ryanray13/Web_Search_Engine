@@ -128,7 +128,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     _postingLists.clear();
     writeIndexToDisk();
     _totalTermFrequency = totalTermFrequency;
-    System.out.println(System.currentTimeMillis() - start);
+    System.out.println("System time lapse: " + (System.currentTimeMillis() - start) + " milliseconds");
     System.out.println("Indexed " + Integer.toString(_numDocs) + " docs with "
         + Long.toString(_totalTermFrequency) + " terms.");
   }
@@ -274,16 +274,10 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
   private void writeIndexToDisk() throws FileNotFoundException, IOException {
 
-    Map<Integer, String> tempMap = new HashMap<Integer, String>();
-    for (String key : _diskIndex.keySet()) {
-      tempMap.put(_diskIndex.get(key), key);
-    }
     int[] dictionaryList = new int[_diskIndex.size()];
     for (int i = 0; i < dictionaryList.length; i++) {
       dictionaryList[i] = i;
-      _termList.add(tempMap.get(i));
     }
-    tempMap = null;
 
     List<Integer> diskList = new ArrayList<Integer>();
     int[] index = new int[partNumber];
@@ -340,7 +334,16 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
       readers[j].close();
       inputFiles[j].delete();
     }
-    _postingLists.clear();
+    
+    Map<Integer, String> tempMap = new HashMap<Integer, String>();
+    for (String key : _diskIndex.keySet()) {
+      tempMap.put(_diskIndex.get(key), key);
+    }
+    for (int i = 0; i < tempMap.size(); i++) {
+      _termList.add(tempMap.get(i));
+    }
+    tempMap = null;
+    
     ObjectOutputStream os = new ObjectOutputStream(new BufferedOutputStream(
         new FileOutputStream(indexFile)));
     os.writeObject(this);

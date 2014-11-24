@@ -125,11 +125,9 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     }
     writeMapToDisk();
     _postingLists.clear();
-    long start2 = System.currentTimeMillis();
     writeIndexToDisk();
     _totalTermFrequency = totalTermFrequency;
-    System.out.println(start2 - start);
-    System.out.println(System.currentTimeMillis() - start2);
+    System.out.println("System time lapse: " + (System.currentTimeMillis() - start) + " milliseconds");
     System.out.println("Indexed " + Integer.toString(_numDocs) + " docs with "
         + Long.toString(_totalTermFrequency) + " terms.");
   }
@@ -362,16 +360,10 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   }
 
   private void writeIndexToDisk() throws FileNotFoundException, IOException {
-    Map<Integer, String> tempMap = new HashMap<Integer, String>();
-    for (String key : _diskIndex.keySet()) {
-      tempMap.put(_diskIndex.get(key), key);
-    }
     int[] dictionaryList = new int[_diskIndex.size()];
     for (int i = 0; i < dictionaryList.length; i++) {
       dictionaryList[i] = i;
-      _termList.add(tempMap.get(i));
     }
-    tempMap = null;
 
     List<Byte> diskList = new ArrayList<Byte>();
     List<Byte> byteList = new ArrayList<Byte>();
@@ -429,12 +421,21 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
       readers[j].close();
       inputFiles[j].delete();
     }
-    _postingLists.clear();
-
+    
+    Map<Integer, String> tempMap = new HashMap<Integer, String>();
+    for (String key : _diskIndex.keySet()) {
+      tempMap.put(_diskIndex.get(key), key);
+    }
+    for (int i = 0; i < tempMap.size(); i++) {
+      _termList.add(tempMap.get(i));
+    }
+    tempMap = null;
+    
     ObjectOutputStream os = new ObjectOutputStream(new BufferedOutputStream(
         new FileOutputStream(indexFile)));
     os.writeObject(this);
     os.close();
+    
   }
 
   @Override
@@ -621,10 +622,10 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   private int next(String term, int docid) {
 
     List<Integer> list = getTermList(term);
-    int cache = cacheIndex.get(_diskIndex.get(term));
     if (list == null) {
       return -1;
     }
+    int cache = cacheIndex.get(_diskIndex.get(term));
     if (list.size() == 0 || list.get(list.size() - 2) <= docid) {
       return -1;
     }

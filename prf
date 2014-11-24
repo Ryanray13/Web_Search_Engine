@@ -5,6 +5,6 @@ while read -r line
 do
 i=$(( i + 1 ))
 prfout=data/prf/prf-$i.tsv
-curl "http://localhost:25801/prf?query="${line}"&ranker=favorite&numdocs=10&numterms=5" > $prfout
+curl "http://localhost:25801/prf?query="${line}"&ranker=favorite&numdocs=$1&numterms=$2" > $prfout
 echo $line:$prfout >> prf.tsv
 done < queries.tsv

@@ -16,9 +16,9 @@ import edu.nyu.cs.cs2580.SearchEngine.Options;
 public class RankerComprehensive extends Ranker {
   private static final double LOG2_BASE = Math.log(2.0);
   private static final double LAMBDA = 0.5;
-  private static final double BASE_BETA = 0.7;
-  private static final double PAGERANK_BETA = 0.1;
-  private static final double NUMVIEW_BETA = 0.2;
+  private static final double BASE_BETA = 0.65;
+  private static final double PAGERANK_BETA = 0.20;
+  private static final double NUMVIEW_BETA = 0.15;
 
   public RankerComprehensive(Options options, CgiArguments arguments,
       Indexer indexer) {
@@ -72,7 +72,7 @@ public class RankerComprehensive extends Ranker {
       }
     }
 
-    score = BASE_BETA * score + PAGERANK_BETA * doc.getPageRank()
+    score = BASE_BETA * score + PAGERANK_BETA * Math.log(doc.getPageRank()+1) / LOG2_BASE
         + NUMVIEW_BETA * Math.log(doc.getNumViews()+1) / LOG2_BASE;
     if (score == 0.0) {
       return null;

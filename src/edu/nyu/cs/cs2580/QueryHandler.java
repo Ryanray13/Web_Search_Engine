@@ -121,6 +121,9 @@ class QueryHandler implements HttpHandler {
       response.append(response.length() > 0 ? "\n" : "");
       response.append(doc.asTextResult());
     }
+    if(response.length() == 0){
+      response.append("No results retrieved!");
+    }
     response.append(response.length() > 0 ? "\n" : "");
   }
 
@@ -130,6 +133,10 @@ class QueryHandler implements HttpHandler {
     for (ScoredDocument doc : docs) {
       response.append(doc.asHtmlResult());
       response.append("\n");
+    }
+    if(response.length() == 0){
+      response.append("No results retrieved!\n");
+      return;
     }
     response.deleteCharAt(response.length() - 2);
     response.append("]\n");

@@ -25,8 +25,8 @@ public class CorpusAnalyzerPagerank extends CorpusAnalyzer {
     super(options);
   }
 
-  private static final float LAMBDA = 0.1f;
-  private static final int ITERATION = 2;
+  private static final float LAMBDA = 0.9f;
+  private static final int ITERATION = 1;
 
   private Map<Integer, Set<Integer>> corpusGraph;
   private Map<Integer, String> docidMap;
@@ -99,7 +99,7 @@ public class CorpusAnalyzerPagerank extends CorpusAnalyzer {
           corpusGraph.put(_documentUrls.get(file.getName()), linkSet);
         }
       }
-
+     
       DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
           new FileOutputStream(graphFile)));
       writer.writeInt(corpusGraph.size());
@@ -157,10 +157,9 @@ public class CorpusAnalyzerPagerank extends CorpusAnalyzer {
   public void compute() throws IOException {
     System.out.println("Computing using " + this.getClass().getName());
     if (corpusGraph == null) {
-      System.out.println("asdf");
       DataInputStream reader = new DataInputStream(new BufferedInputStream(
           new FileInputStream(graphFile)));
-      Map<Integer, Set<Integer>> corpusGraph = new HashMap<Integer, Set<Integer>>();
+      corpusGraph = new HashMap<Integer, Set<Integer>>();
       int graphSize = reader.readInt();
       for (int i = 0; i < graphSize; i++) {
         int docid = reader.readInt();
@@ -183,26 +182,32 @@ public class CorpusAnalyzerPagerank extends CorpusAnalyzer {
     }
 
     Map<Integer, Float> pageRank = new HashMap<Integer, Float>();
-    Map<Integer, Float> nextPR = new HashMap<Integer, Float>();
+    Map<Integer, Float> tempPR = new HashMap<Integer, Float>();
     for (Integer key : corpusGraph.keySet()) {
       pageRank.put(key, 1.0f);
-      nextPR.put(key, 0.0f);
+      tempPR.put(key, 0.0f);
     }
+    float sum = corpusGraph.size();
     for (int iter = 0; iter < ITERATION; iter++) {
-      for (Integer id : docidMap.keySet()) {
+      float tempSum = 0.0f;
+      for (Integer id : pageRank.keySet()) {
         Set<Integer> outlinks = corpusGraph.get(id);
         for (Integer key : outlinks)
-          nextPR.put(key,
-              nextPR.get(key) + pageRank.get(id) / outlinks.size());
+          tempPR.put(key,
+              tempPR.get(key) + pageRank.get(id) / outlinks.size());
       }
-      for (Integer key : nextPR.keySet()) {
-        pageRank.put(key, (1-LAMBDA) * nextPR.get(key) + LAMBDA);
-      }
-      for (Integer key : nextPR.keySet()) {
-        nextPR.put(key, 0.0f);
-      }
-    }
+      for (Integer key : tempPR.keySet()) {
 
+        float value =  (1-LAMBDA) * tempPR.get(key) + LAMBDA * sum / corpusGraph.size();
+        tempSum += value;
+        pageRank.put(key,value);
+      }
+      for (Integer key : tempPR.keySet()) {
+        tempPR.put(key, 0.0f);
+      }
+      sum = tempSum;
+    }
+    
     DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
         new FileOutputStream(pageRankFile)));
     writer.writeInt(pageRank.size());

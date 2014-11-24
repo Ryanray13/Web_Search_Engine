@@ -30,18 +30,19 @@ Change in the parent directory of src first and then,
 # Part 3: Comparing PageRank and NumViews
   
   $ java -cp src edu.nyu.cs.cs2580.Spearman data/mining/pageRankResult data/mining/numViewsResult
-
-
+  
 3.1 The Spearman correlation is ...
 
-# Part 4:
-                0.9      0.1     Lambda
-         1   0.45328   0.45328
-         2   0.44927   0.45224
+                        0.9                   0.1           Lambda
+         1      0.45473162218747987   0.45473158958754595
+         2      0.4507496821652745    0.4537042608511672
      Iteration
-     
-4.2 
 
+# Part 4:
+4.1  To run pseudo-relevance feedback (server must be on): 
+  curl "http://localhost:25801/prf?query=google&ranker=favorite&numdocs=10&numterms=5"
+  
+4.2 
   #!/bin/bash
   rm -f prf*.tsv
   i=0
@@ -49,12 +50,22 @@ Change in the parent directory of src first and then,
   do
   i=$(( i + 1 ))
   prfout=data/prf/prf-$i.tsv
-  curl "http://localhost:25801/prf?query="${line}"&ranker=favorite&numdocs=10&numterms=5" > $prfout
+  curl "http://localhost:25801/prf?query="${line}"&ranker=favorite&numdocs=$1&numterms=$2" > $prfout
   echo $line:$prfout >> prf.tsv
   done < queries.tsv
 
   $ java -cp src edu.nyu.cs.cs2580.Bhattacharyya prf.tsv qsim.tsv
+  
+  Run above script as : ./prf 10 5. First argument is numdocs and second argument is numterms
+  All the expansion words will be store in $prfout directory (as data/prf/prf-$i.tsv in script). 
 
 FYI:
+Index:
+We modify the base class of Index adding a method in order to calculate PRF.  Given a docid, it returns all the uniq
+terms the document has and the corresponding frequency. 
+  
+  public abstract Map<String, Integer> getDocTermMap(int docid);
+
+Query Parse:
 When parsing phrase(words with quotes), I only parse phrase with space i.e. ["new york" city] will be parsed in to 
 two phrases, while ["new york"city] with no space after the second quote, will be parsed as new york"city.

@@ -72,6 +72,8 @@ public class PseudoRelevanceFeedback {
     stopWords.add("retrieved");
     stopWords.add("or");
     stopWords.add("-");
+    stopWords.add("¨C");
+    stopWords.add("/");
     stopWords.add("an");
     stopWords.add("be");
     stopWords.add("which");
@@ -97,6 +99,9 @@ public class PseudoRelevanceFeedback {
     stopWords.add("there");
     stopWords.add("no");
     stopWords.add("they");
+    stopWords.add("[1]");
+    stopWords.add("n/a");
+    stopWords.add("may");
   }
 
   public StringBuffer compute() {
@@ -109,7 +114,7 @@ public class PseudoRelevanceFeedback {
       Document document = _indexer.getDoc(docid);
       Map<String, Integer> docTermMap = _indexer.getDocTermMap(docid);
       for (String term : docTermMap.keySet()) {
-        if (!queryTerms.contains(term) && !stopWords.contains(term)) {
+        if ( !stopWords.contains(term)) {
           if (termMap.containsKey(term)) {
             termMap.put(term, docTermMap.get(term) + termMap.get(term));
           } else {
