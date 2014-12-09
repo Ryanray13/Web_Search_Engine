@@ -127,7 +127,8 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     _postingLists.clear();
     writeIndexToDisk();
     _totalTermFrequency = totalTermFrequency;
-    System.out.println("System time lapse: " + (System.currentTimeMillis() - start) + " milliseconds");
+    System.out.println("System time lapse: "
+        + (System.currentTimeMillis() - start) + " milliseconds");
     System.out.println("Indexed " + Integer.toString(_numDocs) + " docs with "
         + Long.toString(_totalTermFrequency) + " terms.");
   }
@@ -421,7 +422,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
       readers[j].close();
       inputFiles[j].delete();
     }
-    
+
     Map<Integer, String> tempMap = new HashMap<Integer, String>();
     for (String key : _diskIndex.keySet()) {
       tempMap.put(_diskIndex.get(key), key);
@@ -430,12 +431,12 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
       _termList.add(tempMap.get(i));
     }
     tempMap = null;
-    
+
     ObjectOutputStream os = new ObjectOutputStream(new BufferedOutputStream(
         new FileOutputStream(indexFile)));
     os.writeObject(this);
     os.close();
-    
+
   }
 
   @Override
@@ -521,6 +522,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
         if (!_postingLists.containsKey(_diskIndex.get(term))) {
           _postingLists.put(_diskIndex.get(term),
               decodeByte(getTermListFromDisk(term)));
+          cacheIndex.put(_diskIndex.get(term), 0);
           if (_postingLists.size() >= CACHE_SIZE) {
             return;
           }
@@ -530,8 +532,8 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   }
 
   /**
-   * Gets the term list from memory, or from disk when not in memory. If not in
-   * disk either, return null
+   * Gets the term list from memory, or from disk when not in memory. If
+   * not in disk either, return null
    * 
    * @param term
    * @return
@@ -568,7 +570,6 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     } catch (Exception e) {
       e.printStackTrace();
     }
-    cacheIndex.put(_diskIndex.get(term), 0);
     return list;
   }
 
@@ -612,8 +613,8 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   }
 
   /**
-   * Returns document id after the given document id Returns -1 if no document
-   * left to search
+   * Returns document id after the given document id Returns -1 if no
+   * document left to search
    * 
    * @param term
    * @param docid
@@ -704,7 +705,8 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   }
 
   @Override
-  // Number of documents in which {@code term} appeared, over the full corpus.
+  // Number of documents in which {@code term} appeared, over the full
+  // corpus.
   public int corpusDocFrequencyByTerm(String term) {
     // check whether the term is in postingLists, if not load from disk
     List<Integer> list = getTermList(term);
