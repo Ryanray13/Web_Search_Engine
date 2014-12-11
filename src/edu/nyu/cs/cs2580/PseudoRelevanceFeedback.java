@@ -103,6 +103,7 @@ public class PseudoRelevanceFeedback {
     stopWords.add("[1]");
     stopWords.add("n/a");
     stopWords.add("may");
+    stopWords.add("wikipedia");
   }
 
   public StringBuffer compute() {

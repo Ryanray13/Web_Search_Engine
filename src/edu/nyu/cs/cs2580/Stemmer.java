@@ -67,7 +67,9 @@ class Stemmer {
         new_b[c] = b[c];
       b = new_b;
     }
-    b[i++] = ch;
+    if(ch!='.' && ch!='!' && ch !='?' && ch !=';' && ch != '\'' && ch != '\"'  ){
+      b[i++] = ch;
+    }
   }
 
   /**
@@ -82,8 +84,11 @@ class Stemmer {
         new_b[c] = b[c];
       b = new_b;
     }
-    for (int c = 0; c < wLen; c++)
-      b[i++] = w[c];
+    for (int c = 0; c < wLen; c++){
+      if(w[c]!='.' && w[c]!='!' && w[c] !='?' && w[c] !=';' && w[c] != '\'' && w[c] != '\"'  ){
+        b[i++] = w[c];
+      }
+    }
   }
   
   /**
