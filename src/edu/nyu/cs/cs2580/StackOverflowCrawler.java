@@ -38,7 +38,7 @@ public class StackOverflowCrawler {
     
     try {
       // create tag map
-      String tagFile = "data/stackoverflow/simple/tags_top" +  String.valueOf(TAGS) + ".txt";
+      String tagFile = "data/stackoverflow/tags_top" +  String.valueOf(TAGS) + ".txt";
       initTagMap(tagFile);
 
       // whether questions crawled enough
