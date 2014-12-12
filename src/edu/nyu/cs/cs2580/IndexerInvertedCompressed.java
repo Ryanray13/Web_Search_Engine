@@ -208,6 +208,9 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     List<Integer> list = null;
     while (s.hasNext()) {
       String term = s.next();
+      if(term.startsWith("http")){
+        continue;
+      }
       if (_diskIndex.containsKey(term)
           && _postingLists.containsKey(_diskIndex.get(term))) {
         list = _postingLists.get(_diskIndex.get(term));
@@ -830,5 +833,10 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
       e.printStackTrace();
     }
     return map;
+  }
+
+  @Override
+  public boolean hasTerm(String term) {
+    return _diskIndex.containsKey(term);
   }
 }

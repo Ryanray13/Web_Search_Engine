@@ -135,6 +135,9 @@ public abstract class Indexer {
   
   //Given a docid, get the list of term the document has
   public abstract Map<String, Integer> getDocTermMap(int docid);
+  
+  //Given a tern, check whether the index has the term
+  public abstract boolean hasTerm(String term);
 
   /**
    * All Indexers must be created through this factory class based on the

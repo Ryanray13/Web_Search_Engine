@@ -1,5 +1,8 @@
 package edu.nyu.cs.cs2580;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  Porter stemmer in Java. The original paper is in
 
@@ -30,7 +33,7 @@ package edu.nyu.cs.cs2580;
  from Brian Goetz of Quiotix Corporation (brian@quiotix.com).
 
  Release 4
-**/
+ **/
 
 /**
  * Stemmer, implementing the Porter Stemming Algorithm
@@ -45,14 +48,44 @@ class Stemmer {
 
   private char[] b;
   private int i, i_end;
-  private int j;  // temporary position where transformation will happen
-  private int k;  // end position of current stemming
+  private int j; // temporary position where transformation will happen
+  private int k; // end position of current stemming
+
+  private Set<Character> punctuation = new HashSet<Character>();
+  
 
   /* unit of size whereby b is increased */
   public Stemmer() {
     b = new char[INC];
     i = 0;
     i_end = 0;
+    punctuation.add('.');
+    punctuation.add(',');
+    punctuation.add('!');
+    punctuation.add('?');
+    punctuation.add(';');
+    punctuation.add(':');
+    punctuation.add('(');
+    punctuation.add(')');
+    punctuation.add('[');
+    punctuation.add(']');
+    punctuation.add('=');
+    punctuation.add('^');
+    punctuation.add('*');
+    punctuation.add('\'');
+    punctuation.add('\"');
+    punctuation.add('¡°');
+    punctuation.add('¡±');
+    punctuation.add('¡®');
+    punctuation.add('¡¯');
+    punctuation.add('£»');
+    punctuation.add('¡£');
+    punctuation.add('£º');
+    punctuation.add('£¬');
+    punctuation.add('£¡');
+    punctuation.add('£¿');
+    punctuation.add('\\');
+    punctuation.add('#');
   }
 
   /**
@@ -67,7 +100,7 @@ class Stemmer {
         new_b[c] = b[c];
       b = new_b;
     }
-    if(ch!='.' && ch!='!' && ch !='?' && ch !=';' && ch != '\'' && ch != '\"'  ){
+    if (!punctuation.contains(ch)) {
       b[i++] = ch;
     }
   }
@@ -84,10 +117,42 @@ class Stemmer {
         new_b[c] = b[c];
       b = new_b;
     }
-    for (int c = 0; c < wLen; c++){
-      if(w[c]!='.' && w[c]!='!' && w[c] !='?' && w[c] !=';' && w[c] != '\'' && w[c] != '\"'  ){
+    for (int c = 0; c < wLen; c++) {
+      if (!punctuation.contains(w[c])) {
         b[i++] = w[c];
       }
+    }
+  }
+
+  /**
+   * Add a character to the word being stemmed. When you are finished adding
+   * characters, you can call stem(void) to stem the word.
+   */
+
+  public void addWithPunctuation(char ch) {
+    if (i == b.length) {
+      char[] new_b = new char[i + INC];
+      for (int c = 0; c < i; c++)
+        new_b[c] = b[c];
+      b = new_b;
+    }
+    b[i++] = ch;
+  }
+
+  /**
+   * Adds wLen characters to the word being stemmed contained in a portion of a
+   * char[] array. This is like repeated calls of add(char ch), but faster.
+   */
+
+  public void addWithPunctuation(char[] w, int wLen) {
+    if (i + wLen >= b.length) {
+      char[] new_b = new char[i + wLen + INC];
+      for (int c = 0; c < i; c++)
+        new_b[c] = b[c];
+      b = new_b;
+    }
+    for (int c = 0; c < wLen; c++) {
+        b[i++] = w[c];
     }
   }
   
@@ -561,8 +626,8 @@ class Stemmer {
     i_end = k + 1;
     i = 0;
   }
-  
-  public void stemWithStep1(){
+
+  public void stemWithStep1() {
     k = i - 1;
     if (k > 1) {
       step1();
@@ -570,7 +635,7 @@ class Stemmer {
     i_end = k + 1;
     i = 0;
   }
-  
+
   /**
    * Test program for demonstrating the Stemmer. It reads text from a a list of
    * files, stems each word, and writes the result to standard output. Note that

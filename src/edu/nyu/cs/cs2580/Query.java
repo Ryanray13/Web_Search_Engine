@@ -18,7 +18,7 @@ import java.util.Vector;
 public class Query {
   public String _query = null;
   public Vector<String> _tokens = new Vector<String>();
-  private Set<String> stopWords = new HashSet<String>();
+  protected Set<String> stopWords = new HashSet<String>();
   
   public Query(String query) {
     _query = query;
@@ -42,7 +42,7 @@ public class Query {
     stopWords.add("it");
     stopWords.add("are");
     stopWords.add("this");
-    stopWords.add("[edit]");
+    stopWords.add("edit");
     stopWords.add("retrieved");
     stopWords.add("or");
     stopWords.add("-");
@@ -72,10 +72,10 @@ public class Query {
     stopWords.add("there");
     stopWords.add("no");
     stopWords.add("they");
-    stopWords.add("[1]");
+    stopWords.add("1");
     stopWords.add("n/a");
     stopWords.add("may");
-    stopWords.add("wikipedia");
+    stopWords.add("wikipedia"); 
   }
 
   public void processQuery() {

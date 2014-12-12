@@ -74,14 +74,16 @@ public class QueryPhrase extends Query {
     Scanner s = new Scanner(str);
     while (s.hasNext()) {
       String term = s.next();
-      _tokens.add(term);
+      if(!stopWords.contains(term)){
+        _tokens.add(term);
+      }
     }
     s.close();
   }
   
   private void putPhraseIntoVector(String str){
     Stemmer stemmer = new Stemmer();
-    stemmer.add(str.toCharArray(), str.length());
+    stemmer.addWithPunctuation(str.toCharArray(), str.length());
     stemmer.stemWithStep1();
     String stemStr = stemmer.toString();
     _tokens.add(stemStr);

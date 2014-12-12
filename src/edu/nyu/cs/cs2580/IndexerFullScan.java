@@ -243,4 +243,10 @@ class IndexerFullScan extends Indexer implements Serializable {
     // TODO Auto-generated method stub
     return null;
   }
+
+  @Override
+  public boolean hasTerm(String term) {
+    // TODO Auto-generated method stub
+    return false;
+  }
 }

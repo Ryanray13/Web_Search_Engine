@@ -21,7 +21,7 @@ public class PseudoRelevanceFeedback {
   private boolean _includeQueyTerms;
 
   class FrequentTerm implements Comparable<FrequentTerm> {
-    private String _term;
+    public String _term;
     private double _probability;
 
     FrequentTerm(String term, double prob) {
@@ -70,7 +70,7 @@ public class PseudoRelevanceFeedback {
     stopWords.add("it");
     stopWords.add("are");
     stopWords.add("this");
-    stopWords.add("[edit]");
+    stopWords.add("edit");
     stopWords.add("retrieved");
     stopWords.add("or");
     stopWords.add("-");
@@ -100,10 +100,10 @@ public class PseudoRelevanceFeedback {
     stopWords.add("there");
     stopWords.add("no");
     stopWords.add("they");
-    stopWords.add("[1]");
+    stopWords.add("1");
     stopWords.add("n/a");
     stopWords.add("may");
-    stopWords.add("wikipedia");
+    stopWords.add("wikipedia"); 
   }
 
   public StringBuffer compute() {
@@ -152,7 +152,7 @@ public class PseudoRelevanceFeedback {
     Collections.sort(results, Collections.reverseOrder());
     normalize(results);
     StringBuffer response = new StringBuffer();
-    for (FrequentTerm fterm : results) {
+    for (FrequentTerm fterm : results) {   
       response.append(fterm.toString());
       response.append('\n');
     }
