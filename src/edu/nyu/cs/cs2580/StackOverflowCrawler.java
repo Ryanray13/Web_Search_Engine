@@ -52,7 +52,7 @@ public class StackOverflowCrawler {
         boolean crawled = crawlQuestionHtml(qid);
         
         // Prevent crawling too fast
-        Thread.sleep(3000);
+        Thread.sleep(2500);
 
         if (crawled) {
           System.out.println("crawled " + qid);
@@ -97,23 +97,37 @@ public class StackOverflowCrawler {
                 .ignoreHttpErrors(true) 
                 .execute();
         int statusCode = response.statusCode();
-        if(statusCode == 200) {
-          System.out.println("connected");
-          Document doc = Jsoup.connect(url).get();
-          Element tagList = doc.select("div.post-taglist").first();
-          if (tagList == null) { return false; }
-          String text = tagList.text();
-          String[] tagLists = text.split(" ");
-          // if can contribute then write to disk
-          for (String tag : tagLists) {
-            if (tagMap.containsKey(tag)) {
-              int count = tagMap.get(tag);
-              if (count < QUESTIONS_AT_LEAST_PER_TAG) {
-                writeHtmlToDisk(qid, doc);
-                return true; 
-              }
+        if(statusCode != 200) {
+          return false;
+        }
+        Document doc = Jsoup.connect(url).get();
+        Element tagList = doc.select("div.post-taglist").first();
+        if (tagList == null) { return false; }
+        String text = tagList.text();
+        String[] tagLists = text.split(" ");
+
+        // if can contribute then write to disk
+        boolean canContribute = false;
+        for (String tag : tagLists) {
+          if (tagMap.containsKey(tag)) {
+            int count = tagMap.get(tag);
+            if (count < QUESTIONS_AT_LEAST_PER_TAG) {
+              canContribute = true;
+              writeHtmlToDisk(qid, doc);
+              break;
             }
           }
+        }
+        if (canContribute) {
+          for (String tag : tagLists) {
+            if (tagMap.containsKey(tag)) {
+              int count = tagMap.get(tag); 
+              count++;
+              tagMap.put(tag, count);
+            }
+          }
+          return true;
+        } else {
           return false;
         }
     } catch (IOException e) {
