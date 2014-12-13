@@ -140,7 +140,7 @@ class QueryHandler implements HttpHandler {
 
   private void constructHtmlOutput(final Vector<ScoredDocument> docs,
       StringBuffer response) {
-    response.append("[\n");
+    response.append("{\n\"results\":[\n");
     for (ScoredDocument doc : docs) {
       response.append(doc.asHtmlResult());
       response.append("\n");
@@ -150,7 +150,8 @@ class QueryHandler implements HttpHandler {
       return;
     }
     response.deleteCharAt(response.length() - 2);
-    response.append("]\n");
+    response.append("],\n");
+    response.append("\"knowledge\": null\n}");
   }
 
   public void handle(HttpExchange exchange) throws IOException {

@@ -112,7 +112,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
         docTermWriter = new DataOutputStream(new BufferedOutputStream(
             new FileOutputStream(docTermFile)));
         for (File file : allFiles) {
-          processDocument(file);
+          processDocument(file, _options._corpusPrefix);
           if (_numDocs % PARTIAL_SIZE == 0) {
             writeMapToDisk();
             _postingLists.clear();
@@ -120,6 +120,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
         }
         docTermWriter.close();
       }
+      File stackOverFlowDir = new File(_options._stackOverFlowPrefix);
     } else {
       throw new IOException("Corpus prefix is not a direcroty");
     }
@@ -170,7 +171,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   }
 
   // process document in corpus where each document is a file
-  private void processDocument(File file) throws IOException {
+  private void processDocument(File file, String pathPrefix) throws IOException {
     // Use jsoup to parse html
     org.jsoup.nodes.Document parsedDocument = Jsoup.parse(file, "UTF-8");
     String documentText = parsedDocument.text().toLowerCase();
@@ -185,7 +186,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     indexDocument(stemedDocument, docid);
     document.setBaseUrl("en.wikipedia.org/wiki/");
     document.setName(file.getName());
-    document.setPathPrefix(_options._corpusPrefix);
+    document.setPathPrefix(pathPrefix);
     document.setTitle(parsedDocument.title());
     document.setLength(stemedDocument.length());
     String fileName = file.getName();

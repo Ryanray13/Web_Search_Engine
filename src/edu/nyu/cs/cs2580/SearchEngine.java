@@ -52,7 +52,7 @@ public class SearchEngine {
     public String _corpusPrefix = null;
 
     //Stackoverflow prefix
-    public String _stackPrefix = null;
+    public String _stackOverFlowPrefix = null;
     
     // The parent path where the log date reside.
     // HW1/HW2: n/a
@@ -109,8 +109,8 @@ public class SearchEngine {
       Check(_indexPrefix != null, "Missing option: index_prefix!");
       _miningPrefix = options.get("mining_prefix");
       Check(_miningPrefix!= null, "Missing option: mining_prefix!");
-      _stackPrefix = options.get("stackoverflow_prefix");
-      Check(_stackPrefix!= null, "Missing option: stackoverflow_prefix!");
+      _stackOverFlowPrefix = options.get("stackoverflow_prefix");
+      Check(_stackOverFlowPrefix!= null, "Missing option: stackoverflow_prefix!");
 
       // Populate specific options.
       _indexerType = options.get("indexer_type");
