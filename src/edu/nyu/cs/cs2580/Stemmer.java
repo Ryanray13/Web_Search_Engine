@@ -74,16 +74,16 @@ class Stemmer {
     punctuation.add('*');
     punctuation.add('\'');
     punctuation.add('\"');
-    punctuation.add('°∞');
-    punctuation.add('°±');
-    punctuation.add('°Æ');
-    punctuation.add('°Ø');
-    punctuation.add('£ª');
-    punctuation.add('°£');
-    punctuation.add('£∫');
-    punctuation.add('£¨');
-    punctuation.add('£°');
-    punctuation.add('£ø');
+    punctuation.add('„ÄÇ');
+    punctuation.add('Ôºå');
+    punctuation.add('ÔºÅ');
+    punctuation.add('?');
+    punctuation.add(';');
+    punctuation.add(':');
+    punctuation.add('‚Äò');
+    punctuation.add('‚Äô');
+    punctuation.add('‚Äú');
+    punctuation.add('‚Äù');
     punctuation.add('\\');
     punctuation.add('#');
   }
