@@ -79,6 +79,8 @@ public class SearchEngine {
     // The parent path where the mining results reside.
     public String _miningPrefix = null;
 
+    public String _spellprefix = null;
+
     /**
      * Constructor for options.
      * @param optionFile where all the options must reside
@@ -113,8 +115,11 @@ public class SearchEngine {
       _miningPrefix = options.get("mining_prefix");
       Check(_miningPrefix!= null, "Missing option: mining_prefix!");
       _stackOverFlowPrefix = options.get("stackoverflow_prefix");
-      Check(_stackOverFlowPrefix!= null, "Missing option: stackoverflow_prefix!");
-
+      Check(_stackOverFlowPrefix!= null, "Missing option: stackoverflow_prefix!");    
+      _spellprefix  = options.get("spell_prefix");
+      Check(_stackOverFlowPrefix!= null, "Missing option: spell_prefix!");
+      
+      
       // Populate specific options.
       _indexerType = options.get("indexer_type");
       Check(_indexerType != null, "Missing option: indexer_type!");

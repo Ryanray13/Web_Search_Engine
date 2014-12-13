@@ -59,4 +59,10 @@ class RankerFullScan extends Ranker {
     }
     return new ScoredDocument(doc, score);
   }
+
+  @Override
+  public KnowledgeDocument getDocumentWithKnowledge(Query query) {
+    // TODO Auto-generated method stub
+    return null;
+  }
 }

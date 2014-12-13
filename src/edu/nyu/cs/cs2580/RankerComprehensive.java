@@ -19,6 +19,9 @@ public class RankerComprehensive extends Ranker {
   private static final double BASE_BETA = 0.65;
   private static final double PAGERANK_BETA = 0.2;
   private static final double NUMVIEW_BETA = 0.15;
+  private static final double STACK_BASE_BETA = 0.8;
+  private static final double STACK_PAGERANK_BETA = 0.1;
+  private static final double STACK_NUMVIEW_BETA = 0.1;
 
   public RankerComprehensive(Options options, CgiArguments arguments,
       Indexer indexer, Indexer stackIndexer) {
@@ -72,9 +75,70 @@ public class RankerComprehensive extends Ranker {
       }
     }
 
-    if(score != 0.0){
-      score = BASE_BETA * score + PAGERANK_BETA * Math.sqrt(doc.getPageRank()+1) 
-          + NUMVIEW_BETA * Math.log(doc.getNumViews()+1) / LOG2_BASE;
+    if (score != 0.0) {
+      score = BASE_BETA * score + PAGERANK_BETA
+          * Math.sqrt(doc.getPageRank() + 1) + NUMVIEW_BETA
+          * Math.log(doc.getNumViews() + 1) / LOG2_BASE;
+    }
+    if (score == 0.0) {
+      return null;
+    } else {
+      return new ScoredDocument(doc, score);
+    }
+  }
+
+  @Override
+  public KnowledgeDocument getDocumentWithKnowledge(Query query) {
+    ScoredDocument results = null;
+    Document doc = null;
+    int docid = -1;
+
+    while ((doc = _stackIndexer.nextDoc(query, docid)) != null) {
+      ScoredDocument sdoc = scoreStackDocument(query, doc);
+      if (sdoc != null) {
+        if (sdoc.compareTo(results) == 1) {
+          results = sdoc;
+        }
+      }
+      docid = doc._docid;
+    }
+
+    if (results != null) {
+      int resultDocid = results.getDocid();
+      String knowledge = ((IndexerStackOverFlowCompressed) _stackIndexer)
+          .getKnowledge(resultDocid);
+      DocumentStackOverFlow document = (DocumentStackOverFlow) _stackIndexer
+          .getDoc(resultDocid);
+      return new KnowledgeDocument(document, knowledge);
+    } else {
+      return null;
+    }
+  }
+
+  private ScoredDocument scoreStackDocument(Query query, Document doc) {
+    double score = 0.0;
+    if (((DocumentStackOverFlow) doc).getLength() == 0) {
+      return null;
+    }
+
+    Vector<String> phrases = query._tokens;
+    for (String phrase : phrases) {
+      double probability = 0;
+      String[] terms = phrase.trim().split(" +");
+      for (String term : terms) {
+        probability = (1 - LAMBDA)
+            * _stackIndexer.documentTermFrequency(term, doc._docid)
+            / ((DocumentIndexed) doc).getLength() + LAMBDA
+            * _stackIndexer.corpusTermFrequency(term)
+            / _stackIndexer._totalTermFrequency;
+        score += Math.log(probability) / LOG2_BASE;
+      }
+    }
+
+    if (score != 0.0) {
+      score = STACK_BASE_BETA * score + STACK_PAGERANK_BETA
+          * Math.sqrt(doc.getPageRank() + 1) + STACK_NUMVIEW_BETA
+          * Math.log(doc.getNumViews() + 1) / LOG2_BASE;
     }
     if (score == 0.0) {
       return null;

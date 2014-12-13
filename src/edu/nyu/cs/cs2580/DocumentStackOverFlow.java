@@ -3,8 +3,9 @@ package edu.nyu.cs.cs2580;
 /**
  * Document for stackoverflow
  */
-public class DocumentStackOverFlow extends Document {
+public class DocumentStackOverFlow extends Document{
   
+  private static final long serialVersionUID = -6473419056494802194L;
   private int _length = 0;
   private int _vote = 0;
 
@@ -27,5 +28,4 @@ public class DocumentStackOverFlow extends Document {
   public void setVote(int vote) {
     this._vote = vote;
   }
-  
 }

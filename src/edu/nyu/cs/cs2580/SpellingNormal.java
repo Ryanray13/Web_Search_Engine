@@ -11,12 +11,40 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-class Spelling {
+import edu.nyu.cs.cs2580.SearchEngine.Options;
+
+
+/**
+ * spell corrector using big.txt as dictionay
+ * @author Ray
+ *
+ */
+class SpellingNormal extends Spell{
 
   public final Map<String, Integer> nWords = new HashMap<String, Integer>();
+  
+  public SpellingNormal(Options option){
+    super(option);
+  }
+  
+  public SpellingNormal(){
+    super();
+  }
 
-  public Spelling(String file) throws IOException {
+  public void train(String file) throws IOException {
     BufferedReader in = new BufferedReader(new FileReader(file));
+    Pattern p = Pattern.compile("\\w+");
+    for (String temp = ""; temp != null; temp = in.readLine()) {
+      Matcher m = p.matcher(temp.toLowerCase());
+      while (m.find())
+        nWords.put((temp = m.group()),
+            nWords.containsKey(temp) ? nWords.get(temp) + 1 : 1);
+    }
+    in.close();
+  }
+  
+  public void train() throws IOException {
+    BufferedReader in = new BufferedReader(new FileReader(_spellprefix + "/big.txt"));
     Pattern p = Pattern.compile("\\w+");
     for (String temp = ""; temp != null; temp = in.readLine()) {
       Matcher m = p.matcher(temp.toLowerCase());
@@ -69,7 +97,8 @@ class Spelling {
 
   public static void main(String args[]) throws IOException {
     
-    Spelling spel = new Spelling("data/SpellTrainer/big.txt");
+    SpellingNormal spel = new SpellingNormal();
+    spel.train("data/SpellTrainer/big.txt");
     long start = System.nanoTime();
     System.out.println(spel.correct("exceptiosnssasd"));
     System.out.println(System.nanoTime() - start);

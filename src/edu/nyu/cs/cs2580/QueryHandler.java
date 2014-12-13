@@ -129,7 +129,7 @@ class QueryHandler implements HttpHandler {
   }
 
   private void constructTextOutput(final Vector<ScoredDocument> docs,
-      StringBuffer response) {
+      KnowledgeDocument knoc, StringBuffer response) {
     for (ScoredDocument doc : docs) {
       response.append(response.length() > 0 ? "\n" : "");
       response.append(doc.asTextResult());
@@ -138,14 +138,15 @@ class QueryHandler implements HttpHandler {
       response.append("No results retrieved!");
     }
     response.append(response.length() > 0 ? "\n" : "");
+    response.append(knoc.asTextResult() + "\n");
   }
 
   private void constructHtmlOutput(final Vector<ScoredDocument> docs,
-      StringBuffer response) {
+      KnowledgeDocument knoc, StringBuffer response) {
     response.append("{\n\"results\":[\n");
     for (ScoredDocument doc : docs) {
       response.append(doc.asHtmlResult());
-      response.append("\n");
+      response.append(",\n");
     }
     if(response.length() == 0){
       response.append("No results retrieved!\n");
@@ -153,7 +154,9 @@ class QueryHandler implements HttpHandler {
     }
     response.deleteCharAt(response.length() - 2);
     response.append("],\n");
-    response.append("\"knowledge\": null\n}");
+    response.append("\"knowledge\":");
+    response.append(knoc.asHtmlResult());
+    response.append("\n}");
   }
 
   public void handle(HttpExchange exchange) throws IOException {
@@ -203,15 +206,16 @@ class QueryHandler implements HttpHandler {
     Vector<ScoredDocument> scoredDocs = ranker.runQuery(processedQuery,
         cgiArgs._numResults);
 
+    KnowledgeDocument knowledgeDoc = ranker.getDocumentWithKnowledge(processedQuery);
     if (uriPath.equals("/search")) {
       StringBuffer response = new StringBuffer();
       switch (cgiArgs._outputFormat) {
       case TEXT:
-        constructTextOutput(scoredDocs, response);
+        constructTextOutput(scoredDocs, knowledgeDoc , response);
         break;
       case HTML:
         // @CS2580: Plug in your HTML output
-        constructHtmlOutput(scoredDocs, response);
+        constructHtmlOutput(scoredDocs, knowledgeDoc, response);
         break;
       default:
         // nothing

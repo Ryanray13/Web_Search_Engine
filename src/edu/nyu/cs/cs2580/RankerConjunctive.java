@@ -42,4 +42,10 @@ public class RankerConjunctive extends Ranker {
     Collections.sort(results, Collections.reverseOrder());
     return results;
   }
+
+  @Override
+  public KnowledgeDocument getDocumentWithKnowledge(Query query) {
+    // TODO Auto-generated method stub
+    return null;
+  }
 }

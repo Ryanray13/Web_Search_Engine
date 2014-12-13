@@ -56,6 +56,13 @@ public abstract class Ranker {
    * @return Up to {@code numResults} scored documents in ranked order
    */
   public abstract Vector<ScoredDocument> runQuery(Query query, int numResults);
+  
+  
+  /**
+   * Given a query, get knowledge
+   * @param query the parsed user query
+   */
+  public abstract KnowledgeDocument getDocumentWithKnowledge(Query query);
 
   /**
    * All Rankers must be created through this factory class based on the
@@ -83,8 +90,7 @@ public abstract class Ranker {
         // Plug in your phrase Ranker
         break;
       case NUMVIEW:
-        // Plug in your linear Ranker
-        break;
+        return new RankerNumview(options, arguments, indexer, stackIndexer);
       case LINEAR:
         // Plug in your linear Ranker
         break;

@@ -72,4 +72,55 @@ public class RankerFavorite extends Ranker {
       return new ScoredDocument(doc, score);
     }
   }
+
+  @Override
+  public KnowledgeDocument getDocumentWithKnowledge(Query query) {
+    ScoredDocument results = null;
+    Document doc = null;
+    int docid = -1;
+
+    while ((doc = _stackIndexer.nextDoc(query, docid)) != null) {
+      ScoredDocument sdoc = scoreStackDocument(query, doc);
+      if (sdoc != null) {
+        if (sdoc.compareTo(results) == 1) {
+          results = sdoc;
+        }
+      }
+      docid = doc._docid;
+    }
+
+    if (results != null) {
+      int resultDocid = results.getDocid();
+      String knowledge = ((IndexerStackOverFlowCompressed) _stackIndexer)
+          .getKnowledge(resultDocid);
+      DocumentStackOverFlow document = (DocumentStackOverFlow) _stackIndexer
+          .getDoc(resultDocid);
+      return new KnowledgeDocument(document, knowledge);
+    } else {
+      return null;
+    }
+  }
+  
+  private ScoredDocument scoreStackDocument(Query query, Document doc) {
+    double score = 0.0;
+    double probability = 0;
+    int length = ((DocumentStackOverFlow) doc).getLength();
+    if (length == 0) {
+      return null;
+    }
+
+    Vector<String> phrases = ((QueryPhrase) query).getTermVector();
+    for (String term : phrases) {
+      probability = (1 - LAMBDA)
+          * _stackIndexer.documentTermFrequency(term, doc._docid)
+          / length + LAMBDA
+          * _stackIndexer.corpusTermFrequency(term) / _stackIndexer._totalTermFrequency;
+      score += Math.log(probability) / LOG2_BASE;
+    }
+    if (score == 0.0) {
+      return null;
+    } else {
+      return new ScoredDocument(doc, score);
+    }
+  }
 }

@@ -6,12 +6,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
-class SpellingIndexed {
+/**
+ * spell corrector using corpus as dictionary
+ * @author Ray
+ *
+ */
+class SpellingIndexed extends Spell {
 
   private Indexer _indexer;
 
   public SpellingIndexed(Indexer indexer) {
+    super();
     _indexer = indexer;
   }
 

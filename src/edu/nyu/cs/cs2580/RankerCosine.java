@@ -11,10 +11,9 @@ import edu.nyu.cs.cs2580.QueryHandler.CgiArguments;
 import edu.nyu.cs.cs2580.SearchEngine.Options;
 
 /**
- * @CS2580: Implement this class for HW2 based on a refactoring of your favorite
- *          Ranker (except RankerPhrase) from HW1. The new Ranker should no
- *          longer rely on the instructors' {@link IndexerFullScan}, instead it
- *          should use one of your more efficient implementations.
+ * cosine ranker, but not work very well, need some performance tuning
+ * @author Ray
+ *
  */
 public class RankerCosine extends Ranker {
   private static final double LOG2_BASE = Math.log(2.0);
@@ -116,5 +115,11 @@ public class RankerCosine extends Ranker {
       }
     }
     return score;
+  }
+
+  @Override
+  public KnowledgeDocument getDocumentWithKnowledge(Query query) {
+    // TODO Auto-generated method stub
+    return null;
   }
 }

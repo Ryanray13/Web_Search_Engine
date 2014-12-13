@@ -112,18 +112,10 @@ public class IndexerStackOverFlowCompressed extends IndexerInvertedCompressed im
     try {
       Element e = parsedDocument.body().getElementsByClass("post-text").get(1);
       if (e != null) {
-        Scanner s = new Scanner(e.getElementsByClass("post-text").text());
-        List<String> answerTermList = new ArrayList<String>();
-        while (s.hasNext()) {
-          answerTermList.add(s.next());
-        }
-        docTermWriter.writeInt(answerTermList.size());
-        for(String str : answerTermList){
-          docTermWriter.writeUTF(str);
-        }
+        String answer = e.text();
+        docTermWriter.writeUTF(answer);
         docTermWriter.flush();
         _docTermOffset.add(docTermWriter.size());
-        s.close();
       }
     } catch (Exception e) {
       // TODO Auto-generated catch block
@@ -243,27 +235,24 @@ public class IndexerStackOverFlowCompressed extends IndexerInvertedCompressed im
   /**
    * Given a docid, return its answer
    */
-  public List<String> getAnswers(int docid){
+  public String getKnowledge(int docid){
     int offset = 0;
     if (docid != 0) {
       offset = _docTermOffset.get(docid - 1);
     }
 
-    List<String> strList = new ArrayList<String>();
+    String knowledge = "";
     try {
       RandomAccessFile raf = new RandomAccessFile(docTermFile, "r");
       DataInputStream reader = new DataInputStream(new BufferedInputStream(
           new FileInputStream(raf.getFD())));
       raf.seek(offset);
-      int size = reader.readInt();
-      for (int i = 0; i < size; i++) {
-        strList.add(reader.readUTF());
-      }
+      knowledge = reader.readUTF();
       raf.close();
       reader.close();
     } catch (Exception e) {
       e.printStackTrace();
     }
-    return strList;
+    return knowledge;
   }
 }
