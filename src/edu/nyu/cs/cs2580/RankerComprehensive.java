@@ -19,9 +19,10 @@ public class RankerComprehensive extends Ranker {
   private static final double BASE_BETA = 0.65;
   private static final double PAGERANK_BETA = 0.2;
   private static final double NUMVIEW_BETA = 0.15;
-  private static final double STACK_BASE_BETA = 0.8;
+  private static final double STACK_BASE_BETA = 0.5;
   private static final double STACK_PAGERANK_BETA = 0.1;
   private static final double STACK_NUMVIEW_BETA = 0.1;
+  private static final double STACK_VOTE_BETA = 0.3;
 
   public RankerComprehensive(Options options, CgiArguments arguments,
       Indexer indexer, Indexer stackIndexer) {
@@ -117,7 +118,7 @@ public class RankerComprehensive extends Ranker {
 
   private ScoredDocument scoreStackDocument(Query query, Document doc) {
     double score = 0.0;
-    if (((DocumentStackOverFlow) doc).getLength() == 0) {
+    if (((DocumentStackOverFlow)doc).getLength() == 0) {
       return null;
     }
 
@@ -138,7 +139,8 @@ public class RankerComprehensive extends Ranker {
     if (score != 0.0) {
       score = STACK_BASE_BETA * score + STACK_PAGERANK_BETA
           * Math.sqrt(doc.getPageRank() + 1) + STACK_NUMVIEW_BETA
-          * Math.log(doc.getNumViews() + 1) / LOG2_BASE;
+          * Math.log(doc.getNumViews() + 1) / LOG2_BASE + STACK_VOTE_BETA
+          * Math.log(((DocumentStackOverFlow)doc).getVote() + 1) / LOG2_BASE;
     }
     if (score == 0.0) {
       return null;

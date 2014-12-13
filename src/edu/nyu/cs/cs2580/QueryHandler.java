@@ -33,7 +33,7 @@ class QueryHandler implements HttpHandler {
     private int _numResults = 10;
 
     private int _numTerms = 5;
-    
+
     private boolean _includeQueryTerms = true;
 
     // The type of the ranker we will be using.
@@ -90,17 +90,17 @@ class QueryHandler implements HttpHandler {
             _numTerms = Integer.parseInt(val);
           } catch (IllegalArgumentException e) {
             // Ignored, search engine should never fail upon invalid user input.
-          }        
-        }else if (key.equals("includequery")) {
+          }
+        } else if (key.equals("includequery")) {
           try {
-            if(val.equalsIgnoreCase("true")){
+            if (val.equalsIgnoreCase("true")) {
               _includeQueryTerms = true;
-            }else if(val.equalsIgnoreCase("false")){
+            } else if (val.equalsIgnoreCase("false")) {
               _includeQueryTerms = false;
             }
           } catch (IllegalArgumentException e) {
             // Ignored, search engine should never fail upon invalid user input.
-          }        
+          }
         }
 
       } // End of iterating over params
@@ -134,11 +134,13 @@ class QueryHandler implements HttpHandler {
       response.append(response.length() > 0 ? "\n" : "");
       response.append(doc.asTextResult());
     }
-    if(response.length() == 0){
+    if (response.length() == 0) {
       response.append("No results retrieved!");
     }
     response.append(response.length() > 0 ? "\n" : "");
-    response.append(knoc.asTextResult() + "\n");
+    if (knoc != null) {
+      response.append(knoc.asTextResult() + "\n");
+    }
   }
 
   private void constructHtmlOutput(final Vector<ScoredDocument> docs,
@@ -148,14 +150,18 @@ class QueryHandler implements HttpHandler {
       response.append(doc.asHtmlResult());
       response.append(",\n");
     }
-    if(response.length() == 0){
-      response.append("No results retrieved!\n");
+    if (docs.size() == 0) {
+      response.append(",\n");
       return;
     }
     response.deleteCharAt(response.length() - 2);
     response.append("],\n");
     response.append("\"knowledge\":");
-    response.append(knoc.asHtmlResult());
+    if (knoc != null) {
+      response.append(knoc.asHtmlResult());
+    } else {
+      response.append("null");
+    }
     response.append("\n}");
   }
 
@@ -206,12 +212,13 @@ class QueryHandler implements HttpHandler {
     Vector<ScoredDocument> scoredDocs = ranker.runQuery(processedQuery,
         cgiArgs._numResults);
 
-    KnowledgeDocument knowledgeDoc = ranker.getDocumentWithKnowledge(processedQuery);
+    KnowledgeDocument knowledgeDoc = null;//ranker
+        //.getDocumentWithKnowledge(processedQuery);
     if (uriPath.equals("/search")) {
       StringBuffer response = new StringBuffer();
       switch (cgiArgs._outputFormat) {
       case TEXT:
-        constructTextOutput(scoredDocs, knowledgeDoc , response);
+        constructTextOutput(scoredDocs, knowledgeDoc, response);
         break;
       case HTML:
         // @CS2580: Plug in your HTML output
@@ -224,7 +231,8 @@ class QueryHandler implements HttpHandler {
       System.out.println("Finished query: " + cgiArgs._query);
     } else {
       PseudoRelevanceFeedback prf = new PseudoRelevanceFeedback(scoredDocs,
-          _indexer, cgiArgs._numTerms, cgiArgs._includeQueryTerms, processedQuery);
+          _indexer, cgiArgs._numTerms, cgiArgs._includeQueryTerms,
+          processedQuery);
       respondWithMsg(exchange, prf.compute().toString());
       System.out.println("Finished Expansion: " + cgiArgs._query);
     }
