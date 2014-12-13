@@ -34,12 +34,13 @@ class ScoredDocument implements Comparable<ScoredDocument> {
    */
   public String asHtmlResult() {
     StringBuffer buf = new StringBuffer();
-    buf.append("\"id\": ").append(_doc._docid)
+    buf.append("{\"id\": ").append(_doc._docid)
     .append(", \"title\": \"").append(_doc.getTitle())
-    .append(", \"url\": \"").append(_doc.getUrl())
+    .append("\", \"url\": \"").append(_doc.getBaseUrl()+_doc.getName())
+    .append("\", \"fileName\": \"").append(_doc.getName())
     .append("\", \"score\": ").append(_score)
-    .append("\", \"pagerank\": ").append(_doc.getPageRank())
-    .append("\", \"numviews\": ").append(_doc.getNumViews())
+    .append(", \"pagerank\": ").append(_doc.getPageRank())
+    .append(", \"numviews\": ").append(_doc.getNumViews())
     .append("},");
     return buf.toString();
   }

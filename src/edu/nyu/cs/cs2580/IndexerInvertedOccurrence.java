@@ -183,7 +183,8 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     DocumentIndexed document = new DocumentIndexed(docid);
     // Indexing.
     indexDocument(stemedDocument, docid);
-    document.setUrl(file.getAbsolutePath());
+    document.setBaseUrl("en.wikipedia.org/wiki/");
+    document.setName(file.getName());
     document.setTitle(parsedDocument.title());
     document.setLength(stemedDocument.length());
     String fileName = file.getName();
