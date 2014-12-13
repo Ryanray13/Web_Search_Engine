@@ -33,42 +33,42 @@ import edu.nyu.cs.cs2580.SearchEngine.Options;
 public class IndexerInvertedCompressed extends Indexer implements Serializable {
 
   private static final long serialVersionUID = 5984985672402218465L;
-  protected static final transient int CACHE_SIZE = 20;
-  protected static final transient int PARTIAL_SIZE = 205;
+  private static final transient int CACHE_SIZE = 20;
+  private static final transient int PARTIAL_SIZE = 205;
 
   /** ---- Private instances ---- */
-  protected transient Map<Integer, List<Integer>> _postingLists = new HashMap<Integer, List<Integer>>();
-  protected transient Map<Integer, Integer> cacheIndex = null;
+  private transient Map<Integer, List<Integer>> _postingLists = new HashMap<Integer, List<Integer>>();
+  private transient Map<Integer, Integer> cacheIndex = null;
   private transient Map<String, Integer> _numViews = new HashMap<String, Integer>();
-  protected transient Map<String, Float> _pageRanks = new HashMap<String, Float>();
-  protected transient List<Integer> _diskLength = new ArrayList<Integer>();
+  private transient Map<String, Float> _pageRanks = new HashMap<String, Float>();
+  private transient List<Integer> _diskLength = new ArrayList<Integer>();
   // disk list offset
-  protected transient Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
+  private transient Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
   // doc terms and frequencys
-  protected transient Map<Integer, Integer> docTermMap = new HashMap<Integer, Integer>();
+  private transient Map<Integer, Integer> docTermMap = new HashMap<Integer, Integer>();
 
   // Cache current running query
-  protected transient String currentQuery = "";
-  protected transient String currentTerm = "";
-  protected transient String indexFile = "";
-  protected transient String diskIndexFile = "";
-  protected transient String docTermFile = "";
-  protected transient String postingListFile = "";
-  protected transient int cacheTermListIndex = 0;
-  protected transient int partNumber = 0;
-  protected transient List<Integer> cacheTermList;
-  protected transient DataOutputStream docTermWriter;
+  private transient String currentQuery = "";
+  private transient String currentTerm = "";
+  private transient String indexFile = "";
+  private transient String diskIndexFile = "";
+  private transient String docTermFile = "";
+  private transient String postingListFile = "";
+  private transient int cacheTermListIndex = 0;
+  private transient int partNumber = 0;
+  private transient List<Integer> cacheTermList;
+  private transient DataOutputStream docTermWriter;
 
   // doc term list offset
-  protected List<Integer> _docTermOffset = new ArrayList<Integer>();
+  private List<Integer> _docTermOffset = new ArrayList<Integer>();
 
   // Store all the documents
-  protected List<Document> _documents = new ArrayList<Document>();
+  private List<Document> _documents = new ArrayList<Document>();
 
   // store all the terms
-  protected List<String> _termList = new ArrayList<String>();
+  private List<String> _termList = new ArrayList<String>();
 
-  protected long totalTermFrequency = 0;
+  private long totalTermFrequency = 0;
 
   public IndexerInvertedCompressed() {
   }
@@ -278,7 +278,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     docTermMap.clear();
   }
 
-  protected void writeMapToDisk() throws IOException {
+  private void writeMapToDisk() throws IOException {
     String outputFile = _options._indexPrefix + "/corpuspart"
         + String.valueOf(partNumber) + ".list";
 
@@ -307,7 +307,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     partNumber++;
   }
 
-  protected byte[] vByte(int num) {
+  private byte[] vByte(int num) {
     byte[] ret = null;
     if (num < 128) {
       ret = new byte[1];
@@ -349,7 +349,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     return ret;
   }
 
-  protected List<Integer> decodeByte(List<Byte> list) {
+  private List<Integer> decodeByte(List<Byte> list) {
     List<Byte> byteList = new ArrayList<Byte>();
     List<Integer> ret = new ArrayList<Integer>();
     for (int i = 0; i < list.size(); i++) {
@@ -364,7 +364,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     return ret;
   }
 
-  protected int convert(List<Byte> byteList) {
+  private int convert(List<Byte> byteList) {
     if (byteList.size() == 1) {
       return (byteList.get(0) + 128);
     } else if (byteList.size() == 2) {
@@ -378,7 +378,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     }
   }
 
-  protected void writeIndexToDisk() throws FileNotFoundException, IOException {
+  private void writeIndexToDisk() throws FileNotFoundException, IOException {
     int[] dictionaryList = new int[_diskIndex.size()];
     for (int i = 0; i < dictionaryList.length; i++) {
       dictionaryList[i] = i;
@@ -531,7 +531,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     }
   }
 
-  protected void loadQueryList(Query query) {
+  private void loadQueryList(Query query) {
     _postingLists.clear();
     cacheIndex.clear();
     Vector<String> terms = ((QueryPhrase) query).getTermVector();
@@ -556,7 +556,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
    * @param term
    * @return
    */
-  protected List<Integer> getTermList(String term) {
+  private List<Integer> getTermList(String term) {
     if (!_diskIndex.containsKey(term)) {
       return null;
     }
@@ -570,7 +570,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   }
 
   // Given a term, load term list from disk
-  protected List<Byte> getTermListFromDisk(String term) {
+  private List<Byte> getTermListFromDisk(String term) {
     List<Byte> list = new ArrayList<Byte>();
     int offset = _diskIndex.get(term);
     String inputFile = _options._indexPrefix + "/corpus.list";
@@ -599,7 +599,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
    * @param docid
    * @return
    */
-  protected int nextContainAllDocument(Query query, int docid) {
+  private int nextContainAllDocument(Query query, int docid) {
     while (true) {
       boolean isEqual = true;
       List<Integer> docids = new ArrayList<Integer>();
@@ -638,7 +638,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
    * @param docid
    * @return
    */
-  protected int next(String term, int docid) {
+  private int next(String term, int docid) {
 
     List<Integer> list = getTermList(term);
     if (list == null) {
@@ -671,7 +671,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   }
 
   // terms at least contain 2 words
-  protected boolean containPhrase(String[] terms, int docid) {
+  private boolean containPhrase(String[] terms, int docid) {
     int pos = -1;
     // position == -1 indicate has searched to the end of the document
     while (true) {
@@ -704,7 +704,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   }
 
   // return next occurrence of word in document after current position
-  protected int nextPos(String word, int docid, int pos) {
+  private int nextPos(String word, int docid, int pos) {
     List<Integer> list = getTermList(word);
     if (list == null || list.size() == 0 || list.get(list.size() - 1) <= pos) {
       return -1;

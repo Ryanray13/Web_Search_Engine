@@ -134,27 +134,26 @@ class QueryHandler implements HttpHandler {
       response.append(response.length() > 0 ? "\n" : "");
       response.append(doc.asTextResult());
     }
-    if (response.length() == 0) {
-      response.append("No results retrieved!");
-    }
+
     response.append(response.length() > 0 ? "\n" : "");
     if (knoc != null) {
       response.append(knoc.asTextResult() + "\n");
+    }
+    if (response.length() == 0) {
+      response.append("No results retrieved!");
     }
   }
 
   private void constructHtmlOutput(final Vector<ScoredDocument> docs,
       KnowledgeDocument knoc, StringBuffer response) {
-    response.append("{\n\"results\":[\n");
+    response.append("{\n\"results\":[ \n");
     for (ScoredDocument doc : docs) {
       response.append(doc.asHtmlResult());
       response.append(",\n");
     }
-    if (docs.size() == 0) {
-      response.append(",\n");
-      return;
+    if(docs.size()!=0){
+      response.deleteCharAt(response.length() - 2);
     }
-    response.deleteCharAt(response.length() - 2);
     response.append("],\n");
     response.append("\"knowledge\":");
     if (knoc != null) {
@@ -185,7 +184,7 @@ class QueryHandler implements HttpHandler {
     if (uriPath == null || uriQuery == null) {
       respondWithMsg(exchange, "Something wrong with the URI!");
     }
-    if (!uriPath.equals("/search") && !uriPath.equals("/prf")) {
+    if (!uriPath.equals("/search") && !uriPath.equals("/prf") && !uriPath.equals("/know")) {
       respondWithMsg(exchange, "Only /search or /prf is handled!");
     }
     System.out.println("Query: " + uriQuery);
@@ -229,11 +228,26 @@ class QueryHandler implements HttpHandler {
       }
       respondWithMsg(exchange, response.toString());
       System.out.println("Finished query: " + cgiArgs._query);
-    } else {
+    } else if(uriPath.equals("/prf")){
       PseudoRelevanceFeedback prf = new PseudoRelevanceFeedback(scoredDocs,
           _indexer, cgiArgs._numTerms, cgiArgs._includeQueryTerms,
           processedQuery);
       respondWithMsg(exchange, prf.compute().toString());
+      System.out.println("Finished Expansion: " + cgiArgs._query);
+    }else{
+      KnowledgeDocument knowledgeDocument = ranker.getDocumentWithKnowledge(processedQuery);
+      StringBuffer response = new StringBuffer();
+      switch (cgiArgs._outputFormat) {
+      case TEXT:
+        constructTextOutput(new Vector<ScoredDocument>(), knowledgeDocument, response);
+        break;
+      case HTML:
+        constructHtmlOutput(new Vector<ScoredDocument>(), knowledgeDocument, response);
+        break;
+      default:
+        // nothing
+      }
+      respondWithMsg(exchange, response.toString());
       System.out.println("Finished Expansion: " + cgiArgs._query);
     }
   }

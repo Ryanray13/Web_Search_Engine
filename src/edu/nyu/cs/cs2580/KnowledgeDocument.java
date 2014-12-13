@@ -1,5 +1,8 @@
 package edu.nyu.cs.cs2580;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+
 /**
  * Document with Knowledge
  */
@@ -27,7 +30,7 @@ class KnowledgeDocument {
     buf.append("Vote:").append(_doc.getVote()).append("\t");
     buf.append("PR:").append(_doc.getPageRank()).append("\t");
     buf.append("NV:").append(_doc.getNumViews()).append("\t");
-    buf.append("\n").append(_knowledge);
+    buf.append("\n").append(_knowledge).append("\n");
     return buf.toString();
   }
 
@@ -36,14 +39,19 @@ class KnowledgeDocument {
    */
   public String asHtmlResult() {
     StringBuffer buf = new StringBuffer();
-    buf.append("{\"id\": ").append(_doc._docid).append(", \"title\": \"")
-        .append(_doc.getTitle()).append("\", \"url\": \"")
-        .append(_doc.getBaseUrl() + _doc.getName())
-        .append("\", \"filePath\": \"")
-        .append(_doc.getPathPrefix() + "/" + _doc.getName())
-        .append("\", \"knowledge\": ").append(_knowledge).append(", \"pagerank\": ")
-        .append(_doc.getPageRank()).append(", \"numviews\": ")
-        .append(_doc.getNumViews()).append("}");
+    try {
+      buf.append("{\"id\": ").append(_doc._docid).append(", \"title\": \"")
+          .append(URLEncoder.encode(_doc.getTitle(),"UTF-8")).append("\", \"url\": \"")
+          .append(_doc.getBaseUrl() + _doc.getName())
+          .append("\", \"filePath\": \"")
+          .append(_doc.getPathPrefix() + "/" + _doc.getName())
+          .append("\", \"knowledge\": \"").append(_knowledge).append("\", \"pagerank\": ")
+          .append(_doc.getPageRank()).append(", \"numviews\": ")
+          .append(_doc.getNumViews()).append("}");
+    } catch (UnsupportedEncodingException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
     return buf.toString();
   }
 }

@@ -78,14 +78,15 @@ class Stemmer {
     punctuation.add('，');
     punctuation.add('！');
     punctuation.add('?');
-    punctuation.add(';');
-    punctuation.add(':');
+    punctuation.add('；');
+    punctuation.add('：');
     punctuation.add('‘');
     punctuation.add('’');
     punctuation.add('“');
     punctuation.add('”');
     punctuation.add('\\');
     punctuation.add('#');
+    punctuation.add('•');
   }
 
   /**
