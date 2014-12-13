@@ -36,6 +36,7 @@ class ScoredDocument implements Comparable<ScoredDocument> {
     StringBuffer buf = new StringBuffer();
     buf.append("\"id\": ").append(_doc._docid)
     .append(", \"title\": \"").append(_doc.getTitle())
+    .append(", \"url\": \"").append(_doc.getUrl())
     .append("\", \"score\": ").append(_score)
     .append("\", \"pagerank\": ").append(_doc.getPageRank())
     .append("\", \"numviews\": ").append(_doc.getNumViews())

@@ -51,6 +51,9 @@ public class SearchEngine {
     // HW2/HW3: We have a partial Wikipedia dump.
     public String _corpusPrefix = null;
 
+    //Stackoverflow prefix
+    public String _stackPrefix = null;
+    
     // The parent path where the log date reside.
     // HW1/HW2: n/a
     // HW3: We have a partial Wikipedia visit log dump.
@@ -106,6 +109,8 @@ public class SearchEngine {
       Check(_indexPrefix != null, "Missing option: index_prefix!");
       _miningPrefix = options.get("mining_prefix");
       Check(_miningPrefix!= null, "Missing option: mining_prefix!");
+      _stackPrefix = options.get("stackoverflow_prefix");
+      Check(_stackPrefix!= null, "Missing option: stackoverflow_prefix!");
 
       // Populate specific options.
       _indexerType = options.get("indexer_type");

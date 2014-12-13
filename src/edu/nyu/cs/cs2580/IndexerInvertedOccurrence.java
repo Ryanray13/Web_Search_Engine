@@ -76,10 +76,10 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
 
   public IndexerInvertedOccurrence(Options options) {
     super(options);
-    indexFile = options._indexPrefix + "/wiki.object";
-    diskIndexFile = options._indexPrefix + "/wiki.idx";
-    docTermFile = options._indexPrefix + "/wiki.docterm";
-    postingListFile = _options._indexPrefix + "/wiki.list";
+    indexFile = options._indexPrefix + "/corpus.object";
+    diskIndexFile = options._indexPrefix + "/corpus.idx";
+    docTermFile = options._indexPrefix + "/corpus.docterm";
+    postingListFile = _options._indexPrefix + "/corpus.list";
     System.out.println("Using Indexer: " + this.getClass().getSimpleName());
   }
 
@@ -140,7 +140,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     if (newfile.isDirectory()) {
       File[] files = newfile.listFiles();
       for (File file : files) {
-        if (file.getName().matches(".*wiki.*")) {
+        if (file.getName().matches(".*corpus.*")) {
           file.delete();
         }
       }
@@ -169,7 +169,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     ++_numDocs;
   }
 
-  // process document in wiki where each document is a file
+  // process document in corpus where each document is a file
   private void processDocument(File file) throws IOException {
     // Use jsoup to parse html
     org.jsoup.nodes.Document parsedDocument = Jsoup.parse(file, "UTF-8");
@@ -254,7 +254,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
   }
 
   private void writeMapToDisk() throws IOException {
-    String outputFile = _options._indexPrefix + "/wikipart"
+    String outputFile = _options._indexPrefix + "/corpuspart"
         + String.valueOf(partNumber) + ".list";
 
     List<Integer> keyList = new ArrayList<Integer>(_postingLists.keySet());
@@ -289,7 +289,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     File[] inputFiles = new File[partNumber];
     DataInputStream[] readers = new DataInputStream[partNumber];
     for (int i = 0; i < partNumber; i++) {
-      inputFiles[i] = new File(_options._indexPrefix + "/wikipart"
+      inputFiles[i] = new File(_options._indexPrefix + "/corpuspart"
           + String.valueOf(i) + ".list");
       readers[i] = new DataInputStream(new BufferedInputStream(
           new FileInputStream(inputFiles[i])));

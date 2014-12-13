@@ -68,9 +68,10 @@ class Spelling {
   }
 
   public static void main(String args[]) throws IOException {
+    
     Spelling spel = new Spelling("data/SpellTrainer/big.txt");
     long start = System.nanoTime();
-    System.out.println(spel.correct("exceptiosnfsasd"));
+    System.out.println(spel.correct("exceptiosnssasd"));
     System.out.println(System.nanoTime() - start);
   }
 

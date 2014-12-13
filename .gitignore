@@ -10,8 +10,10 @@ bin/*
 */src/edu/nyu/cs/.DS_Store
 /bin/
 public/.idea/*
-/data/wiki/*
-/data/mining/*
-/data/index/*
+/data/*
+!/data/log/*
+!/data/prf/*
+!/data/simple/*
+!/data/stackoverflow/*
 /results/*
 /dist/*
