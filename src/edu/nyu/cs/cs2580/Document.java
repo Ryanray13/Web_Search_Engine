@@ -65,6 +65,7 @@ class Document implements Serializable {
   private String _title = "";
   private String _url = "";
   private String _fileName="";
+  private String _prefix="";
 
   // Basic information for ranking
   private float _pageRank = 0.0f;
@@ -89,9 +90,17 @@ class Document implements Serializable {
   public String getName() {
     return _fileName;
   }
+  
+  public String getPathPrefix() {
+    return _prefix;
+  }
 
   public void setBaseUrl(String url) {
     this._url = url;
+  }
+  
+  public void setPathPrefix(String prefix) {
+    this._prefix = prefix;
   }
 
   public void setName(String name) {

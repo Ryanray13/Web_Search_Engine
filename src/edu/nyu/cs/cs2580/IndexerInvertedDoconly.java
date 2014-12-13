@@ -185,6 +185,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
     document.setBaseUrl("en.wikipedia.org/wiki/");
     document.setName(file.getName());
+    document.setPathPrefix(_options._corpusPrefix);
     document.setTitle(parsedDocument.title());
     document.setLength(stemedDocument.length());
     String fileName = file.getName();
