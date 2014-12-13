@@ -66,7 +66,10 @@ public class SearchEngine {
 
     // The specific Indexer to be used.
     public String _indexerType = null;
-
+    
+    // The specific Indexer to be used.
+    public String _indexerStackOverFlowType = null;
+    
     // The specific CorpusAnalyzer to be used.
     public String _corpusAnalyzerType = null;
 
@@ -115,6 +118,9 @@ public class SearchEngine {
       // Populate specific options.
       _indexerType = options.get("indexer_type");
       Check(_indexerType != null, "Missing option: indexer_type!");
+      
+      _indexerStackOverFlowType = options.get("indexerStackOverFlow_type");
+      Check(_indexerType != null, "Missing option: _indexerStackOverFlowType!");
 
       _corpusAnalyzerType = options.get("corpus_analyzer_type");
       Check(_corpusAnalyzerType != null,
@@ -198,17 +204,25 @@ public class SearchEngine {
   
   private static void startIndexing() throws IOException {
     Indexer indexer = Indexer.Factory.getIndexerByOption(SearchEngine.OPTIONS);
+    Indexer indexerStackOverFlow = Indexer.Factory.getIndexerStackOverFlow(SearchEngine.OPTIONS);
     Check(indexer != null,
         "Indexer " + SearchEngine.OPTIONS._indexerType + " not found!");
+    Check(indexerStackOverFlow != null,
+        "Indexer " + SearchEngine.OPTIONS._indexerStackOverFlowType + " not found!");
     indexer.constructIndex();
+    indexerStackOverFlow.constructIndex();
   }
   
   private static void startServing() throws IOException, ClassNotFoundException {
     // Create the handler and its associated indexer.
     Indexer indexer = Indexer.Factory.getIndexerByOption(SearchEngine.OPTIONS);
+    Indexer indexerStackOverFlow = Indexer.Factory.getIndexerStackOverFlow(SearchEngine.OPTIONS);
     Check(indexer != null,
         "Indexer " + SearchEngine.OPTIONS._indexerType + " not found!");
+    Check(indexerStackOverFlow != null,
+        "Indexer " + SearchEngine.OPTIONS._indexerStackOverFlowType + " not found!");
     indexer.loadIndex();
+    indexerStackOverFlow.loadIndex();
     QueryHandler handler = new QueryHandler(SearchEngine.OPTIONS, indexer);
 
     // Establish the serving environment

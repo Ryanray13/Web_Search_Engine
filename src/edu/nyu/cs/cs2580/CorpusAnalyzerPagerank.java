@@ -65,8 +65,13 @@ public class CorpusAnalyzerPagerank extends CorpusAnalyzer {
     Map<Integer, Integer> redirects = new HashMap<Integer, Integer>();
     int docid = 0;
     File corpusDirectory = new File(_options._corpusPrefix);
-    if (corpusDirectory.isDirectory()) {
-      File[] allFiles = corpusDirectory.listFiles();
+    File stackOverFlowDir = new File(_options._stackOverFlowPrefix);
+    if (corpusDirectory.isDirectory() && stackOverFlowDir.isDirectory()) {
+      File[] corpusFiles = corpusDirectory.listFiles();
+      File[] stackFiles = stackOverFlowDir.listFiles();
+      File[] allFiles = new File[(corpusFiles.length + stackFiles.length)];
+      System.arraycopy(corpusFiles, 0, allFiles, 0, corpusFiles.length);
+      System.arraycopy(stackFiles, 0, allFiles, corpusFiles.length, stackFiles.length);
       for (File file : allFiles) {
         _documentUrls.put(file.getName(), docid);
         docid++;

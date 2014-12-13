@@ -35,7 +35,6 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   private static final long serialVersionUID = 5984985672402218465L;
   private static final transient int CACHE_SIZE = 20;
   private static final transient int PARTIAL_SIZE = 205;
-  // private static final transient int LIST_SIZE = 1500000;
 
   /** ---- Private instances ---- */
   private transient Map<Integer, List<Integer>> _postingLists = new HashMap<Integer, List<Integer>>();
@@ -45,6 +44,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   private transient List<Integer> _diskLength = new ArrayList<Integer>();
   // disk list offset
   private transient Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
+  //doc terms and frequencys
   private transient Map<Integer, Integer> docTermMap = new HashMap<Integer, Integer>();
 
   // Cache current running query
@@ -118,9 +118,22 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
             _postingLists.clear();
           }
         }
+        
+      //index stackoverFlow as normal corpus
+        File stackOverFlowDir = new File(_options._stackOverFlowPrefix);
+        if (stackOverFlowDir.isDirectory()){
+          allFiles = stackOverFlowDir.listFiles();
+          for (File file : allFiles) {
+            processDocument(file, _options._stackOverFlowPrefix);
+            if (_numDocs % PARTIAL_SIZE == 0) {
+              writeMapToDisk();
+              _postingLists.clear();
+            }
+          }
+        }
         docTermWriter.close();
       }
-      File stackOverFlowDir = new File(_options._stackOverFlowPrefix);
+      
     } else {
       throw new IOException("Corpus prefix is not a direcroty");
     }
@@ -184,7 +197,11 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     DocumentIndexed document = new DocumentIndexed(docid);
     // Indexing.
     indexDocument(stemedDocument, docid);
-    document.setBaseUrl("en.wikipedia.org/wiki/");
+    if (pathPrefix.equals("data/corpus")){
+      document.setBaseUrl("en.wikipedia.org/wiki/");
+    }else{
+      document.setBaseUrl("stackoverflow.com/questions/");
+    }
     document.setName(file.getName());
     document.setPathPrefix(pathPrefix);
     document.setTitle(parsedDocument.title());
@@ -254,11 +271,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
         docTermWriter.writeByte(byt);
       }
       docTermWriter.flush();
-      int preOffset = 0;
-      if (_docTermOffset.size() != 0) {
-        preOffset = _docTermOffset.get(_docTermOffset.size() - 1);
-      }
-      _docTermOffset.add(docTermList.size() + preOffset);
+      _docTermOffset.add(docTermWriter.size());
     } catch (Exception e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
@@ -471,6 +484,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     for (String str : _termList) {
       _diskIndex.put(str, reader.readInt());
     }
+    System.out.println(_termList.size());
     reader.close();
     // Loading each size of the term posting list.
     System.out.println(Integer.toString(_numDocs) + " documents loaded "

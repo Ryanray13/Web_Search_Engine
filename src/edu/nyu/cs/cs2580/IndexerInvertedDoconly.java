@@ -35,7 +35,6 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   private static final long serialVersionUID = -2048986665889156698L;
 
   private static final transient int CACHE_SIZE = 30;
-  // private static final transient int LIST_SIZE = 1000000;
   private static final transient int PARTIAL_SIZE = 256;
 
   // Using hashMap to present postinglists, each term has a list of Integers.
@@ -46,6 +45,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   private transient List<Integer> _diskLength = new ArrayList<Integer>();
   // disk list offset
   private transient Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
+//doc terms and frequency
   private transient Map<Integer, Integer> docTermMap = new HashMap<Integer, Integer>();
 
   // Cache current running query
@@ -119,6 +119,17 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
             _postingLists.clear();
           }
         }
+        File stackOverFlowDir = new File(_options._stackOverFlowPrefix);
+        if (stackOverFlowDir.isDirectory()){
+          allFiles = stackOverFlowDir.listFiles();
+          for (File file : allFiles) {
+            processDocument(file, _options._stackOverFlowPrefix);
+            if (_numDocs % PARTIAL_SIZE == 0) {
+              writeMapToDisk();
+              _postingLists.clear();
+            }
+          }
+        }
         docTermWriter.close();
       }
     } else {
@@ -182,8 +193,11 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     DocumentIndexed document = new DocumentIndexed(docid);
     // Indexing.
     indexDocument(stemedDocument, docid);
-
-    document.setBaseUrl("en.wikipedia.org/wiki/");
+    if (pathPrefix.equals("data/corpus")){
+      document.setBaseUrl("en.wikipedia.org/wiki/");
+    }else{
+      document.setBaseUrl("stackoverflow.com/questions/");
+    }
     document.setName(file.getName());
     document.setPathPrefix(pathPrefix);
     document.setTitle(parsedDocument.title());
@@ -245,14 +259,14 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
         docTermWriter.writeInt(docTermMap.get(key));
       }
       docTermWriter.flush();
+      int preOffset = 0;
+      if (_docTermOffset.size() != 0) {
+        preOffset = _docTermOffset.get(_docTermOffset.size() - 1);
+      }
+      _docTermOffset.add(docTermMap.size() + preOffset);
     } catch (Exception e) {
       e.printStackTrace();
     }
-    int preOffset = 0;
-    if (_docTermOffset.size() != 0) {
-      preOffset = _docTermOffset.get(_docTermOffset.size() - 1);
-    }
-    _docTermOffset.add(docTermMap.size() + preOffset);
     docTermMap.clear();
   }
 

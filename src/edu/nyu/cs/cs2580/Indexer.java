@@ -153,8 +153,20 @@ public abstract class Indexer {
         return new IndexerInvertedOccurrence(options);
       } else if (options._indexerType.equals("inverted-compressed")) {
         return new IndexerInvertedCompressed(options);
+      } else if (options._indexerType.equals("stackoverflow-compressed")) {
+        return new IndexerStackOverFlowCompressed(options);
       }
       return null;
     }
+    
+    public static Indexer getIndexerStackOverFlow(Options options) {
+      if (options._indexerStackOverFlowType.equals("stackoverflow-occurrence")) {
+        return new IndexerInvertedOccurrence(options);
+      } else if (options._indexerStackOverFlowType.equals("stackoverflow-compressed")) {
+        return new IndexerStackOverFlowCompressed(options);
+      }
+      return null;
+    }
+    
   }
 }

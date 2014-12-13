@@ -9,7 +9,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -24,29 +23,28 @@ import java.util.Scanner;
 import java.util.Vector;
 
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Element;
 
 import edu.nyu.cs.cs2580.SearchEngine.Options;
 
 /**
- * @CS2580: Implement this class for HW2.
+ * Indexer for stackoverflow to get answers
  */
-public class IndexerInvertedOccurrence extends Indexer implements Serializable {
+public class IndexerStackOverFlowCompressed extends Indexer implements
+    Serializable {
 
-  private static final long serialVersionUID = -4516219082721025281L;
+  private static final long serialVersionUID = 47542898854666350L;
 
-  private static final transient int CACHE_SIZE = 10;
-  private static final transient int PARTIAL_SIZE = 205;
+  private static final transient int CACHE_SIZE = 20;
+  private static final transient int PARTIAL_SIZE = 1000;
 
   /** ---- Private instances ---- */
   private transient Map<Integer, List<Integer>> _postingLists = new HashMap<Integer, List<Integer>>();
   private transient Map<Integer, Integer> cacheIndex = null;
-  private transient Map<String, Integer> _numViews = new HashMap<String, Integer>();
   private transient Map<String, Float> _pageRanks = new HashMap<String, Float>();
   private transient List<Integer> _diskLength = new ArrayList<Integer>();
   // disk list offset
   private transient Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
-  // doc terms and frequency
-  private transient Map<Integer, Integer> docTermMap = new HashMap<Integer, Integer>();
 
   // Cache current running query
   private transient String currentQuery = "";
@@ -55,12 +53,12 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
   private transient String diskIndexFile = "";
   private transient String docTermFile = "";
   private transient String postingListFile = "";
-  private transient int partNumber = 0;
   private transient int cacheTermListIndex = 0;
+  private transient int partNumber = 0;
   private transient List<Integer> cacheTermList;
   private transient DataOutputStream docTermWriter;
 
-  // doc term list offset
+  // doc answer list disk offset
   private List<Integer> _docTermOffset = new ArrayList<Integer>();
 
   // Store all the documents
@@ -71,15 +69,15 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
 
   private long totalTermFrequency = 0;
 
-  public IndexerInvertedOccurrence() {
+  public IndexerStackOverFlowCompressed() {
   }
 
-  public IndexerInvertedOccurrence(Options options) {
+  public IndexerStackOverFlowCompressed(Options options) {
     super(options);
-    indexFile = options._indexPrefix + "/corpus.object";
-    diskIndexFile = options._indexPrefix + "/corpus.idx";
-    docTermFile = options._indexPrefix + "/corpus.docterm";
-    postingListFile = _options._indexPrefix + "/corpus.list";
+    indexFile = options._indexPrefix + "/stack.object";
+    diskIndexFile = options._indexPrefix + "/stack.idx";
+    docTermFile = options._indexPrefix + "/stack.docterm";
+    postingListFile = _options._indexPrefix + "/stack.list";
     System.out.println("Using Indexer: " + this.getClass().getSimpleName());
   }
 
@@ -91,50 +89,21 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     long start = System.currentTimeMillis();
     _pageRanks = (HashMap<String, Float>) CorpusAnalyzer.Factory
         .getCorpusAnalyzerByOption(_options).load();
-    _numViews = (HashMap<String, Integer>) LogMiner.Factory
-        .getLogMinerByOption(_options).load();
-    File corpusDirectory = new File(_options._corpusPrefix);
-    if (corpusDirectory.isDirectory()) {
-      System.out.println("Construct index from: " + corpusDirectory);
-      File[] allFiles = corpusDirectory.listFiles();
+    File _stackOverFlowDir = new File(_options._stackOverFlowPrefix);
+    if (_stackOverFlowDir.isDirectory()) {
+      System.out.println("Construct index from: " + _stackOverFlowDir);
+      File[] allFiles = _stackOverFlowDir.listFiles();
       // If corpus is in the corpus tsv file
-      if (allFiles.length == 1 && allFiles[0].getName() == "corpus.tsv") {
-        BufferedReader reader = new BufferedReader(new FileReader(
-            corpusDirectory + "/corpus.tsv"));
-        try {
-          String line = null;
-          while ((line = reader.readLine()) != null) {
-            processDocument(line);
-          }
-        } finally {
-          reader.close();
-        }
-      } else {
-        docTermWriter = new DataOutputStream(new BufferedOutputStream(
-            new FileOutputStream(docTermFile)));
-        for (File file : allFiles) {
-          processDocument(file,_options._corpusPrefix);
-          if (_numDocs % PARTIAL_SIZE == 0) {
-            writeMapToDisk();
-            _postingLists.clear();
-          }
-        }
-        docTermWriter.close();
-      }
-      
-      //index stackoverFlow as normal corpus
-      File stackOverFlowDir = new File(_options._stackOverFlowPrefix);
-      if (stackOverFlowDir.isDirectory()){
-        allFiles = stackOverFlowDir.listFiles();
-        for (File file : allFiles) {
-          processDocument(file, _options._stackOverFlowPrefix);
-          if (_numDocs % PARTIAL_SIZE == 0) {
-            writeMapToDisk();
-            _postingLists.clear();
-          }
+      docTermWriter = new DataOutputStream(new BufferedOutputStream(
+          new FileOutputStream(docTermFile)));
+      for (File file : allFiles) {
+        processDocument(file, _options._corpusPrefix);
+        if (_numDocs % PARTIAL_SIZE == 0) {
+          writeMapToDisk();
+          _postingLists.clear();
         }
       }
-      
+      docTermWriter.close();
     } else {
       throw new IOException("Corpus prefix is not a direcroty");
     }
@@ -154,61 +123,70 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     if (newfile.isDirectory()) {
       File[] files = newfile.listFiles();
       for (File file : files) {
-        if (file.getName().matches(".*corpus.*")) {
+        if (file.getName().matches(".*stack.*")) {
           file.delete();
         }
       }
     }
   }
 
-  // process document in Corpus.tsv
-  private void processDocument(String content) {
-    Scanner s = new Scanner(content).useDelimiter("\t");
-    String title = s.next();
-    String body = s.next();
-    s.close();
-    Stemmer stemmer = new Stemmer();
-    stemmer.add((title + body).toLowerCase().toCharArray(), title.length()
-        + body.length());
-    stemmer.stemWithStep1();
-    String stemedDocument = stemmer.toString();
-
-    int docid = _documents.size();
-    DocumentIndexed document = new DocumentIndexed(docid);
-    // Indexing.
-    indexDocument(stemedDocument, docid);
-    document.setTitle(title);
-    document.setLength(stemedDocument.length());
-    _documents.add(document);
-    ++_numDocs;
-  }
-
   // process document in corpus where each document is a file
-  private void processDocument(File file, String pathPrefix) throws IOException {
+  private void processDocument(File file, String pathPrefix)
+      throws IOException {
     // Use jsoup to parse html
     org.jsoup.nodes.Document parsedDocument = Jsoup.parse(file, "UTF-8");
-    String documentText = parsedDocument.text().toLowerCase();
+    String documentText = parsedDocument.title().toLowerCase();
     Stemmer stemmer = new Stemmer();
     stemmer.add(documentText.toCharArray(), documentText.length());
     stemmer.stemWithStep1();
     String stemedDocument = stemmer.toString();
 
     int docid = _documents.size();
-    DocumentIndexed document = new DocumentIndexed(docid);
+    DocumentStackOverFlow document = new DocumentStackOverFlow(docid);
     // Indexing.
     indexDocument(stemedDocument, docid);
-    if (pathPrefix.equals("data/corpus")){
-      document.setBaseUrl("en.wikipedia.org/wiki/");
-    }else{
-      document.setBaseUrl("stackoverflow.com/questions/");
+    try {
+      Element e = parsedDocument.body().getElementsByClass("post-text").get(1);
+      if (e != null) {
+        Scanner s = new Scanner(e.getElementsByClass("post-text").text());
+        List<String> answerTermList = new ArrayList<String>();
+        while (s.hasNext()) {
+          answerTermList.add(s.next());
+        }
+        docTermWriter.flush();
+        _docTermOffset.add(docTermWriter.size());
+        s.close();
+      }
+    } catch (Exception e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
     }
+    document.setBaseUrl("stackoverflow.com/questions/");
     document.setName(file.getName());
     document.setPathPrefix(pathPrefix);
     document.setTitle(parsedDocument.title());
     document.setLength(stemedDocument.length());
     String fileName = file.getName();
-    if (_numViews.containsKey(fileName)) {
-      document.setNumViews(_numViews.get(fileName));
+    Element e = parsedDocument.body().getElementsByClass("vote-count-post").first();
+    if (e != null & !e.text().equals("")) {
+      try {
+        document.setVote(Integer.parseInt(e.text()));
+      } catch (NumberFormatException e1) {
+        e1.printStackTrace();
+        document.setVote(0);
+      }
+    } else {
+      document.setVote(0);
+    }
+    e = parsedDocument.body().getElementsByClass("label-key").get(3);
+    if (e != null & !e.text().equals("")) {
+      try {
+        String[] text = e.text().split(" ");
+        document.setNumViews(Integer.parseInt(text[0]));
+      } catch (NumberFormatException e1) {
+        e1.printStackTrace();
+        document.setNumViews(0);
+      }
     } else {
       document.setNumViews(0);
     }
@@ -218,7 +196,6 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
       document.setPageRank(0);
     }
     _documents.add(document);
-    // System.out.println("url: " + document.getUrl());
     ++_numDocs;
   }
 
@@ -229,9 +206,6 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     List<Integer> list = null;
     while (s.hasNext()) {
       String term = s.next();
-      if(term.startsWith("http")){
-        continue;
-      }
       if (_diskIndex.containsKey(term)
           && _postingLists.containsKey(_diskIndex.get(term))) {
         list = _postingLists.get(_diskIndex.get(term));
@@ -245,48 +219,35 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
         }
         _postingLists.put(_diskIndex.get(term), list);
       }
-      if (docTermMap.containsKey(_diskIndex.get(term))) {
-        docTermMap.put(_diskIndex.get(term),
-            docTermMap.get(_diskIndex.get(term)) + 1);
-      } else {
-        docTermMap.put(_diskIndex.get(term), 1);
-      }
       list.add(offset);
       totalTermFrequency++;
       offset++;
     }
     s.close();
-    try {
-      for (Integer key : docTermMap.keySet()) {
-        docTermWriter.writeInt(key);
-        docTermWriter.writeInt(docTermMap.get(key));
-      }
-      docTermWriter.flush();
-      int preOffset = 0;
-      if (_docTermOffset.size() != 0) {
-        preOffset = _docTermOffset.get(_docTermOffset.size() - 1);
-      }
-      _docTermOffset.add(docTermMap.size() + preOffset);
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    docTermMap.clear();
   }
 
   private void writeMapToDisk() throws IOException {
-    String outputFile = _options._indexPrefix + "/corpuspart"
+    String outputFile = _options._indexPrefix + "/stackpart"
         + String.valueOf(partNumber) + ".list";
 
     List<Integer> keyList = new ArrayList<Integer>(_postingLists.keySet());
     Collections.sort(keyList);
     DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
         new FileOutputStream(outputFile)));
+    List<Byte> byteList = new ArrayList<Byte>();
     for (Integer key : keyList) {
+      byteList.clear();
       List<Integer> termList = _postingLists.get(key);
       writer.writeInt(key);
-      writer.writeInt(termList.size());
-      for (Integer value : termList) {
-        writer.writeInt(value);
+      for (int k = 0; k < termList.size(); k++) {
+        byte[] values = vByte(termList.get(k));
+        for (byte value : values) {
+          byteList.add(value);
+        }
+      }
+      writer.writeInt(byteList.size());
+      for (Byte value : byteList) {
+        writer.writeByte(value);
       }
     }
     _diskLength.add(_postingLists.size());
@@ -294,13 +255,85 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     partNumber++;
   }
 
-  private void writeIndexToDisk() throws FileNotFoundException, IOException {
+  private byte[] vByte(int num) {
+    byte[] ret = null;
+    if (num < 128) {
+      ret = new byte[1];
+      ret[0] = (byte) (num + 128);
+      return ret;
+    } else if (num < 16384) {
+      ret = new byte[2];
+      ret[0] = (byte) (num / 128);
+      ret[1] = (byte) (num % 128 + 128);
+    } else if (num < 2097152) {
+      ret = new byte[3];
+      ret[0] = (byte) (num / 16384);
+      byte[] rest = vByte(num % 16384);
+      if (rest.length == 1) {
+        ret[1] = 0;
+        ret[2] = rest[0];
+      } else {
+        ret[1] = rest[0];
+        ret[2] = rest[1];
+      }
+    } else if (num < 268435456) {
+      ret = new byte[4];
+      ret[0] = (byte) (num / 2097152);
+      byte[] rest = vByte(num % 2097152);
+      if (rest.length == 1) {
+        ret[1] = 0;
+        ret[2] = 0;
+        ret[3] = rest[0];
+      } else if (rest.length == 2) {
+        ret[1] = 0;
+        ret[2] = rest[0];
+        ret[3] = rest[1];
+      } else if (rest.length == 3) {
+        ret[1] = rest[0];
+        ret[2] = rest[1];
+        ret[3] = rest[2];
+      }
+    }
+    return ret;
+  }
 
+  private List<Integer> decodeByte(List<Byte> list) {
+    List<Byte> byteList = new ArrayList<Byte>();
+    List<Integer> ret = new ArrayList<Integer>();
+    for (int i = 0; i < list.size(); i++) {
+      if (list.get(i) < 0) {
+        byteList.add(list.get(i));
+        ret.add(convert(byteList));
+        byteList.clear();
+      } else {
+        byteList.add(list.get(i));
+      }
+    }
+    return ret;
+  }
+
+  private int convert(List<Byte> byteList) {
+    if (byteList.size() == 1) {
+      return (byteList.get(0) + 128);
+    } else if (byteList.size() == 2) {
+      return (byteList.get(0) * 128 + (byteList.get(1) + 128));
+    } else if (byteList.size() == 3) {
+      return (byteList.get(0) * 16384 + byteList.get(1) * 128 + (byteList
+          .get(2) + 128));
+    } else {
+      return (byteList.get(0) * 2097152 + byteList.get(1) * 16384
+          + byteList.get(2) * 128 + (byteList.get(3) + 128));
+    }
+  }
+
+  private void writeIndexToDisk() throws FileNotFoundException, IOException {
     int[] dictionaryList = new int[_diskIndex.size()];
     for (int i = 0; i < dictionaryList.length; i++) {
       dictionaryList[i] = i;
     }
-    List<Integer> diskList = new ArrayList<Integer>();
+
+    List<Byte> diskList = new ArrayList<Byte>();
+    List<Byte> byteList = new ArrayList<Byte>();
     int[] index = new int[partNumber];
     int[] diskTerms = new int[partNumber];
     int[] termSizes = new int[partNumber];
@@ -309,7 +342,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     File[] inputFiles = new File[partNumber];
     DataInputStream[] readers = new DataInputStream[partNumber];
     for (int i = 0; i < partNumber; i++) {
-      inputFiles[i] = new File(_options._indexPrefix + "/corpuspart"
+      inputFiles[i] = new File(_options._indexPrefix + "/stackpart"
           + String.valueOf(i) + ".list");
       readers[i] = new DataInputStream(new BufferedInputStream(
           new FileInputStream(inputFiles[i])));
@@ -318,18 +351,18 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
         new FileOutputStream(postingListFile)));
     DataOutputStream writer2 = new DataOutputStream(new BufferedOutputStream(
         new FileOutputStream(diskIndexFile)));
+
     for (int i = 0; i < partNumber; i++) {
       diskTerms[i] = readers[i].readInt();
       termSizes[i] = readers[i].readInt();
     }
-
     int j = 0;
     int k = 0;
     for (int i = 0; i < dictionaryList.length; i++) {
       for (j = 0; j < partNumber; j++) {
         if (diskTerms[j] == dictionaryList[i]) {
           for (k = 0; k < termSizes[j]; k++) {
-            diskList.add(readers[j].readInt());
+            diskList.add(readers[j].readByte());
           }
           index[j]++;
           if (index[j] < _diskLength.get(j)) {
@@ -340,15 +373,15 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
       }
 
       writer.writeInt(diskList.size());
-      for (Integer value : diskList) {
-        writer.writeInt(value);
+      for (Byte value : diskList) {
+        writer.writeByte(value);
       }
 
       writer2.writeInt(offset);
-      offset += (diskList.size() + 1);
+      offset += (diskList.size() + 4);
       diskList.clear();
+      byteList.clear();
     }
-
     writer.close();
     writer2.close();
     for (j = 0; j < partNumber; j++) {
@@ -364,10 +397,12 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
       _termList.add(tempMap.get(i));
     }
     tempMap = null;
+
     ObjectOutputStream os = new ObjectOutputStream(new BufferedOutputStream(
         new FileOutputStream(indexFile)));
     os.writeObject(this);
     os.close();
+
   }
 
   @Override
@@ -375,7 +410,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     System.out.println("Load index from: " + indexFile);
     ObjectInputStream is = new ObjectInputStream(new BufferedInputStream(
         new FileInputStream(indexFile)));
-    IndexerInvertedOccurrence newIndexer = (IndexerInvertedOccurrence) is
+    IndexerStackOverFlowCompressed newIndexer = (IndexerStackOverFlowCompressed) is
         .readObject();
     is.close();
 
@@ -387,8 +422,6 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     this._numDocs = _documents.size();
     this._diskLength = null;
     this._pageRanks = null;
-    this._numViews = null;
-    this.docTermMap = null;
 
     cacheIndex = new HashMap<Integer, Integer>();
     DataInputStream reader = new DataInputStream(new BufferedInputStream(
@@ -396,7 +429,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     for (String str : _termList) {
       _diskIndex.put(str, reader.readInt());
     }
-    
+    System.out.println(_termList.size());
     reader.close();
     // Loading each size of the term posting list.
     System.out.println(Integer.toString(_numDocs) + " documents loaded "
@@ -452,7 +485,8 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     for (String term : terms) {
       if (_diskIndex.containsKey(term)) {
         if (!_postingLists.containsKey(_diskIndex.get(term))) {
-          _postingLists.put(_diskIndex.get(term), getTermList(term));
+          _postingLists.put(_diskIndex.get(term),
+              decodeByte(getTermListFromDisk(term)));
           cacheIndex.put(_diskIndex.get(term), 0);
           if (_postingLists.size() >= CACHE_SIZE) {
             return;
@@ -463,8 +497,8 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
   }
 
   /**
-   * Gets the term list from memory, or from disk when not in memory. If
-   * not in disk either, return null
+   * Gets the term list from memory, or from disk when not in memory. If not in
+   * disk either, return null
    * 
    * @param term
    * @return
@@ -473,25 +507,28 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     if (!_diskIndex.containsKey(term)) {
       return null;
     }
+    List<Integer> list;
     if (_postingLists.containsKey(_diskIndex.get(term))) {
       return _postingLists.get(_diskIndex.get(term));
     } else {
-      return getTermListFromDisk(term);
+      list = decodeByte(getTermListFromDisk(term));
+      return list;
     }
   }
 
   // Given a term, load term list from disk
-  private List<Integer> getTermListFromDisk(String term) {
-    List<Integer> list = new ArrayList<Integer>();
+  private List<Byte> getTermListFromDisk(String term) {
+    List<Byte> list = new ArrayList<Byte>();
     int offset = _diskIndex.get(term);
+    String inputFile = _options._indexPrefix + "/stack.list";
     try {
-      RandomAccessFile raf = new RandomAccessFile(postingListFile, "r");
+      RandomAccessFile raf = new RandomAccessFile(inputFile, "r");
       DataInputStream reader = new DataInputStream(new BufferedInputStream(
           new FileInputStream(raf.getFD())));
-      raf.seek(offset * 4);
+      raf.seek(offset);
       int size = reader.readInt();
       for (int i = 0; i < size; i++) {
-        list.add((reader.readInt()));
+        list.add((reader.readByte()));
       }
       raf.close();
       reader.close();
@@ -514,7 +551,6 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
       boolean isEqual = true;
       List<Integer> docids = new ArrayList<Integer>();
       Vector<String> terms = ((QueryPhrase) query).getTermVector();
-
       for (String term : terms) {
         int d = next(term, docid);
         if (d == -1)
@@ -542,8 +578,8 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
   }
 
   /**
-   * Returns document id after the given document id Returns -1 if no
-   * document left to search
+   * Returns document id after the given document id Returns -1 if no document
+   * left to search
    * 
    * @param term
    * @param docid
@@ -657,29 +693,16 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
   // Number of times {@code term} appeared in corpus.
   public int corpusTermFrequency(String term) {
     // check whether the term is in postingLists, if not load from disk
-    if (!_diskIndex.containsKey(term)) {
+    List<Integer> list = getTermList(term);
+    if (list == null) {
       return 0;
     }
-    if (_postingLists.containsKey(_diskIndex.get(term))) {
-      return _postingLists.get(_diskIndex.get(term)).size() / 2;
-    } else {
-      int offset = _diskIndex.get(term);
-      int size = 0;
-      try {
-        RandomAccessFile raf = new RandomAccessFile(postingListFile, "r");
-        DataInputStream reader = new DataInputStream(new BufferedInputStream(
-            new FileInputStream(raf.getFD())));
-        raf.seek(offset * 4);
-        size = reader.readInt();
-        raf.close();
-        reader.close();
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-      return size / 2;
-    }
+    return list.size() / 2;
   }
 
+  /**
+   * @CS2580: Implement this to work with your RankerFavorite.
+   */
   @Override
   public int documentTermFrequency(String term, int docid) {
     // check whether the term is in postingLists, if not load from disk
@@ -715,7 +738,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
       while (i >= 0 && list.get(i) == current) {
         i = i - 2;
       }
-      if (list.get(i) >= docid) {
+      if (list.get(i) > docid) {
         cache = 0;
       } else if (list.get(i) == docid) {
         while (i >= 0 && list.get(i) == docid) {
@@ -750,15 +773,21 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     if (docid != 0) {
       offset = _docTermOffset.get(docid - 1);
     }
+
     int size = _docTermOffset.get(docid) - offset;
+    List<Byte> byteList = new ArrayList<Byte>();
     Map<String, Integer> map = new HashMap<String, Integer>();
     try {
       RandomAccessFile raf = new RandomAccessFile(docTermFile, "r");
       DataInputStream reader = new DataInputStream(new BufferedInputStream(
           new FileInputStream(raf.getFD())));
-      raf.seek(offset * 8);
+      raf.seek(offset);
       for (int i = 0; i < size; i++) {
-        map.put(_termList.get(reader.readInt()), reader.readInt());
+        byteList.add(reader.readByte());
+      }
+      List<Integer> termList = decodeByte(byteList);
+      for (int i = 0; i < termList.size(); i += 2) {
+        map.put(_termList.get(termList.get(i)), termList.get(i + 1));
       }
       raf.close();
       reader.close();
@@ -767,7 +796,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     }
     return map;
   }
-  
+
   @Override
   public boolean hasTerm(String term) {
     return _diskIndex.containsKey(term);
