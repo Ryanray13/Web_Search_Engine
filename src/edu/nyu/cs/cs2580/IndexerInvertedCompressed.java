@@ -44,12 +44,12 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   private transient List<Integer> _diskLength = new ArrayList<Integer>();
   // disk list offset
   private transient Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
-  //doc terms and frequencys
+  // doc terms and frequencys
   private transient Map<Integer, Integer> docTermMap = new HashMap<Integer, Integer>();
 
   // Cache current running query
   private transient String currentQuery = "";
-  private transient String currentTerm = "";  
+  private transient String currentTerm = "";
   private transient String indexFile = "";
   private transient String diskIndexFile = "";
   private transient String docTermFile = "";
@@ -118,10 +118,10 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
             _postingLists.clear();
           }
         }
-        
-      //index stackoverFlow as normal corpus
+
+        // index stackoverFlow as normal corpus
         File stackOverFlowDir = new File(_options._stackOverFlowPrefix);
-        if (stackOverFlowDir.isDirectory()){
+        if (stackOverFlowDir.isDirectory()) {
           allFiles = stackOverFlowDir.listFiles();
           for (File file : allFiles) {
             processDocument(file, _options._stackOverFlowPrefix);
@@ -133,7 +133,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
         }
         docTermWriter.close();
       }
-      
+
     } else {
       throw new IOException("Corpus prefix is not a direcroty");
     }
@@ -184,7 +184,8 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   }
 
   // process document in corpus where each document is a file
-  private void processDocument(File file, String pathPrefix) throws IOException {
+  private void processDocument(File file, String pathPrefix)
+      throws IOException {
     // Use jsoup to parse html
     org.jsoup.nodes.Document parsedDocument = Jsoup.parse(file, "UTF-8");
     String documentText = parsedDocument.text().toLowerCase();
@@ -197,9 +198,9 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     DocumentIndexed document = new DocumentIndexed(docid);
     // Indexing.
     indexDocument(stemedDocument, docid);
-    if (pathPrefix.equals("data/corpus")){
+    if (pathPrefix.equals("data/corpus")) {
       document.setBaseUrl("en.wikipedia.org/wiki/");
-    }else{
+    } else {
       document.setBaseUrl("stackoverflow.com/questions/");
     }
     document.setName(file.getName());
@@ -207,10 +208,26 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     document.setTitle(parsedDocument.title());
     document.setLength(stemedDocument.length());
     String fileName = file.getName();
-    if (_numViews.containsKey(fileName)) {
-      document.setNumViews(_numViews.get(fileName));
+    if (pathPrefix.equals("data/corpus")) {
+      if (_numViews.containsKey(fileName)) {
+        document.setNumViews(_numViews.get(fileName));
+      } else {
+        document.setNumViews(0);
+      }
     } else {
-      document.setNumViews(0);
+      org.jsoup.nodes.Element e = parsedDocument.body()
+          .getElementsByClass("label-key").get(3);
+      if (e != null & !e.text().equals("")) {
+        try {
+          String[] text = e.text().split(" ");
+          document.setNumViews(Integer.parseInt(text[0]));
+        } catch (NumberFormatException e1) {
+          e1.printStackTrace();
+          document.setNumViews(0);
+        }
+      } else {
+        document.setNumViews(0);
+      }
     }
     if (_pageRanks.containsKey(fileName)) {
       document.setPageRank(_pageRanks.get(file.getName()));
@@ -228,7 +245,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     List<Integer> list = null;
     while (s.hasNext()) {
       String term = s.next();
-      if(term.startsWith("http")){
+      if (term.startsWith("http")) {
         continue;
       }
       if (_diskIndex.containsKey(term)
@@ -484,7 +501,6 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     for (String str : _termList) {
       _diskIndex.put(str, reader.readInt());
     }
-    System.out.println(_termList.size());
     reader.close();
     // Loading each size of the term posting list.
     System.out.println(Integer.toString(_numDocs) + " documents loaded "
@@ -552,8 +568,8 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   }
 
   /**
-   * Gets the term list from memory, or from disk when not in memory. If
-   * not in disk either, return null
+   * Gets the term list from memory, or from disk when not in memory. If not in
+   * disk either, return null
    * 
    * @param term
    * @return
@@ -633,8 +649,8 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   }
 
   /**
-   * Returns document id after the given document id Returns -1 if no
-   * document left to search
+   * Returns document id after the given document id Returns -1 if no document
+   * left to search
    * 
    * @param term
    * @param docid

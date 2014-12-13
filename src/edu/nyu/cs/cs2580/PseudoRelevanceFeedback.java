@@ -104,6 +104,11 @@ public class PseudoRelevanceFeedback {
     stopWords.add("n/a");
     stopWords.add("may");
     stopWords.add("wikipedia"); 
+    stopWords.add("up"); 
+    stopWords.add("down"); 
+    stopWords.add("vote");
+    stopWords.add("stack");
+    stopWords.add("overflow"); 
   }
 
   public StringBuffer compute() {

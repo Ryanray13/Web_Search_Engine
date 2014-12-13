@@ -2,7 +2,6 @@ package edu.nyu.cs.cs2580;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -429,7 +428,7 @@ public class IndexerStackOverFlowCompressed extends Indexer implements
     for (String str : _termList) {
       _diskIndex.put(str, reader.readInt());
     }
-    System.out.println(_termList.size());
+
     reader.close();
     // Loading each size of the term posting list.
     System.out.println(Integer.toString(_numDocs) + " documents loaded "
