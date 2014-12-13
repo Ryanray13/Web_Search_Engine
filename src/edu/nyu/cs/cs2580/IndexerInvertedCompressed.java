@@ -33,51 +33,51 @@ import edu.nyu.cs.cs2580.SearchEngine.Options;
 public class IndexerInvertedCompressed extends Indexer implements Serializable {
 
   private static final long serialVersionUID = 5984985672402218465L;
-  private static final transient int CACHE_SIZE = 20;
-  private static final transient int PARTIAL_SIZE = 205;
+  protected static final transient int CACHE_SIZE = 20;
+  protected static final transient int PARTIAL_SIZE = 205;
 
   /** ---- Private instances ---- */
-  private transient Map<Integer, List<Integer>> _postingLists = new HashMap<Integer, List<Integer>>();
-  private transient Map<Integer, Integer> cacheIndex = null;
+  protected transient Map<Integer, List<Integer>> _postingLists = new HashMap<Integer, List<Integer>>();
+  protected transient Map<Integer, Integer> cacheIndex = null;
   private transient Map<String, Integer> _numViews = new HashMap<String, Integer>();
-  private transient Map<String, Float> _pageRanks = new HashMap<String, Float>();
-  private transient List<Integer> _diskLength = new ArrayList<Integer>();
+  protected transient Map<String, Float> _pageRanks = new HashMap<String, Float>();
+  protected transient List<Integer> _diskLength = new ArrayList<Integer>();
   // disk list offset
-  private transient Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
+  protected transient Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
   // doc terms and frequencys
-  private transient Map<Integer, Integer> docTermMap = new HashMap<Integer, Integer>();
+  protected transient Map<Integer, Integer> docTermMap = new HashMap<Integer, Integer>();
 
   // Cache current running query
-  private transient String currentQuery = "";
-  private transient String currentTerm = "";
-  private transient String indexFile = "";
-  private transient String diskIndexFile = "";
-  private transient String docTermFile = "";
-  private transient String postingListFile = "";
-  private transient int cacheTermListIndex = 0;
-  private transient int partNumber = 0;
-  private transient List<Integer> cacheTermList;
-  private transient DataOutputStream docTermWriter;
+  protected transient String currentQuery = "";
+  protected transient String currentTerm = "";
+  protected transient String indexFile = "";
+  protected transient String diskIndexFile = "";
+  protected transient String docTermFile = "";
+  protected transient String postingListFile = "";
+  protected transient int cacheTermListIndex = 0;
+  protected transient int partNumber = 0;
+  protected transient List<Integer> cacheTermList;
+  protected transient DataOutputStream docTermWriter;
 
   // doc term list offset
-  private List<Integer> _docTermOffset = new ArrayList<Integer>();
+  protected List<Integer> _docTermOffset = new ArrayList<Integer>();
 
   // Store all the documents
-  private List<Document> _documents = new ArrayList<Document>();
+  protected List<Document> _documents = new ArrayList<Document>();
 
   // store all the terms
-  private List<String> _termList = new ArrayList<String>();
+  protected List<String> _termList = new ArrayList<String>();
 
-  private long totalTermFrequency = 0;
+  protected long totalTermFrequency = 0;
 
   public IndexerInvertedCompressed() {
   }
 
   public IndexerInvertedCompressed(Options options) {
     super(options);
-    indexFile = options._indexPrefix + "/corpus.object";
-    diskIndexFile = options._indexPrefix + "/corpus.idx";
-    docTermFile = options._indexPrefix + "/corpus.docterm";
+    indexFile = _options._indexPrefix + "/corpus.object";
+    diskIndexFile = _options._indexPrefix + "/corpus.idx";
+    docTermFile = _options._indexPrefix + "/corpus.docterm";
     postingListFile = _options._indexPrefix + "/corpus.list";
     System.out.println("Using Indexer: " + this.getClass().getSimpleName());
   }
@@ -88,10 +88,8 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     // delete already existing index files
     deleteExistingFiles();
     long start = System.currentTimeMillis();
-    _pageRanks = (HashMap<String, Float>) CorpusAnalyzer.Factory
-        .getCorpusAnalyzerByOption(_options).load();
-    _numViews = (HashMap<String, Integer>) LogMiner.Factory
-        .getLogMinerByOption(_options).load();
+    _pageRanks = (HashMap<String, Float>) _corpusAnalyzer.load();
+    _numViews = (HashMap<String, Integer>) _logMiner.load();
     File corpusDirectory = new File(_options._corpusPrefix);
     if (corpusDirectory.isDirectory()) {
       System.out.println("Construct index from: " + corpusDirectory);
@@ -208,26 +206,10 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     document.setTitle(parsedDocument.title());
     document.setLength(stemedDocument.length());
     String fileName = file.getName();
-    if (pathPrefix.equals("data/corpus")) {
-      if (_numViews.containsKey(fileName)) {
-        document.setNumViews(_numViews.get(fileName));
-      } else {
-        document.setNumViews(0);
-      }
+    if (_numViews.containsKey(fileName)) {
+      document.setNumViews(_numViews.get(fileName));
     } else {
-      org.jsoup.nodes.Element e = parsedDocument.body()
-          .getElementsByClass("label-key").get(3);
-      if (e != null & !e.text().equals("")) {
-        try {
-          String[] text = e.text().split(" ");
-          document.setNumViews(Integer.parseInt(text[0]));
-        } catch (NumberFormatException e1) {
-          e1.printStackTrace();
-          document.setNumViews(0);
-        }
-      } else {
-        document.setNumViews(0);
-      }
+      document.setNumViews(0);
     }
     if (_pageRanks.containsKey(fileName)) {
       document.setPageRank(_pageRanks.get(file.getName()));
@@ -296,7 +278,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     docTermMap.clear();
   }
 
-  private void writeMapToDisk() throws IOException {
+  protected void writeMapToDisk() throws IOException {
     String outputFile = _options._indexPrefix + "/corpuspart"
         + String.valueOf(partNumber) + ".list";
 
@@ -325,7 +307,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     partNumber++;
   }
 
-  private byte[] vByte(int num) {
+  protected byte[] vByte(int num) {
     byte[] ret = null;
     if (num < 128) {
       ret = new byte[1];
@@ -367,7 +349,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     return ret;
   }
 
-  private List<Integer> decodeByte(List<Byte> list) {
+  protected List<Integer> decodeByte(List<Byte> list) {
     List<Byte> byteList = new ArrayList<Byte>();
     List<Integer> ret = new ArrayList<Integer>();
     for (int i = 0; i < list.size(); i++) {
@@ -382,7 +364,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     return ret;
   }
 
-  private int convert(List<Byte> byteList) {
+  protected int convert(List<Byte> byteList) {
     if (byteList.size() == 1) {
       return (byteList.get(0) + 128);
     } else if (byteList.size() == 2) {
@@ -396,7 +378,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     }
   }
 
-  private void writeIndexToDisk() throws FileNotFoundException, IOException {
+  protected void writeIndexToDisk() throws FileNotFoundException, IOException {
     int[] dictionaryList = new int[_diskIndex.size()];
     for (int i = 0; i < dictionaryList.length; i++) {
       dictionaryList[i] = i;
@@ -549,7 +531,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     }
   }
 
-  private void loadQueryList(Query query) {
+  protected void loadQueryList(Query query) {
     _postingLists.clear();
     cacheIndex.clear();
     Vector<String> terms = ((QueryPhrase) query).getTermVector();
@@ -574,7 +556,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
    * @param term
    * @return
    */
-  private List<Integer> getTermList(String term) {
+  protected List<Integer> getTermList(String term) {
     if (!_diskIndex.containsKey(term)) {
       return null;
     }
@@ -588,7 +570,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   }
 
   // Given a term, load term list from disk
-  private List<Byte> getTermListFromDisk(String term) {
+  protected List<Byte> getTermListFromDisk(String term) {
     List<Byte> list = new ArrayList<Byte>();
     int offset = _diskIndex.get(term);
     String inputFile = _options._indexPrefix + "/corpus.list";
@@ -617,7 +599,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
    * @param docid
    * @return
    */
-  private int nextContainAllDocument(Query query, int docid) {
+  protected int nextContainAllDocument(Query query, int docid) {
     while (true) {
       boolean isEqual = true;
       List<Integer> docids = new ArrayList<Integer>();
@@ -656,7 +638,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
    * @param docid
    * @return
    */
-  private int next(String term, int docid) {
+  protected int next(String term, int docid) {
 
     List<Integer> list = getTermList(term);
     if (list == null) {
@@ -689,7 +671,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   }
 
   // terms at least contain 2 words
-  private boolean containPhrase(String[] terms, int docid) {
+  protected boolean containPhrase(String[] terms, int docid) {
     int pos = -1;
     // position == -1 indicate has searched to the end of the document
     while (true) {
@@ -722,7 +704,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   }
 
   // return next occurrence of word in document after current position
-  private int nextPos(String word, int docid, int pos) {
+  protected int nextPos(String word, int docid, int pos) {
     List<Integer> list = getTermList(word);
     if (list == null || list.size() == 0 || list.get(list.size() - 1) <= pos) {
       return -1;

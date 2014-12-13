@@ -21,8 +21,8 @@ public class RankerCosine extends Ranker {
   private static int totalDocNum;
 
   public RankerCosine(Options options, CgiArguments arguments,
-      Indexer indexer) {
-    super(options, arguments, indexer);
+      Indexer indexer, Indexer stackIndexer) {
+    super(options, arguments, indexer, stackIndexer);
     totalDocNum = _indexer._numDocs;
     System.out.println("Using Ranker: " + this.getClass().getSimpleName());
   }

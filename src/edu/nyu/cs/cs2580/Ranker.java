@@ -35,14 +35,18 @@ public abstract class Ranker {
   // The Indexer via which documents are retrieved, see {@code IndexerFullScan}
   // for a concrete implementation. N.B. Be careful about thread safety here.
   protected Indexer _indexer;
+  
+  //Indexer for stackoverflow
+  protected Indexer _stackIndexer;
 
   /**
    * Constructor: the construction of the Ranker requires an Indexer.
    */
-  protected Ranker(Options options, CgiArguments arguments, Indexer indexer) {
+  protected Ranker(Options options, CgiArguments arguments, Indexer indexer, Indexer stackOverFlowIndexer) {
     _options = options;
     _arguments = arguments;
     _indexer = indexer;
+    _stackIndexer = stackOverFlowIndexer;
   }
 
   /**
@@ -59,24 +63,27 @@ public abstract class Ranker {
    */
   public static class Factory {
     public static Ranker getRankerByArguments(CgiArguments arguments,
-        Options options, Indexer indexer) {
+        Options options, Indexer indexer, Indexer stackIndexer) {
       switch (arguments._rankerType) {
       case FULLSCAN:
-        return new RankerFullScan(options, arguments, indexer);
+        return new RankerFullScan(options, arguments, indexer, stackIndexer);
       case CONJUNCTIVE:
-        return new RankerConjunctive(options, arguments, indexer);
+        return new RankerConjunctive(options, arguments, indexer, stackIndexer);
       case FAVORITE:
-        return new RankerFavorite(options, arguments, indexer);
+        return new RankerFavorite(options, arguments, indexer, stackIndexer);
       case COMPREHENSIVE:
-        return new RankerComprehensive(options, arguments, indexer);
+        return new RankerComprehensive(options, arguments, indexer, stackIndexer);
       case COSINE:
         // Plug in your cosine Ranker
-        return new RankerCosine(options, arguments, indexer);
+        return new RankerCosine(options, arguments, indexer, stackIndexer);
       case QL:
         // Plug in your QL Ranker
-        return new RankerFavorite(options, arguments, indexer);
+        return new RankerFavorite(options, arguments, indexer, stackIndexer);
       case PHRASE:
         // Plug in your phrase Ranker
+        break;
+      case NUMVIEW:
+        // Plug in your linear Ranker
         break;
       case LINEAR:
         // Plug in your linear Ranker

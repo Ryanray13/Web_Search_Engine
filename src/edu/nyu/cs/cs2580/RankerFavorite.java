@@ -19,8 +19,8 @@ public class RankerFavorite extends Ranker {
   private static final double LAMBDA = 0.5;
 
   public RankerFavorite(Options options, CgiArguments arguments,
-      Indexer indexer) {
-    super(options, arguments, indexer);
+      Indexer indexer, Indexer stackIndexer) {
+    super(options, arguments, indexer, stackIndexer);
     System.out.println("Using Ranker: " + this.getClass().getSimpleName());
   }
 

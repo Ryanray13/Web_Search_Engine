@@ -9,18 +9,16 @@ import edu.nyu.cs.cs2580.QueryHandler.CgiArguments;
 import edu.nyu.cs.cs2580.SearchEngine.Options;
 
 /**
- * @CS2580: Implement this class for HW3 based on your {@code RankerFavorite}
- *          from HW2. The new Ranker should now combine both term features and
- *          the document-level features including the PageRank and the NumViews.
+ * @CS2580: Implement this class for HW2 based on a refactoring of your favorite
+ *          Ranker (except RankerPhrase) from HW1. The new Ranker should no
+ *          longer rely on the instructors' {@link IndexerFullScan}, instead it
+ *          should use one of your more efficient implementations.
  */
-public class RankerComprehensive extends Ranker {
+public class RankerNumview extends Ranker {
   private static final double LOG2_BASE = Math.log(2.0);
   private static final double LAMBDA = 0.5;
-  private static final double BASE_BETA = 0.65;
-  private static final double PAGERANK_BETA = 0.2;
-  private static final double NUMVIEW_BETA = 0.15;
 
-  public RankerComprehensive(Options options, CgiArguments arguments,
+  public RankerNumview(Options options, CgiArguments arguments,
       Indexer indexer, Indexer stackIndexer) {
     super(options, arguments, indexer, stackIndexer);
     System.out.println("Using Ranker: " + this.getClass().getSimpleName());
@@ -53,29 +51,7 @@ public class RankerComprehensive extends Ranker {
   }
 
   private ScoredDocument scoreDocument(Query query, Document doc) {
-    double score = 0.0;
-    if (((DocumentIndexed) doc).getLength() == 0) {
-      return null;
-    }
-
-    Vector<String> phrases = query._tokens;
-    for (String phrase : phrases) {
-      double probability = 0;
-      String[] terms = phrase.trim().split(" +");
-      for (String term : terms) {
-        probability = (1 - LAMBDA)
-            * _indexer.documentTermFrequency(term, doc._docid)
-            / ((DocumentIndexed) doc).getLength() + LAMBDA
-            * _indexer.corpusTermFrequency(term)
-            / _indexer._totalTermFrequency;
-        score += Math.log(probability) / LOG2_BASE;
-      }
-    }
-
-    if(score != 0.0){
-      score = BASE_BETA * score + PAGERANK_BETA * Math.sqrt(doc.getPageRank()+1) 
-          + NUMVIEW_BETA * Math.log(doc.getNumViews()+1) / LOG2_BASE;
-    }
+    double score = Math.log(doc.getNumViews() + 1) / LOG2_BASE;
     if (score == 0.0) {
       return null;
     } else {

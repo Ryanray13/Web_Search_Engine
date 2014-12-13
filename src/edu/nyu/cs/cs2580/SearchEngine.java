@@ -205,6 +205,7 @@ public class SearchEngine {
   private static void startIndexing() throws IOException {
     Indexer indexer = Indexer.Factory.getIndexerByOption(SearchEngine.OPTIONS);
     Indexer indexerStackOverFlow = Indexer.Factory.getIndexerStackOverFlow(SearchEngine.OPTIONS);
+
     Check(indexer != null,
         "Indexer " + SearchEngine.OPTIONS._indexerType + " not found!");
     Check(indexerStackOverFlow != null,
@@ -223,7 +224,7 @@ public class SearchEngine {
         "Indexer " + SearchEngine.OPTIONS._indexerStackOverFlowType + " not found!");
     indexer.loadIndex();
     indexerStackOverFlow.loadIndex();
-    QueryHandler handler = new QueryHandler(SearchEngine.OPTIONS, indexer);
+    QueryHandler handler = new QueryHandler(SearchEngine.OPTIONS, indexer, indexerStackOverFlow);
 
     // Establish the serving environment
     InetSocketAddress addr = new InetSocketAddress(SearchEngine.PORT);

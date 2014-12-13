@@ -76,9 +76,9 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
 
   public IndexerInvertedOccurrence(Options options) {
     super(options);
-    indexFile = options._indexPrefix + "/corpus.object";
-    diskIndexFile = options._indexPrefix + "/corpus.idx";
-    docTermFile = options._indexPrefix + "/corpus.docterm";
+    indexFile = _options._indexPrefix + "/corpus.object";
+    diskIndexFile = _options._indexPrefix + "/corpus.idx";
+    docTermFile = _options._indexPrefix + "/corpus.docterm";
     postingListFile = _options._indexPrefix + "/corpus.list";
     System.out.println("Using Indexer: " + this.getClass().getSimpleName());
   }
@@ -89,10 +89,8 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     // delete already existing index files
     deleteExistingFiles();
     long start = System.currentTimeMillis();
-    _pageRanks = (HashMap<String, Float>) CorpusAnalyzer.Factory
-        .getCorpusAnalyzerByOption(_options).load();
-    _numViews = (HashMap<String, Integer>) LogMiner.Factory
-        .getLogMinerByOption(_options).load();
+    _pageRanks = (HashMap<String, Float>) _corpusAnalyzer.load();
+    _numViews = (HashMap<String, Integer>) _logMiner.load();
     File corpusDirectory = new File(_options._corpusPrefix);
     if (corpusDirectory.isDirectory()) {
       System.out.println("Construct index from: " + corpusDirectory);

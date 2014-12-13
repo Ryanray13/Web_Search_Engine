@@ -76,9 +76,9 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
   public IndexerInvertedDoconly(Options options) {
     super(options);
-    indexFile = options._indexPrefix + "/corpus.object";
-    diskIndexFile = options._indexPrefix + "/corpus.idx";
-    docTermFile = options._indexPrefix + "/corpus.docterm";
+    indexFile = _options._indexPrefix + "/corpus.object";
+    diskIndexFile = _options._indexPrefix + "/corpus.idx";
+    docTermFile = _options._indexPrefix + "/corpus.docterm";
     postingListFile = _options._indexPrefix + "/corpus.list";
     System.out.println("Using Indexer: " + this.getClass().getSimpleName());
   }
@@ -89,10 +89,8 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     // delete already existing index files
     deleteExistingFiles();
     long start = System.currentTimeMillis();
-    _pageRanks = (HashMap<String, Float>) CorpusAnalyzer.Factory
-        .getCorpusAnalyzerByOption(_options).load();
-    _numViews = (HashMap<String, Integer>) LogMiner.Factory
-        .getLogMinerByOption(_options).load();
+    _pageRanks = (HashMap<String, Float>) _corpusAnalyzer.load();
+    _numViews = (HashMap<String, Integer>) _logMiner.load();
     File corpusDirectory = new File(_options._corpusPrefix);
     if (corpusDirectory.isDirectory()) {
       System.out.println("Construct index from: " + corpusDirectory);
@@ -203,26 +201,10 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     document.setTitle(parsedDocument.title());
     document.setLength(stemedDocument.length());
     String fileName = file.getName();
-    if (pathPrefix.equals("data/corpus")) {
-      if (_numViews.containsKey(fileName)) {
-        document.setNumViews(_numViews.get(fileName));
-      } else {
-        document.setNumViews(0);
-      }
+    if (_numViews.containsKey(fileName)) {
+      document.setNumViews(_numViews.get(fileName));
     } else {
-      org.jsoup.nodes.Element e = parsedDocument.body()
-          .getElementsByClass("label-key").get(3);
-      if (e != null & !e.text().equals("")) {
-        try {
-          String[] text = e.text().split(" ");
-          document.setNumViews(Integer.parseInt(text[0]));
-        } catch (NumberFormatException e1) {
-          e1.printStackTrace();
-          document.setNumViews(0);
-        }
-      } else {
-        document.setNumViews(0);
-      }
+      document.setNumViews(0);
     }
     if (_pageRanks.containsKey(fileName)) {
       document.setPageRank(_pageRanks.get(file.getName()));

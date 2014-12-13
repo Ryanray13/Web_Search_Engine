@@ -15,9 +15,9 @@ import edu.nyu.cs.cs2580.SearchEngine.Options;
  */
 public class RankerConjunctive extends Ranker {
 
-  public RankerConjunctive(Options options,
-      CgiArguments arguments, Indexer indexer) {
-    super(options, arguments, indexer);
+  public RankerConjunctive(Options options, CgiArguments arguments,
+      Indexer indexer, Indexer stackIndexer) {
+    super(options, arguments, indexer, stackIndexer);
     System.out.println("Using Ranker: " + this.getClass().getSimpleName());
   }
 

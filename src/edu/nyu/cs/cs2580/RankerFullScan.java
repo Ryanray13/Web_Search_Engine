@@ -15,9 +15,9 @@ import edu.nyu.cs.cs2580.SearchEngine.Options;
  */
 class RankerFullScan extends Ranker {
 
-  public RankerFullScan(Options options,
-      CgiArguments arguments, Indexer indexer) {
-    super(options, arguments, indexer);
+  public RankerFullScan(Options options, CgiArguments arguments,
+      Indexer indexer, Indexer stackIndexer) {
+    super(options, arguments, indexer, stackIndexer);
     System.out.println("Using Ranker: " + this.getClass().getSimpleName());
   }
 

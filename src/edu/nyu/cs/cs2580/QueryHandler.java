@@ -38,7 +38,7 @@ class QueryHandler implements HttpHandler {
 
     // The type of the ranker we will be using.
     public enum RankerType {
-      NONE, FULLSCAN, CONJUNCTIVE, FAVORITE, COSINE, PHRASE, QL, LINEAR, COMPREHENSIVE,
+      NONE, FULLSCAN, CONJUNCTIVE, FAVORITE, COSINE, PHRASE, QL, LINEAR, COMPREHENSIVE, NUMVIEW,
     }
 
     public RankerType _rankerType = RankerType.NONE;
@@ -111,9 +111,11 @@ class QueryHandler implements HttpHandler {
   // we are not worried about thread-safety here, the Indexer class must take
   // care of thread-safety.
   private Indexer _indexer;
+  private Indexer _stackIndexer;
 
-  public QueryHandler(Options options, Indexer indexer) {
+  public QueryHandler(Options options, Indexer indexer, Indexer stackIndexer) {
     _indexer = indexer;
+    _stackIndexer = stackIndexer;
   }
 
   private void respondWithMsg(HttpExchange exchange, final String message)
@@ -187,7 +189,7 @@ class QueryHandler implements HttpHandler {
 
     // Create the ranker.
     Ranker ranker = Ranker.Factory.getRankerByArguments(cgiArgs,
-        SearchEngine.OPTIONS, _indexer);
+        SearchEngine.OPTIONS, _indexer, _stackIndexer);
     if (ranker == null) {
       respondWithMsg(exchange, "Ranker " + cgiArgs._rankerType.toString()
           + " is not valid!");
