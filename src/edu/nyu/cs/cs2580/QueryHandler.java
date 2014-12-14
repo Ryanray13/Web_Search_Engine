@@ -259,6 +259,7 @@ class QueryHandler implements HttpHandler {
 
     // Processing the query.
     Query processedQuery = new QueryPhrase(cgiArgs._query);
+    processedQuery.setStopWords(_spellChecker.getStopWords());
     processedQuery.processQuery();
 
     KnowledgeDocument knowledgeDoc = ranker

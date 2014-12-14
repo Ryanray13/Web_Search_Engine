@@ -74,7 +74,7 @@ public class QueryPhrase extends Query {
     Scanner s = new Scanner(stemStr);
     while (s.hasNext()) {
       String term = s.next();
-      if(!stopWords.contains(term)){
+      if(!_stopWords.contains(term)){
         _tokens.add(term);
       }
     }

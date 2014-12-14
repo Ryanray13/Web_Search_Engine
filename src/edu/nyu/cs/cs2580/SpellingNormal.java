@@ -86,7 +86,7 @@ class SpellingNormal extends Spelling {
     List<String> list = edits(word);
     Map<Integer, String> candidates = new HashMap<Integer, String>();
     for (String s : list){
-      if (nWords.containsKey(s)){
+      if (nWords.containsKey(s) && !_stopWords.contains(s)){
         candidates.put(nWords.get(s), s);
       }
     }
@@ -97,7 +97,7 @@ class SpellingNormal extends Spelling {
     }
     for (String s : list){
       for (String w : edits(s)){
-        if (nWords.containsKey(w)){
+        if (nWords.containsKey(w) && !_stopWords.contains(w)){
           candidates.put(nWords.get(w), w);
         }
       }

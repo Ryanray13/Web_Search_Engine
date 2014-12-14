@@ -48,7 +48,7 @@ class SpellingIndexed extends Spelling {
     List<String> list = edits(word);
     Map<Integer, String> candidates = new HashMap<Integer, String>();
     for (String s : list){
-      if (_indexer.hasTerm(s)) {
+      if (_indexer.hasTerm(s) && !_stopWords.contains(s)) {
         candidates.put(_indexer.corpusDocFrequencyByTerm(s), s);
       }
     }
@@ -59,7 +59,7 @@ class SpellingIndexed extends Spelling {
     //check with edit distance 2
     for (String s : list) {
       for (String w : edits(s)) {
-        if (_indexer.hasTerm(w)) {
+        if (_indexer.hasTerm(w)&& !_stopWords.contains(w)) {
           candidates.put(_indexer.corpusDocFrequencyByTerm(w), w);
         }
       }
