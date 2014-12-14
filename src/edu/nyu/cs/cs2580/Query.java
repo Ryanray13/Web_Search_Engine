@@ -39,4 +39,5 @@ public class Query {
   public void setStopWords(Set<String> stopWords){
     _stopWords = stopWords;
   }
+
 }

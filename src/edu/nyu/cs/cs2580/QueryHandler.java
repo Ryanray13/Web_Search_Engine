@@ -193,7 +193,8 @@ class QueryHandler implements HttpHandler {
   }
 
   private void constructHtmlOutput(final Vector<ScoredDocument> docs,
-      KnowledgeDocument knoc, String spellCheckResult, Query query, StringBuffer response) {
+      KnowledgeDocument knoc, String spellCheckResult, Query query,
+      StringBuffer response) {
     response.append("{\n\"results\":[ \n");
     for (ScoredDocument doc : docs) {
       doc.parseSnippet(query);
@@ -221,6 +222,13 @@ class QueryHandler implements HttpHandler {
     } else {
       response.append("null");
     }
+    response.append(",\n\"query\": ");
+    String queryString = ((QueryPhrase) query).toString();
+    try {
+      response.append("\"" + URLEncoder.encode(queryString, "UTF-8") + "\"");
+    } catch (UnsupportedEncodingException e) {
+      response.append("null");
+    }
     response.append("\n}");
   }
 
@@ -241,16 +249,19 @@ class QueryHandler implements HttpHandler {
       }
     }
     if (hasCorrected) {
-      Query tempQuery = new QueryPhrase(correctString);
-      tempQuery.processQuery();
-      Vector<ScoredDocument> scoredDocs = ranker.runQuery(tempQuery, 20, 1);
-      PseudoRelevanceFeedback tempPrf = new PseudoRelevanceFeedback(
-          scoredDocs, _indexer, 20, false, tempQuery);
-      List<String> prfList = tempPrf.compute();
       Set<String> prfCandidates = new HashSet<String>();
-      for (String str : prfList) {
-        String[] strs = str.split("\t");
-        prfCandidates.add(strs[0]);
+      if (!correctString.equals("")) {
+        Query tempQuery = new QueryPhrase(correctString);
+        tempQuery.processQuery();
+        Vector<ScoredDocument> scoredDocs = ranker.runQuery(tempQuery, 20, 1);
+        PseudoRelevanceFeedback tempPrf = new PseudoRelevanceFeedback(
+            scoredDocs, _indexer, 20, false, tempQuery);
+        List<String> prfList = tempPrf.compute();
+
+        for (String str : prfList) {
+          String[] strs = str.split("\t");
+          prfCandidates.add(strs[0]);
+        }
       }
       for (String phrase : phraseVector) {
         String[] terms = phrase.split(" +");
@@ -272,6 +283,7 @@ class QueryHandler implements HttpHandler {
             }
             if (!inPrf) {
               candidate = spellchecker.correct(term);
+              System.out.println("asdf");
             }
           }
           results.append(candidate);

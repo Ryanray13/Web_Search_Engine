@@ -14,6 +14,8 @@ import java.util.regex.Pattern;
  */
 public class QueryPhrase extends Query {
 
+  private Vector<String> _uniqTermVector = null;
+
   public QueryPhrase(String query) {
     super(query);
   }
@@ -67,7 +69,7 @@ public class QueryPhrase extends Query {
   }
 
   private void putTermIntoVector(String str) {
-    if(str.equals("")){
+    if (str.equals("")) {
       return;
     }
     Stemmer stemmer = new Stemmer();
@@ -88,7 +90,7 @@ public class QueryPhrase extends Query {
   }
 
   private void putPhraseIntoVector(String str) {
-    if(str.equals("")){
+    if (str.equals("")) {
       return;
     }
     System.out.println(str);
@@ -100,14 +102,17 @@ public class QueryPhrase extends Query {
   }
 
   public Vector<String> getUniqTermVector() {
-    Set<String> result = new HashSet<String>();
-    for (String phrase : _tokens) {
-      String[] terms = phrase.split(" +");
-      for (String term : terms) {
-        result.add(term);
+    if (this._uniqTermVector == null) {
+      Set<String> result = new HashSet<String>();
+      for (String phrase : _tokens) {
+        String[] terms = phrase.split(" +");
+        for (String term : terms) {
+          result.add(term);
+        }
       }
+      this._uniqTermVector = new Vector<String>(result);
     }
-    return new Vector<String>(result);
+    return this._uniqTermVector;
   }
 
   public Vector<String> getTermVector() {
@@ -119,5 +124,14 @@ public class QueryPhrase extends Query {
       }
     }
     return result;
+  }
+
+  public String toString() {
+    Vector<String> result = getUniqTermVector();
+    StringBuffer bf = new StringBuffer();
+    for (String term : result) {
+      bf.append(term).append(" ");
+    }
+    return bf.toString().trim();
   }
 }
