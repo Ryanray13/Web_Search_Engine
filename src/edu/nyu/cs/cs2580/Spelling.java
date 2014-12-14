@@ -1,6 +1,7 @@
 package edu.nyu.cs.cs2580;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import edu.nyu.cs.cs2580.SearchEngine.Options;
@@ -85,6 +86,8 @@ public abstract class Spelling {
     _stopWords.add("vote");
     _stopWords.add("stack");
     _stopWords.add("overflow"); 
+    _stopWords.add("such"); 
+    _stopWords.add("so"); 
   }
 
   public Set<String> getStopWords(){
@@ -92,4 +95,6 @@ public abstract class Spelling {
   }
   
   public abstract String correct(String word);
+  
+  public abstract Map<Integer, String> correctCandidates(String word);
 }
