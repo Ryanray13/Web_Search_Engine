@@ -9,6 +9,7 @@ function appCtrl($scope, $http) {
     $scope.haveKnowledge = false;
     $scope.haveSpellcheck = false;
     $scope.haveSearchResults = false;
+    $scope.knowledgeMore = false;
     $scope.queryWord = "";
     $scope.ranker = "favorite";
     $scope.size = 10;
@@ -38,6 +39,10 @@ function appCtrl($scope, $http) {
                     know.title = decodeURIComponent(data.knowledge.title).replace(/\+/g, ' ');
                     know.url = data.knowledge.url;
                     know.knowledge = decodeURIComponent(data.knowledge.knowledge).replace(/\+/g, ' ');
+                    if (data.knowledge.knowledge.length > 300) {
+                        know.short = decodeURIComponent(data.knowledge.knowledge).replace(/\+/g, ' ').substring(0, 300);
+                        $scope.knowledgeMore = true;
+                    }
                     know.vote = data.knowledge.vote;
                     $scope.knowledge = know;
                 }
@@ -51,5 +56,9 @@ function appCtrl($scope, $http) {
                     }
                 }
             });
+    };
+
+    $scope.showMore = function () {
+        $scope.knowledgeMore = false;
     };
 }
