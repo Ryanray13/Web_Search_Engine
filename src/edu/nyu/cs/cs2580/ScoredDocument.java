@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Vector;
 
 import org.jsoup.Jsoup;
 
@@ -29,8 +30,36 @@ class ScoredDocument implements Comparable<ScoredDocument> {
       try {
         org.jsoup.nodes.Document parsedDocument = Jsoup.parse(file, "UTF-8");
         String body = parsedDocument.body().text();
-        _snippet = body.substring(0, 250);
+        _snippet = body.substring(0, 250) + "...";
       } catch (IOException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+    }
+  }
+
+  public void parseSnippet(Query query) {
+    Vector<String> phrases = query._tokens;
+    int eachSize = 250 / phrases.size();
+    StringBuffer bf = new StringBuffer();
+    bf.append("...");
+    File file = new File(_doc.getPathPrefix() + "/" + _doc.getName());
+    if (file.exists()) {
+      try {
+        org.jsoup.nodes.Document parsedDocument = Jsoup.parse(file, "UTF-8");
+        String body = parsedDocument.body().text().toLowerCase();
+        int index = 0;
+        for (String phrase : phrases) {
+          index = body.indexOf(phrase,index);
+          if (index != -1) {
+            bf.append(body.substring(index, index+eachSize)).append("...");
+            index += index + eachSize;
+          }else{
+            index = 0;
+          }
+        }
+        _snippet = bf.toString();
+      } catch (Exception e) {
         // TODO Auto-generated catch block
         e.printStackTrace();
       }
@@ -44,7 +73,7 @@ class ScoredDocument implements Comparable<ScoredDocument> {
   public int getDocid() {
     return _doc._docid;
   }
-  
+
   public double getScore() {
     return _score;
   }

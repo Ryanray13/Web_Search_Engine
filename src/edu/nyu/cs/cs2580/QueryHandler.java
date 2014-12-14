@@ -193,10 +193,10 @@ class QueryHandler implements HttpHandler {
   }
 
   private void constructHtmlOutput(final Vector<ScoredDocument> docs,
-      KnowledgeDocument knoc, String spellCheckResult, StringBuffer response) {
+      KnowledgeDocument knoc, String spellCheckResult, Query query, StringBuffer response) {
     response.append("{\n\"results\":[ \n");
     for (ScoredDocument doc : docs) {
-      doc.parseSnippet();
+      doc.parseSnippet(query);
       response.append(doc.asHtmlResult());
       response.append(",\n");
     }
@@ -350,7 +350,7 @@ class QueryHandler implements HttpHandler {
         break;
       case HTML:
         constructHtmlOutput(new Vector<ScoredDocument>(), knowledgeDoc,
-            spellCheckResult, response);
+            spellCheckResult, processedQuery, response);
         break;
       default:
         // nothing
@@ -374,7 +374,7 @@ class QueryHandler implements HttpHandler {
       case HTML:
         // @CS2580: Plug in your HTML output
         constructHtmlOutput(scoredDocs, knowledgeDoc, spellCheckResult,
-            response);
+            processedQuery, response);
         break;
       default:
         // nothing
