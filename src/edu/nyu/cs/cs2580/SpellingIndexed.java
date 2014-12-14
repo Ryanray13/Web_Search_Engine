@@ -76,15 +76,15 @@ class SpellingIndexed extends Spelling {
   }
 
   @Override
-  public Map<Integer, String> correctCandidates(String word) {
+  public Map<String, Integer> correctCandidates(String word) {
     if (_indexer.hasTerm(word)){     
       return null;
     }
     List<String> list = edits(word);
-    Map<Integer, String> candidates = new HashMap<Integer, String>();
+    Map<String, Integer> candidates = new HashMap<String, Integer>();
     for (String s : list){
       if (_indexer.hasTerm(s) && !_stopWords.contains(s)) {
-        candidates.put(_indexer.corpusDocFrequencyByTerm(s), s);
+        candidates.put(s,_indexer.corpusDocFrequencyByTerm(s));
       }
     }
     
@@ -92,11 +92,16 @@ class SpellingIndexed extends Spelling {
     for (String s : list) {
       for (String w : edits(s)) {
         if (_indexer.hasTerm(w)&& !_stopWords.contains(w)) {
-          candidates.put(_indexer.corpusDocFrequencyByTerm(w), w);
+          candidates.put(w,_indexer.corpusDocFrequencyByTerm(w));
         }
       }
     }
     
     return candidates.size() > 0 ? candidates : null;
+  }
+
+  @Override
+  public boolean hasTerm(String word) {
+    return this._indexer.hasTerm(word);
   }
 }

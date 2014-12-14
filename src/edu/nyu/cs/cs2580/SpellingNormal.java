@@ -124,27 +124,32 @@ class SpellingNormal extends Spelling {
   }
 
   @Override
-  public Map<Integer, String> correctCandidates(String word) {
+  public Map<String, Integer> correctCandidates(String word) {
     if (nWords.containsKey(word)){
       return null;
     }
     
     List<String> list = edits(word);
-    Map<Integer, String> candidates = new HashMap<Integer, String>();
+    Map<String, Integer> candidates = new HashMap<String, Integer>();
     for (String s : list){
       if (nWords.containsKey(s) && !_stopWords.contains(s)){
-        candidates.put(nWords.get(s), s);
+        candidates.put(s,nWords.get(s));
       }
     }
     
-    for (String s : list){
+   for (String s : list){
       for (String w : edits(s)){
         if (nWords.containsKey(w) && !_stopWords.contains(w)){
-          candidates.put(nWords.get(w), w);
+          candidates.put(w,nWords.get(w));
         }
       }
     }
     return candidates.size() > 0 ? candidates : null;
+  }
+
+  @Override
+  public boolean hasTerm(String word) {
+    return this.nWords.containsKey(word);
   }
 
 }

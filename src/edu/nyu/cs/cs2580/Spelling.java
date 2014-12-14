@@ -96,5 +96,7 @@ public abstract class Spelling {
   
   public abstract String correct(String word);
   
-  public abstract Map<Integer, String> correctCandidates(String word);
+  public abstract Map<String, Integer> correctCandidates(String word);
+  
+  public abstract boolean hasTerm(String word);
 }
