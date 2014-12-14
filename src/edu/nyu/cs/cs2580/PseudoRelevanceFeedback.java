@@ -92,6 +92,9 @@ public class PseudoRelevanceFeedback {
     stopWords.add("been");
     stopWords.add("can");
     stopWords.add("you");
+    stopWords.add("your");
+    stopWords.add("but");
+    stopWords.add("i");
     stopWords.add("she");
     stopWords.add("other");
     stopWords.add("its");
@@ -116,7 +119,7 @@ public class PseudoRelevanceFeedback {
     stopWords.add("–");
   }
 
-  public StringBuffer compute() {
+  public List<String> compute() {
     Map<String, Integer> termMap = new HashMap<String, Integer>();
     Queue<FrequentTerm> rankQueue = new PriorityQueue<FrequentTerm>();
     Vector<String> queryTerms = ((QueryPhrase) _query).getUniqTermVector();
@@ -161,10 +164,9 @@ public class PseudoRelevanceFeedback {
     }
     Collections.sort(results, Collections.reverseOrder());
     normalize(results);
-    StringBuffer response = new StringBuffer();
+    List<String> response = new ArrayList<String>();
     for (FrequentTerm fterm : results) { 
-      response.append(fterm.toString());
-      response.append('\n');
+      response.add(fterm.toString());
     }
     return response;
   }

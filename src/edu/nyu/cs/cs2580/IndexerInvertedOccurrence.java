@@ -211,26 +211,10 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     document.setTitle(parsedDocument.title());
     document.setLength(stemedDocument.length());
     String fileName = file.getName();
-    if (pathPrefix.equals("data/corpus")) {
-      if (_numViews.containsKey(fileName)) {
-        document.setNumViews(_numViews.get(fileName));
-      } else {
-        document.setNumViews(0);
-      }
+    if (_numViews.containsKey(fileName)) {
+      document.setNumViews(_numViews.get(fileName));
     } else {
-      org.jsoup.nodes.Element e = parsedDocument.body()
-          .getElementsByClass("label-key").get(3);
-      if (e != null & !e.text().equals("")) {
-        try {
-          String[] text = e.text().split(" ");
-          document.setNumViews(Integer.parseInt(text[0]));
-        } catch (NumberFormatException e1) {
-          e1.printStackTrace();
-          document.setNumViews(0);
-        }
-      } else {
-        document.setNumViews(0);
-      }
+      document.setNumViews(0);
     }
     if (_pageRanks.containsKey(fileName)) {
       document.setPageRank(_pageRanks.get(file.getName()));

@@ -94,7 +94,7 @@ public class IndexerStackOverFlowCompressed extends Indexer implements
       docTermWriter = new DataOutputStream(new BufferedOutputStream(
           new FileOutputStream(docTermFile)));
       for (File file : allFiles) {
-        processDocument(file, _options._corpusPrefix);
+        processDocument(file);
         if (_numDocs % PARTIAL_SIZE == 0) {
           writeMapToDisk();
           _postingLists.clear();
@@ -128,7 +128,7 @@ public class IndexerStackOverFlowCompressed extends Indexer implements
   }
 
   // process document in corpus where each document is a file
-  private void processDocument(File file, String pathPrefix)
+  private void processDocument(File file)
       throws IOException {
     // Use jsoup to parse html
     org.jsoup.nodes.Document parsedDocument = Jsoup.parse(file, "UTF-8");
@@ -158,7 +158,7 @@ public class IndexerStackOverFlowCompressed extends Indexer implements
     }
     document.setBaseUrl("stackoverflow.com/questions/");
     document.setName(file.getName());
-    document.setPathPrefix(pathPrefix);
+    document.setPathPrefix("data/stack");
     document.setTitle(parsedDocument.title());
     document.setLength(stemedDocument.length());
     String fileName = file.getName();

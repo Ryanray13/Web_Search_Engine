@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.List;
 import java.util.Vector;
 
 import com.sun.net.httpserver.Headers;
@@ -312,7 +313,12 @@ class QueryHandler implements HttpHandler {
       PseudoRelevanceFeedback prf = new PseudoRelevanceFeedback(scoredDocs,
           _indexer, cgiArgs._numTerms, cgiArgs._includeQueryTerms,
           processedQuery);
-      respondWithMsg(exchange, prf.compute().toString());
+      StringBuffer response = new StringBuffer();
+      List<String> results = prf.compute();
+      for(String str : results){
+        response.append(str).append("\n");
+      }
+      respondWithMsg(exchange, response.toString());
       System.out.println("Finished Expansion: " + cgiArgs._query);
     }
   }
