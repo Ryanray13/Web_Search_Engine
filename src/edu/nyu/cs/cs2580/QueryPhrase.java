@@ -71,7 +71,7 @@ public class QueryPhrase extends Query {
     if (stemStr.isEmpty()) {
       return;
     }
-    Scanner s = new Scanner(str);
+    Scanner s = new Scanner(stemStr);
     while (s.hasNext()) {
       String term = s.next();
       if(!stopWords.contains(term)){

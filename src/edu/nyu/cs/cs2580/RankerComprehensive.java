@@ -21,8 +21,8 @@ public class RankerComprehensive extends Ranker {
   private static final double NUMVIEW_BETA = 0.15;
   private static final double STACK_BASE_BETA = 0.5;
   private static final double STACK_PAGERANK_BETA = 0.1;
-  private static final double STACK_NUMVIEW_BETA = 0.1;
-  private static final double STACK_VOTE_BETA = 0.3;
+  private static final double STACK_NUMVIEW_BETA = 0.05;
+  private static final double STACK_VOTE_BETA = 0.35;
 
   public RankerComprehensive(Options options, CgiArguments arguments,
       Indexer indexer, Indexer stackIndexer) {
@@ -58,22 +58,19 @@ public class RankerComprehensive extends Ranker {
 
   private ScoredDocument scoreDocument(Query query, Document doc) {
     double score = 0.0;
+    double probability = 0;
     if (((DocumentIndexed) doc).getLength() == 0) {
       return null;
     }
 
-    Vector<String> phrases = query._tokens;
-    for (String phrase : phrases) {
-      double probability = 0;
-      String[] terms = phrase.trim().split(" +");
-      for (String term : terms) {
+    Vector<String> phrases = ((QueryPhrase) query).getTermVector();
+    for (String term : phrases) {
         probability = (1 - LAMBDA)
             * _indexer.documentTermFrequency(term, doc._docid)
             / ((DocumentIndexed) doc).getLength() + LAMBDA
             * _indexer.corpusTermFrequency(term)
             / _indexer._totalTermFrequency;
         score += Math.log(probability) / LOG2_BASE;
-      }
     }
 
     if (score != 0.0) {
@@ -93,7 +90,6 @@ public class RankerComprehensive extends Ranker {
     ScoredDocument results = null;
     Document doc = null;
     int docid = -1;
-
     while ((doc = _stackIndexer.nextDoc(query, docid)) != null) {
       ScoredDocument sdoc = scoreStackDocument(query, doc);
       if (sdoc != null) {
@@ -118,22 +114,19 @@ public class RankerComprehensive extends Ranker {
 
   private ScoredDocument scoreStackDocument(Query query, Document doc) {
     double score = 0.0;
+    double probability = 0;
     if (((DocumentStackOverFlow)doc).getLength() == 0) {
       return null;
     }
 
-    Vector<String> phrases = query._tokens;
-    for (String phrase : phrases) {
-      double probability = 0;
-      String[] terms = phrase.trim().split(" +");
-      for (String term : terms) {
+    Vector<String> phrases = ((QueryPhrase) query).getTermVector();
+    for (String term : phrases) {
         probability = (1 - LAMBDA)
-            * _stackIndexer.documentTermFrequency(term, doc._docid)
-            / ((DocumentIndexed) doc).getLength() + LAMBDA
-            * _stackIndexer.corpusTermFrequency(term)
-            / _stackIndexer._totalTermFrequency;
+            * _indexer.documentTermFrequency(term, doc._docid)
+            / ((DocumentStackOverFlow) doc).getLength() + LAMBDA
+            * _indexer.corpusTermFrequency(term)
+            / _indexer._totalTermFrequency;
         score += Math.log(probability) / LOG2_BASE;
-      }
     }
 
     if (score != 0.0) {

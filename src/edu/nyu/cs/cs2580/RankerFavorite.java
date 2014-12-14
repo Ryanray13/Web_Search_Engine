@@ -78,7 +78,6 @@ public class RankerFavorite extends Ranker {
     ScoredDocument results = null;
     Document doc = null;
     int docid = -1;
-
     while ((doc = _stackIndexer.nextDoc(query, docid)) != null) {
       ScoredDocument sdoc = scoreStackDocument(query, doc);
       if (sdoc != null) {

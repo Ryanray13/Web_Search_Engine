@@ -34,7 +34,7 @@ public class IndexerStackOverFlowCompressed extends Indexer implements
 
   private static final long serialVersionUID = 47542898854666350L;
   protected static final transient int CACHE_SIZE = 50;
-  protected static final transient int PARTIAL_SIZE = 1000;
+  protected static final transient int PARTIAL_SIZE = 500;
   /** ---- Private instances ---- */
   private transient Map<Integer, List<Integer>> _postingLists = new HashMap<Integer, List<Integer>>();
   private transient Map<Integer, Integer> cacheIndex = null;
@@ -132,7 +132,9 @@ public class IndexerStackOverFlowCompressed extends Indexer implements
       throws IOException {
     // Use jsoup to parse html
     org.jsoup.nodes.Document parsedDocument = Jsoup.parse(file, "UTF-8");
-    String documentText = parsedDocument.title().toLowerCase();
+    String documentText = parsedDocument.title().toLowerCase() ;
+    Element ele = parsedDocument.body().getElementsByClass("post-text").first();
+    documentText += ele.text();
     Stemmer stemmer = new Stemmer();
     stemmer.add(documentText.toCharArray(), documentText.length());
     stemmer.stemWithStep1();
@@ -143,9 +145,9 @@ public class IndexerStackOverFlowCompressed extends Indexer implements
     // Indexing.
     indexDocument(stemedDocument, docid);
     try {
-      Element e = parsedDocument.body().getElementsByClass("post-text").get(1);
-      if (e != null) {
-        String answer = e.text();
+      ele = parsedDocument.body().getElementsByClass("post-text").get(1);
+      if (ele != null) {
+        String answer = ele.text();
         docTermWriter.writeUTF(answer);
         docTermWriter.flush();
         _docTermOffset.add(docTermWriter.size());
@@ -160,11 +162,10 @@ public class IndexerStackOverFlowCompressed extends Indexer implements
     document.setTitle(parsedDocument.title());
     document.setLength(stemedDocument.length());
     String fileName = file.getName();
-    Element e = parsedDocument.body().getElementsByClass("vote-count-post")
-        .first();
-    if (e != null & !e.text().equals("")) {
+    ele = parsedDocument.body().getElementsByClass("vote-count-post").first();
+    if (ele != null & !ele.text().equals("")) {
       try {
-        document.setVote(Integer.parseInt(e.text()));
+        document.setVote(Integer.parseInt(ele.text()));
       } catch (NumberFormatException e1) {
         e1.printStackTrace();
         document.setVote(0);
@@ -172,10 +173,10 @@ public class IndexerStackOverFlowCompressed extends Indexer implements
     } else {
       document.setVote(0);
     }
-    e = parsedDocument.body().getElementsByClass("label-key").get(3);
-    if (e != null & !e.text().equals("")) {
+    ele = parsedDocument.body().getElementsByClass("label-key").get(3);
+    if (ele != null & !ele.text().equals("")) {
       try {
-        String[] text = e.text().split(" ");
+        String[] text = ele.text().split(" ");
         document.setNumViews(Integer.parseInt(text[0]));
       } catch (NumberFormatException e1) {
         e1.printStackTrace();

@@ -206,12 +206,28 @@ class QueryHandler implements HttpHandler {
     // Processing the query.
     Query processedQuery = new QueryPhrase(cgiArgs._query);
     processedQuery.processQuery();
-
+    
+     KnowledgeDocument knowledgeDoc = ranker.getDocumentWithKnowledge(processedQuery);
+     if (uriPath.equals("/know")){
+       StringBuffer response = new StringBuffer();
+       switch (cgiArgs._outputFormat) {
+       case TEXT:
+         constructTextOutput(new Vector<ScoredDocument>(), knowledgeDoc, response);
+         break;
+       case HTML:
+         constructHtmlOutput(new Vector<ScoredDocument>(), knowledgeDoc, response);
+         break;
+       default:
+         // nothing
+       }
+       respondWithMsg(exchange, response.toString());
+       System.out.println("Finished Expansion: " + cgiArgs._query);
+       return;
+     }
     // Ranking.
     Vector<ScoredDocument> scoredDocs = ranker.runQuery(processedQuery,
         cgiArgs._numResults);
-
-    KnowledgeDocument knowledgeDoc = ranker.getDocumentWithKnowledge(processedQuery);
+    
     if (uriPath.equals("/search")) {
       StringBuffer response = new StringBuffer();
       switch (cgiArgs._outputFormat) {
@@ -232,21 +248,6 @@ class QueryHandler implements HttpHandler {
           _indexer, cgiArgs._numTerms, cgiArgs._includeQueryTerms,
           processedQuery);
       respondWithMsg(exchange, prf.compute().toString());
-      System.out.println("Finished Expansion: " + cgiArgs._query);
-    }else{
-      KnowledgeDocument knowledgeDocument = ranker.getDocumentWithKnowledge(processedQuery);
-      StringBuffer response = new StringBuffer();
-      switch (cgiArgs._outputFormat) {
-      case TEXT:
-        constructTextOutput(new Vector<ScoredDocument>(), knowledgeDocument, response);
-        break;
-      case HTML:
-        constructHtmlOutput(new Vector<ScoredDocument>(), knowledgeDocument, response);
-        break;
-      default:
-        // nothing
-      }
-      respondWithMsg(exchange, response.toString());
       System.out.println("Finished Expansion: " + cgiArgs._query);
     }
   }

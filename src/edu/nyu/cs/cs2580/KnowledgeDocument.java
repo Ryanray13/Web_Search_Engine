@@ -49,7 +49,8 @@ class KnowledgeDocument {
           .append("\", \"knowledge\": \"")
           .append(URLEncoder.encode(_knowledge, "UTF-8"))
           .append("\", \"pagerank\": ").append(_doc.getPageRank())
-          .append(", \"numviews\": ").append(_doc.getNumViews()).append("}");
+          .append(", \"numviews\": ").append(_doc.getNumViews())
+          .append(", \"vote\": ").append(_doc.getVote()).append("}");
     } catch (UnsupportedEncodingException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
