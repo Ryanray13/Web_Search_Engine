@@ -156,8 +156,10 @@ class QueryHandler implements HttpHandler {
     _spellChecker = new SpellingNormal(options);
     try {
       ((SpellingNormal) _spellChecker).train();
+      System.out.println("Using normal spell checker");
     } catch (IOException e) {
       _spellChecker = new SpellingIndexed(indexer);
+      System.out.println("Using index spell checker");
     }
   }
 
