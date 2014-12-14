@@ -211,8 +211,7 @@ class QueryHandler implements HttpHandler {
     Vector<ScoredDocument> scoredDocs = ranker.runQuery(processedQuery,
         cgiArgs._numResults);
 
-    KnowledgeDocument knowledgeDoc = null;//ranker
-        //.getDocumentWithKnowledge(processedQuery);
+    KnowledgeDocument knowledgeDoc = ranker.getDocumentWithKnowledge(processedQuery);
     if (uriPath.equals("/search")) {
       StringBuffer response = new StringBuffer();
       switch (cgiArgs._outputFormat) {

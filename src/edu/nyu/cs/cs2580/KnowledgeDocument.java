@@ -8,7 +8,7 @@ import java.net.URLEncoder;
  */
 class KnowledgeDocument {
   private DocumentStackOverFlow _doc;
-  private String _knowledge="";
+  private String _knowledge = "";
 
   public KnowledgeDocument(DocumentStackOverFlow doc, String knowledge) {
     _doc = doc;
@@ -18,7 +18,7 @@ class KnowledgeDocument {
   public int getDocid() {
     return _doc._docid;
   }
-  
+
   public String getKnowledge() {
     return _knowledge;
   }
@@ -41,13 +41,15 @@ class KnowledgeDocument {
     StringBuffer buf = new StringBuffer();
     try {
       buf.append("{\"id\": ").append(_doc._docid).append(", \"title\": \"")
-          .append(URLEncoder.encode(_doc.getTitle(),"UTF-8")).append("\", \"url\": \"")
+          .append(URLEncoder.encode(_doc.getTitle(), "UTF-8"))
+          .append("\", \"url\": \"")
           .append(_doc.getBaseUrl() + _doc.getName())
           .append("\", \"filePath\": \"")
           .append(_doc.getPathPrefix() + "/" + _doc.getName())
-          .append("\", \"knowledge\": \"").append(_knowledge).append("\", \"pagerank\": ")
-          .append(_doc.getPageRank()).append(", \"numviews\": ")
-          .append(_doc.getNumViews()).append("}");
+          .append("\", \"knowledge\": \"")
+          .append(URLEncoder.encode(_knowledge, "UTF-8"))
+          .append("\", \"pagerank\": ").append(_doc.getPageRank())
+          .append(", \"numviews\": ").append(_doc.getNumViews()).append("}");
     } catch (UnsupportedEncodingException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
