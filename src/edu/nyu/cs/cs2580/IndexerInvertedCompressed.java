@@ -110,7 +110,8 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
         docTermWriter = new DataOutputStream(new BufferedOutputStream(
             new FileOutputStream(docTermFile)));
         for (File file : allFiles) {
-          if(file.getName().startsWith(".") || file.getName().endsWith(".html")){
+          if (file.getName().startsWith(".")
+              || file.getName().endsWith(".html")) {
             continue;
           }
           processDocument(file, _options._corpusPrefix);
@@ -125,7 +126,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
         if (stackOverFlowDir.isDirectory()) {
           allFiles = stackOverFlowDir.listFiles();
           for (File file : allFiles) {
-            if(file.getName().startsWith(".")){
+            if (file.getName().startsWith(".")) {
               continue;
             }
             processDocument(file, _options._stackOverFlowPrefix);
@@ -278,7 +279,6 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
       docTermWriter.flush();
       _docTermOffset.add(docTermWriter.size());
     } catch (Exception e) {
-      // TODO Auto-generated catch block
       e.printStackTrace();
     }
     docTermMap.clear();
@@ -571,6 +571,10 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
       return _postingLists.get(_diskIndex.get(term));
     } else {
       list = decodeByte(getTermListFromDisk(term));
+      _postingLists.put(_diskIndex.get(term), list);
+      if (_postingLists.size() > CACHE_SIZE) {
+        _postingLists.clear();
+      }
       return list;
     }
   }

@@ -27,8 +27,9 @@ import org.jsoup.nodes.Element;
 import edu.nyu.cs.cs2580.SearchEngine.Options;
 
 /**
- * Indexer to index stack overflow corpus
- * Mainly to index each questions and its best answers
+ * Indexer to index stack overflow corpus Mainly to index each questions and its
+ * best answers
+ * 
  * @author Ray
  *
  */
@@ -131,15 +132,16 @@ public class IndexerStackOverFlowCompressed extends Indexer implements
   }
 
   // process document in corpus where each document is a file
-  private void processDocument(File file)
-      throws IOException {
+  private void processDocument(File file) throws IOException {
     // Use jsoup to parse html
     org.jsoup.nodes.Document parsedDocument = Jsoup.parse(file, "UTF-8");
-    String documentText = parsedDocument.title() ;
-    Element ele = parsedDocument.body().getElementsByClass("post-text").first();
+    String documentText = parsedDocument.title();
+    Element ele = parsedDocument.body().getElementsByClass("post-text")
+        .first();
     documentText += ele.text();
     Stemmer stemmer = new Stemmer();
-    stemmer.add(documentText.toLowerCase().toCharArray(), documentText.length());
+    stemmer.add(documentText.toLowerCase().toCharArray(),
+        documentText.length());
     stemmer.stemWithStep1();
     String stemedDocument = stemmer.toString();
 
@@ -439,6 +441,10 @@ public class IndexerStackOverFlowCompressed extends Indexer implements
       return _postingLists.get(_diskIndex.get(term));
     } else {
       list = decodeByte(getTermListFromDisk(term));
+      _postingLists.put(_diskIndex.get(term), list);
+      if (_postingLists.size() > CACHE_SIZE) {
+        _postingLists.clear();
+      }
       return list;
     }
   }

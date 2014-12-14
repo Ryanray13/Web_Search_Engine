@@ -111,10 +111,11 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
         docTermWriter = new DataOutputStream(new BufferedOutputStream(
             new FileOutputStream(docTermFile)));
         for (File file : allFiles) {
-          if(file.getName().startsWith(".") || file.getName().endsWith(".html")){
+          if (file.getName().startsWith(".")
+              || file.getName().endsWith(".html")) {
             continue;
           }
-          processDocument(file,_options._corpusPrefix);
+          processDocument(file, _options._corpusPrefix);
           if (_numDocs % PARTIAL_SIZE == 0) {
             writeMapToDisk();
             _postingLists.clear();
@@ -122,13 +123,13 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
         }
         docTermWriter.close();
       }
-      
-      //index stackoverFlow as normal corpus
+
+      // index stackoverFlow as normal corpus
       File stackOverFlowDir = new File(_options._stackOverFlowPrefix);
-      if (stackOverFlowDir.isDirectory()){
+      if (stackOverFlowDir.isDirectory()) {
         allFiles = stackOverFlowDir.listFiles();
         for (File file : allFiles) {
-          if(file.getName().startsWith(".")){
+          if (file.getName().startsWith(".")) {
             continue;
           }
           processDocument(file, _options._stackOverFlowPrefix);
@@ -138,7 +139,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
           }
         }
       }
-      
+
     } else {
       throw new IOException("Corpus prefix is not a direcroty");
     }
@@ -188,7 +189,8 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
   }
 
   // process document in corpus where each document is a file
-  private void processDocument(File file, String pathPrefix) throws IOException {
+  private void processDocument(File file, String pathPrefix)
+      throws IOException {
     // Use jsoup to parse html
     org.jsoup.nodes.Document parsedDocument = Jsoup.parse(file, "UTF-8");
     String documentText = parsedDocument.text().toLowerCase();
@@ -201,9 +203,9 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     DocumentIndexed document = new DocumentIndexed(docid);
     // Indexing.
     indexDocument(stemedDocument, docid);
-    if (pathPrefix.equals("data/corpus")){
+    if (pathPrefix.equals("data/corpus")) {
       document.setBaseUrl("en.wikipedia.org/wiki/");
-    }else{
+    } else {
       document.setBaseUrl("stackoverflow.com/questions/");
     }
     document.setName(file.getName());
@@ -233,7 +235,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     List<Integer> list = null;
     while (s.hasNext()) {
       String term = s.next();
-      if(term.startsWith("http")){
+      if (term.startsWith("http")) {
         continue;
       }
       if (_diskIndex.containsKey(term)
@@ -400,7 +402,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     for (String str : _termList) {
       _diskIndex.put(str, reader.readInt());
     }
-    
+
     reader.close();
     // Loading each size of the term posting list.
     System.out.println(Integer.toString(_numDocs) + " documents loaded "
@@ -467,8 +469,8 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
   }
 
   /**
-   * Gets the term list from memory, or from disk when not in memory. If
-   * not in disk either, return null
+   * Gets the term list from memory, or from disk when not in memory. If not in
+   * disk either, return null
    * 
    * @param term
    * @return
@@ -480,7 +482,12 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     if (_postingLists.containsKey(_diskIndex.get(term))) {
       return _postingLists.get(_diskIndex.get(term));
     } else {
-      return getTermListFromDisk(term);
+      List<Integer> list = getTermListFromDisk(term);
+      _postingLists.put(_diskIndex.get(term), list);
+      if (_postingLists.size() > CACHE_SIZE) {
+        _postingLists.clear();
+      }
+      return list;
     }
   }
 
@@ -546,8 +553,8 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
   }
 
   /**
-   * Returns document id after the given document id Returns -1 if no
-   * document left to search
+   * Returns document id after the given document id Returns -1 if no document
+   * left to search
    * 
    * @param term
    * @param docid
@@ -771,7 +778,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     }
     return map;
   }
-  
+
   @Override
   public boolean hasTerm(String term) {
     return _diskIndex.containsKey(term);

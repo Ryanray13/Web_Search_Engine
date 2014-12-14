@@ -52,7 +52,6 @@ class Stemmer {
   private int k; // end position of current stemming
 
   private Set<Character> punctuation = new HashSet<Character>();
-  
 
   /* unit of size whereby b is increased */
   public Stemmer() {
@@ -137,7 +136,9 @@ class Stemmer {
         new_b[c] = b[c];
       b = new_b;
     }
-    b[i++] = ch;
+    if (ch != '\"') {
+      b[i++] = ch;
+    }
   }
 
   /**
@@ -153,10 +154,12 @@ class Stemmer {
       b = new_b;
     }
     for (int c = 0; c < wLen; c++) {
+      if (w[c] != '\"') {
         b[i++] = w[c];
+      }
     }
   }
-  
+
   /**
    * After a word has been stemmed, it can be retrieved by toString(), or a
    * reference to the internal buffer can be retrieved by getResultBuffer and

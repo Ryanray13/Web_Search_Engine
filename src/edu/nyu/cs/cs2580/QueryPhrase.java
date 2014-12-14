@@ -71,41 +71,42 @@ public class QueryPhrase extends Query {
     if (stemStr.isEmpty()) {
       return;
     }
+    System.out.println(str);
     Scanner s = new Scanner(stemStr);
     while (s.hasNext()) {
       String term = s.next();
-      if(!_stopWords.contains(term)){
+      if (!_stopWords.contains(term)) {
         _tokens.add(term);
       }
     }
     s.close();
   }
-  
-  private void putPhraseIntoVector(String str){
+
+  private void putPhraseIntoVector(String str) {
     Stemmer stemmer = new Stemmer();
     stemmer.addWithPunctuation(str.toLowerCase().toCharArray(), str.length());
     stemmer.stemWithStep1();
     String stemStr = stemmer.toString();
     _tokens.add(stemStr);
   }
-  
-  public Vector<String> getUniqTermVector(){
+
+  public Vector<String> getUniqTermVector() {
     Set<String> result = new HashSet<String>();
     for (String phrase : _tokens) {
       String[] terms = phrase.split(" +");
       for (String term : terms) {
-          result.add(term);
+        result.add(term);
       }
     }
     return new Vector<String>(result);
   }
-  
-  public Vector<String> getTermVector(){
+
+  public Vector<String> getTermVector() {
     Vector<String> result = new Vector<String>();
     for (String phrase : _tokens) {
       String[] terms = phrase.split(" +");
       for (String term : terms) {
-          result.add(term);
+        result.add(term);
       }
     }
     return result;

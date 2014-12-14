@@ -106,19 +106,32 @@ public class PseudoRelevanceFeedback {
     stopWords.add("1");
     stopWords.add("n/a");
     stopWords.add("may");
-    stopWords.add("wikipedia"); 
-    stopWords.add("up"); 
-    stopWords.add("down"); 
+    stopWords.add("wikipedia");
+    stopWords.add("up");
+    stopWords.add("down");
     stopWords.add("vote");
     stopWords.add("stack");
-    stopWords.add("overflow"); 
+    stopWords.add("overflow");
     stopWords.add("editÂ Â");
     stopWords.add("•");
     stopWords.add("|");
     stopWords.add("►");
     stopWords.add("–");
-    stopWords.add("such"); 
-    stopWords.add("so"); 
+    stopWords.add("such");
+    stopWords.add("all");
+    stopWords.add("any");
+    stopWords.add("most");
+    stopWords.add("2010");
+    stopWords.add("2012");
+    stopWords.add("2011");
+    stopWords.add("2009");
+    stopWords.add("2008");
+    stopWords.add("2007");
+    stopWords.add("more");
+    stopWords.add("2");
+    stopWords.add("3");
+    stopWords.add("4");
+    stopWords.add("5");
   }
 
   public List<String> compute() {
@@ -167,7 +180,7 @@ public class PseudoRelevanceFeedback {
     Collections.sort(results, Collections.reverseOrder());
     normalize(results);
     List<String> response = new ArrayList<String>();
-    for (FrequentTerm fterm : results) { 
+    for (FrequentTerm fterm : results) {
       response.add(fterm.toString());
     }
     return response;

@@ -45,7 +45,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   private transient List<Integer> _diskLength = new ArrayList<Integer>();
   // disk list offset
   private transient Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
-//doc terms and frequency
+  // doc terms and frequency
   private transient Map<Integer, Integer> docTermMap = new HashMap<Integer, Integer>();
 
   // Cache current running query
@@ -111,20 +111,21 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
         docTermWriter = new DataOutputStream(new BufferedOutputStream(
             new FileOutputStream(docTermFile)));
         for (File file : allFiles) {
-          if(file.getName().startsWith(".") || file.getName().endsWith(".html")){
+          if (file.getName().startsWith(".")
+              || file.getName().endsWith(".html")) {
             continue;
           }
-          processDocument(file,_options._corpusPrefix);
+          processDocument(file, _options._corpusPrefix);
           if (_numDocs % PARTIAL_SIZE == 0) {
             writeMapToDisk();
             _postingLists.clear();
           }
         }
         File stackOverFlowDir = new File(_options._stackOverFlowPrefix);
-        if (stackOverFlowDir.isDirectory()){
+        if (stackOverFlowDir.isDirectory()) {
           allFiles = stackOverFlowDir.listFiles();
           for (File file : allFiles) {
-            if(file.getName().startsWith(".")){
+            if (file.getName().startsWith(".")) {
               continue;
             }
             processDocument(file, _options._stackOverFlowPrefix);
@@ -143,7 +144,8 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     _postingLists.clear();
     writeIndexToDisk();
     _totalTermFrequency = totalTermFrequency;
-    System.out.println("System time lapse: " + (System.currentTimeMillis() - start) + " milliseconds");
+    System.out.println("System time lapse: "
+        + (System.currentTimeMillis() - start) + " milliseconds");
     System.out.println("Indexed " + Integer.toString(_numDocs) + " docs with "
         + Long.toString(_totalTermFrequency) + " terms.");
   }
@@ -184,7 +186,8 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   }
 
   // process document in corpus where each document is a file
-  private void processDocument(File file, String pathPrefix) throws IOException {
+  private void processDocument(File file, String pathPrefix)
+      throws IOException {
     // Use jsoup to parse html
     org.jsoup.nodes.Document parsedDocument = Jsoup.parse(file, "UTF-8");
     String documentText = parsedDocument.text().toLowerCase();
@@ -197,9 +200,9 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     DocumentIndexed document = new DocumentIndexed(docid);
     // Indexing.
     indexDocument(stemedDocument, docid);
-    if (pathPrefix.equals("data/corpus")){
+    if (pathPrefix.equals("data/corpus")) {
       document.setBaseUrl("en.wikipedia.org/wiki/");
-    }else{
+    } else {
       document.setBaseUrl("stackoverflow.com/questions/");
     }
     document.setName(file.getName());
@@ -227,7 +230,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     List<Integer> list = null;
     while (s.hasNext()) {
       String term = s.next();
-      if(term.startsWith("http")){
+      if (term.startsWith("http")) {
         continue;
       }
       if (_diskIndex.containsKey(term)
@@ -357,7 +360,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
       readers[j].close();
       inputFiles[j].delete();
     }
-    
+
     Map<Integer, String> tempMap = new HashMap<Integer, String>();
     for (String key : _diskIndex.keySet()) {
       tempMap.put(_diskIndex.get(key), key);
@@ -366,7 +369,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
       _termList.add(tempMap.get(i));
     }
     tempMap = null;
-    
+
     ObjectOutputStream os = new ObjectOutputStream(new BufferedOutputStream(
         new FileOutputStream(indexFile)));
     os.writeObject(this);
@@ -494,7 +497,12 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     if (_postingLists.containsKey(_diskIndex.get(term))) {
       return _postingLists.get(_diskIndex.get(term));
     } else {
-      return getTermListFromDisk(term);
+      List<Integer> list = getTermListFromDisk(term);
+      _postingLists.put(_diskIndex.get(term), list);
+      if (_postingLists.size() > CACHE_SIZE) {
+        _postingLists.clear();
+      }
+      return list;
     }
   }
 
@@ -639,7 +647,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     }
     return map;
   }
-  
+
   @Override
   public boolean hasTerm(String term) {
     return _diskIndex.containsKey(term);

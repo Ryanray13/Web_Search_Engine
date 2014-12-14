@@ -65,12 +65,11 @@ public class RankerComprehensive extends Ranker {
 
     Vector<String> phrases = ((QueryPhrase) query).getTermVector();
     for (String term : phrases) {
-        probability = (1 - LAMBDA)
-            * _indexer.documentTermFrequency(term, doc._docid)
-            / ((DocumentIndexed) doc).getLength() + LAMBDA
-            * _indexer.corpusTermFrequency(term)
-            / _indexer._totalTermFrequency;
-        score += Math.log(probability) / LOG2_BASE;
+      probability = (1 - LAMBDA)
+          * _indexer.documentTermFrequency(term, doc._docid)
+          / ((DocumentIndexed) doc).getLength() + LAMBDA
+          * _indexer.corpusTermFrequency(term) / _indexer._totalTermFrequency;
+      score += Math.log(probability) / LOG2_BASE;
     }
 
     if (score != 0.0) {
@@ -115,25 +114,25 @@ public class RankerComprehensive extends Ranker {
   private ScoredDocument scoreStackDocument(Query query, Document doc) {
     double score = 0.0;
     double probability = 0;
-    if (((DocumentStackOverFlow)doc).getLength() == 0) {
+    int length = ((DocumentStackOverFlow) doc).getLength();
+    if (length == 0) {
       return null;
     }
 
     Vector<String> phrases = ((QueryPhrase) query).getTermVector();
     for (String term : phrases) {
-        probability = (1 - LAMBDA)
-            * _indexer.documentTermFrequency(term, doc._docid)
-            / ((DocumentStackOverFlow) doc).getLength() + LAMBDA
-            * _indexer.corpusTermFrequency(term)
-            / _indexer._totalTermFrequency;
-        score += Math.log(probability) / LOG2_BASE;
+      probability = (1 - LAMBDA)
+          * _stackIndexer.documentTermFrequency(term, doc._docid) / length
+          + LAMBDA * _stackIndexer.corpusTermFrequency(term)
+          / _stackIndexer._totalTermFrequency;
+      score += Math.log(probability) / LOG2_BASE;
     }
 
     if (score != 0.0) {
       score = STACK_BASE_BETA * score + STACK_PAGERANK_BETA
           * Math.sqrt(doc.getPageRank() + 1) + STACK_NUMVIEW_BETA
           * Math.log(doc.getNumViews() + 1) / LOG2_BASE + STACK_VOTE_BETA
-          * Math.log(((DocumentStackOverFlow)doc).getVote() + 1) / LOG2_BASE;
+          * Math.log(((DocumentStackOverFlow) doc).getVote() + 1) / LOG2_BASE;
     }
     if (score == 0.0) {
       return null;
