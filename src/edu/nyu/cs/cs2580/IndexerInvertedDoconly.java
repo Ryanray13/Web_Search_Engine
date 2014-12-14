@@ -111,6 +111,9 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
         docTermWriter = new DataOutputStream(new BufferedOutputStream(
             new FileOutputStream(docTermFile)));
         for (File file : allFiles) {
+          if(file.getName().startsWith(".") || file.getName().endsWith(".html")){
+            continue;
+          }
           processDocument(file,_options._corpusPrefix);
           if (_numDocs % PARTIAL_SIZE == 0) {
             writeMapToDisk();
@@ -121,6 +124,9 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
         if (stackOverFlowDir.isDirectory()){
           allFiles = stackOverFlowDir.listFiles();
           for (File file : allFiles) {
+            if(file.getName().startsWith(".")){
+              continue;
+            }
             processDocument(file, _options._stackOverFlowPrefix);
             if (_numDocs % PARTIAL_SIZE == 0) {
               writeMapToDisk();
