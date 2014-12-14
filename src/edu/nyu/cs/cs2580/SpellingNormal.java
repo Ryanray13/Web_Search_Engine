@@ -103,6 +103,7 @@ class SpellingNormal extends Spelling {
     if (candidates.size() > 0){
       return candidates.get(Collections.max(candidates.keySet()));
     }
+   
     for (String s : list){
       for (String w : edits(s)){
         if (nWords.containsKey(w) && !_stopWords.contains(w)){
@@ -119,7 +120,7 @@ class SpellingNormal extends Spelling {
     SpellingNormal spel = new SpellingNormal();
     spel.train("data/SpellTrainer/big.txt");
     long start = System.nanoTime();
-    System.out.println(spel.correct("exceptiosnssasd"));
+    System.out.println(spel.correctCandidates("aaa"));
     System.out.println(System.nanoTime() - start);
   }
 
@@ -128,7 +129,7 @@ class SpellingNormal extends Spelling {
     if (nWords.containsKey(word)){
       return null;
     }
-    
+    int i=0;
     List<String> list = edits(word);
     Map<String, Integer> candidates = new HashMap<String, Integer>();
     for (String s : list){
@@ -136,7 +137,7 @@ class SpellingNormal extends Spelling {
         candidates.put(s,nWords.get(s));
       }
     }
-    
+    System.out.println(i);
    for (String s : list){
       for (String w : edits(s)){
         if (nWords.containsKey(w) && !_stopWords.contains(w)){

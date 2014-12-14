@@ -4,6 +4,8 @@ import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @CS2580: implement this class for HW2 to handle phrase. If the raw query is
@@ -21,9 +23,9 @@ public class QueryPhrase extends Query {
     if (_query == null) {
       return;
     }
-
     this._tokens.clear();
     boolean quote = false;
+    boolean word = false;
     int len = _query.length();
     int p1 = 0;
     int p2 = 0;
@@ -53,6 +55,7 @@ public class QueryPhrase extends Query {
         }
       }
       ++p2;
+      word = true;
     }
     if (p1 < p2) {
       if (_query.charAt(p2 - 1) == '"') {
@@ -64,6 +67,9 @@ public class QueryPhrase extends Query {
   }
 
   private void putTermIntoVector(String str) {
+    if(str.equals("")){
+      return;
+    }
     Stemmer stemmer = new Stemmer();
     stemmer.add(str.toLowerCase().toCharArray(), str.length());
     stemmer.stemWithStep1();
@@ -71,7 +77,6 @@ public class QueryPhrase extends Query {
     if (stemStr.isEmpty()) {
       return;
     }
-    System.out.println(str);
     Scanner s = new Scanner(stemStr);
     while (s.hasNext()) {
       String term = s.next();
@@ -83,6 +88,10 @@ public class QueryPhrase extends Query {
   }
 
   private void putPhraseIntoVector(String str) {
+    if(str.equals("")){
+      return;
+    }
+    System.out.println(str);
     Stemmer stemmer = new Stemmer();
     stemmer.addWithPunctuation(str.toLowerCase().toCharArray(), str.length());
     stemmer.stemWithStep1();

@@ -42,6 +42,8 @@ class QueryHandler implements HttpHandler {
 
     private boolean _includeQueryTerms = true;
 
+    private boolean _spellcheck = true;
+
     // The type of the ranker we will be using.
     public enum RankerType {
       NONE, FULLSCAN, CONJUNCTIVE, FAVORITE, COSINE, PHRASE, QL, LINEAR, COMPREHENSIVE, NUMVIEW,
@@ -107,8 +109,17 @@ class QueryHandler implements HttpHandler {
           } catch (IllegalArgumentException e) {
             // Ignored, search engine should never fail upon invalid user input.
           }
+        } else if (key.equals("spellcheck")) {
+          try {
+            if (val.equalsIgnoreCase("true")) {
+              _spellcheck = true;
+            } else if (val.equalsIgnoreCase("false")) {
+              _spellcheck = false;
+            }
+          } catch (IllegalArgumentException e) {
+            // Ignored, search engine should never fail upon invalid user input.
+          }
         }
-
       } // End of iterating over params
     }
   }
@@ -306,7 +317,8 @@ class QueryHandler implements HttpHandler {
     KnowledgeDocument knowledgeDoc = ranker
         .getDocumentWithKnowledge(processedQuery);
 
-    String spellCheckResult = spellCheck(processedQuery, _spellChecker, ranker);
+    String spellCheckResult = cgiArgs._spellcheck ? spellCheck(processedQuery,
+        _spellChecker, ranker) : "";
 
     // handle knowledge
     if (uriPath.equals("/know")) {
