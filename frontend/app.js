@@ -16,6 +16,7 @@ app.use(express.static(__dirname));
 var api = require('./routes/api');
 
 app.get('/search', api.search);
+app.get('/cached', api.cached);
 
 var port = process.env.PORT || 3000;
 app.listen(port);

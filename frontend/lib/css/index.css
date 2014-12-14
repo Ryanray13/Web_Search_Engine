@@ -1,5 +1,10 @@
 .results { margin-top: 20px; width: 800px; margin-left:  100px;}
 .mb20 { margin-bottom: 20px; }
+.title { font-variant: small-caps; text-align: center}
+.shortPre { margin-bottom: 0; }
+.loadMore { width:770px; }
+.know-section { margin-bottom: 20px; }
+.check-section { margin-bottom: 20px; }
 
 hgroup { padding-left: 15px; border-bottom: 1px solid #ccc; }
 hgroup h1 { font: 500 normal 1.625em "Roboto",Arial,Verdana,sans-serif; color: #2a3644; margin-top: 0; line-height: 1.15; }
