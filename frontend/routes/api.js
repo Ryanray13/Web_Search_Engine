@@ -7,6 +7,8 @@ var logger = log4js.getLogger('API');
 var responses = require('../models/response');
 var http = require('http');
 var url = require('url');
+var path = require('path');
+var fs = require('fs');
 
 getJSON = function (options, onResult) {
 
@@ -50,4 +52,11 @@ exports.search = function (req, res) {
         res.statusCode = statusCode;
         res.send(result);
     });
+}
+
+exports.cached = function (req, res) {
+    var path = url.parse(req.url).query.substring(5);
+    var filename = process.cwd() + '/../'+path;
+    var fileStream = fs.createReadStream(filename);
+    fileStream.pipe(res);
 }

@@ -8,6 +8,7 @@ function appCtrl($scope, $http) {
     $scope.haveResults = false;
     $scope.haveKnowledge = false;
     $scope.haveSpellcheck = false;
+    $scope.haveSearchResults = false;
     $scope.queryWord = "";
     $scope.ranker = "favorite";
     $scope.size = 10;
@@ -24,9 +25,12 @@ function appCtrl($scope, $http) {
                     var docu = {};
                     docu.url = ele.url;
                     docu.title = decodeURIComponent(ele.title).replace(/\+/g,' ');
+                    docu.snippet = decodeURIComponent(ele.snippet).replace(/\+/g,' ');
+                    docu.filePath = ele.filePath;
                     docus.push(docu);
                 });
                 $scope.documents = docus;
+                $scope.haveSearchResults = docus.length != 0;
 
                 $scope.haveKnowledge = data.knowledge != null;
                 if ($scope.haveKnowledge) {

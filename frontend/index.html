@@ -11,8 +11,7 @@
 <body ng-app="myApp" ng-controller="appCtrl">
     <div class="search">
         <div class="jumbotron check-element animate-hide" ng-hide="haveResults" style="margin:30px 150px">
-            <h2>Search Engine 25801</h2>
-            <p>Wuping Lei, Jingxin Zhu, Fei Guan</p>
+            <h2>Stackpedia</h2>
         </div>
         <div>
             <div class="input-group group-margin" style="margin: 50px 200px 20px 200px">
@@ -36,9 +35,6 @@
             </section>
         </div>
         <div ng-show="haveKnowledge">
-            <hgroup class="mb20">
-                <h1>Knowledge Results</h1>
-            </hgroup>
 
             <section class="col-xs-12 col-sm-6 col-md-12">
                 <article class="search-result row">
@@ -46,25 +42,31 @@
                         <h3><a href="{{'http://' + knowledge.url}}" target="_blank">{{knowledge.title}}</a></h3>
                     </div>
                     <div class="col-xs-12 col-sm-12 col-md-12 excerpet">
-                        <p>{{knowledge.knowledge}}</p>
+                        <p><pre>{{knowledge.knowledge}}</pre></p>
                     </div>
                     <span class="clearfix borda"></span>
                 </article>
             </section>
         </div>
 
-        <hgroup class="mb20">
-            <h1>Search Results</h1>
-        </hgroup>
-        {{visual}}
-        <section class="col-xs-12 col-sm-6 col-md-12">
-            <article class="search-result row" ng-repeat="doc in documents">
-                <div class="col-xs-12 col-sm-12 col-md-12 excerpet">
-                    <h3><a href="{{'http://' + doc.url}}" target="_blank">{{doc.title}}</a></h3>
-                </div>
-                <span class="clearfix borda"></span>
-            </article>
-        </section>
+        <div ng-hide="haveSearchResults">
+            <h3>No documents matched</h3>
+        </div>
+        <div ng-show="haveSearchResults">
+            <hgroup class="mb20">
+                <h1>Search Results</h1>
+            </hgroup>
+            <section class="col-xs-12 col-sm-6 col-md-12">
+                <article class="search-result row" ng-repeat="doc in documents">
+                    <div class="col-xs-12 col-sm-12 col-md-12 excerpet">
+                        <h3><a href="{{'http://' + doc.url}}" target="_blank">{{doc.title}}</a></h3>
+                        <p>{{doc.snippet}}...</p>
+                        <a href="{{'/cached?path=' + doc.filePath}}" target="_blank">cached</a>
+                    </div>
+                    <span class="clearfix borda"></span>
+                </article>
+            </section>
+        </div>
     </div>
 </body>
 </html>
