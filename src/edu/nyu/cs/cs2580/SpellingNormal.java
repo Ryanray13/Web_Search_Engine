@@ -36,7 +36,7 @@ class SpellingNormal extends Spelling {
     Pattern p = Pattern.compile("\\w+");
     for (String temp = ""; temp != null; temp = in.readLine()) {
       Matcher m = p.matcher(temp.toLowerCase());
-      while (m.find()){
+      while (m.find()) {
         nWords.put((temp = m.group()),
             nWords.containsKey(temp) ? nWords.get(temp) + 1 : 1);
       }
@@ -50,7 +50,7 @@ class SpellingNormal extends Spelling {
     Pattern p = Pattern.compile("\\w+");
     for (String temp = ""; temp != null; temp = in.readLine()) {
       Matcher m = p.matcher(temp.toLowerCase());
-      while (m.find()){
+      while (m.find()) {
         nWords.put((temp = m.group()),
             nWords.containsKey(temp) ? nWords.get(temp) + 1 : 1);
       }
@@ -61,24 +61,24 @@ class SpellingNormal extends Spelling {
   private final List<String> edits(String word) {
     List<String> result = new ArrayList<String>();
     // deletes
-    for (int i = 0; i < word.length(); ++i){
+    for (int i = 0; i < word.length(); ++i) {
       result.add(word.substring(0, i) + word.substring(i + 1));
     }
     // transpose
-    for (int i = 0; i < word.length() - 1; ++i){
+    for (int i = 0; i < word.length() - 1; ++i) {
       result.add(word.substring(0, i) + word.substring(i + 1, i + 2)
           + word.substring(i, i + 1) + word.substring(i + 2));
     }
     // replace
-    for (int i = 0; i < word.length(); ++i){
-      for (char c = 'a'; c <= 'z'; ++c){
+    for (int i = 0; i < word.length(); ++i) {
+      for (char c = 'a'; c <= 'z'; ++c) {
         result.add(word.substring(0, i) + String.valueOf(c)
             + word.substring(i + 1));
       }
     }
     // insert
-    for (int i = 0; i <= word.length(); ++i){
-      for (char c = 'a'; c <= 'z'; ++c){
+    for (int i = 0; i <= word.length(); ++i) {
+      for (char c = 'a'; c <= 'z'; ++c) {
         result.add(word.substring(0, i) + String.valueOf(c)
             + word.substring(i));
       }
@@ -87,26 +87,26 @@ class SpellingNormal extends Spelling {
   }
 
   public final String correct(String word) {
-    if (nWords.containsKey(word)){
+    if (nWords.containsKey(word)) {
       return word;
     }
-    
+
     List<String> list = edits(word);
     Map<Integer, String> candidates = new HashMap<Integer, String>();
-    for (String s : list){
-      if (nWords.containsKey(s) && !_stopWords.contains(s)){
+    for (String s : list) {
+      if (nWords.containsKey(s) && !_stopWords.contains(s)) {
         candidates.put(nWords.get(s), s);
       }
     }
-    
-  //check with edit distance 2
-    if (candidates.size() > 0){
+
+    // check with edit distance 2
+    if (candidates.size() > 0) {
       return candidates.get(Collections.max(candidates.keySet()));
     }
-   
-    for (String s : list){
-      for (String w : edits(s)){
-        if (nWords.containsKey(w) && !_stopWords.contains(w)){
+
+    for (String s : list) {
+      for (String w : edits(s)) {
+        if (nWords.containsKey(w) && !_stopWords.contains(w)) {
           candidates.put(nWords.get(w), w);
         }
       }
@@ -120,31 +120,42 @@ class SpellingNormal extends Spelling {
     SpellingNormal spel = new SpellingNormal();
     spel.train("data/SpellTrainer/big.txt");
     long start = System.nanoTime();
-    System.out.println(spel.correctCandidates("aaa"));
+    System.out.println(spel.correctCandidatesEdit1("aaa"));
     System.out.println(System.nanoTime() - start);
   }
 
   @Override
-  public Map<String, Integer> correctCandidates(String word) {
-    if (nWords.containsKey(word)){
+  public Map<String, Integer> correctCandidatesEdit1(String word) {
+    if (nWords.containsKey(word)) {
       return null;
     }
-    int i=0;
     List<String> list = edits(word);
     Map<String, Integer> candidates = new HashMap<String, Integer>();
-    for (String s : list){
-      if (nWords.containsKey(s) && !_stopWords.contains(s)){
-        candidates.put(s,nWords.get(s));
+    for (String s : list) {
+      if (nWords.containsKey(s) && !_stopWords.contains(s)) {
+        candidates.put(s, nWords.get(s));
       }
     }
-    System.out.println(i);
-   for (String s : list){
-      for (String w : edits(s)){
-        if (nWords.containsKey(w) && !_stopWords.contains(w)){
-          candidates.put(w,nWords.get(w));
+    return candidates.size() > 0 ? candidates : null;
+  }
+
+  @Override
+  public Map<String, Integer> correctCandidatesEdit2(String word) {
+    if (nWords.containsKey(word)) {
+      return null;
+    }
+    List<String> list = edits(word);
+    Map<String, Integer> candidates = new HashMap<String, Integer>();
+
+    // check with edit distance 2
+    for (String s : list) {
+      for (String w : edits(s)) {
+        if (nWords.containsKey(w) && !_stopWords.contains(w)) {
+          candidates.put(w, nWords.get(w));
         }
       }
     }
+
     return candidates.size() > 0 ? candidates : null;
   }
 

@@ -4,10 +4,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Vector;
 
 import com.sun.net.httpserver.Headers;
@@ -158,7 +157,6 @@ class QueryHandler implements HttpHandler {
     try {
       ((SpellingNormal) _spellChecker).train();
     } catch (IOException e) {
-      // TODO Auto-generated catch block
       _spellChecker = new SpellingIndexed(indexer);
     }
   }
@@ -238,18 +236,25 @@ class QueryHandler implements HttpHandler {
     String correctString = "";
     StringBuffer results = new StringBuffer();
     boolean hasCorrected = false;
+    boolean hasFalse = false;
+
+    // First loop all the word to test whether there is a incorrect word
+    // And construct a string with all correct words
     for (String phrase : phraseVector) {
       String[] terms = phrase.split(" +");
       for (String term : terms) {
         if (!spellchecker.hasTerm(term)) {
-          hasCorrected = true;
+          hasFalse = true;
         } else {
           correctString += term + " ";
         }
       }
     }
-    if (hasCorrected) {
-      Set<String> prfCandidates = new HashSet<String>();
+
+    // If has incorrect words, using correct string as a query
+    // Using PRF to get words recommendation
+    if (hasFalse) {
+      List<String> prfCandidates = new ArrayList<String>();
       if (!correctString.equals("")) {
         Query tempQuery = new QueryPhrase(correctString);
         tempQuery.processQuery();
@@ -269,21 +274,57 @@ class QueryHandler implements HttpHandler {
           results.append("\"");
         }
         for (String term : terms) {
-          Map<String, Integer> tempCandidates = spellchecker
-              .correctCandidates(term);
           String candidate = term;
-          boolean inPrf = false;
-          if (tempCandidates != null) {
-            for (String key : prfCandidates) {
-              if (tempCandidates.containsKey(key)) {
-                candidate = key;
-                inPrf = true;
-                break;
+          boolean inCandidate = false;
+          Map<String, Integer> tempCandidates1 = null;
+          Map<String, Integer> tempCandidates2 = null;
+          if (!spellchecker.hasTerm(term)) {
+            tempCandidates1 = spellchecker.correctCandidatesEdit1(term);
+            // check candidates with edit distance1
+            if (tempCandidates1 != null) {
+              // If a word in prf is also in candidate then choose that word
+              for (String key : prfCandidates) {
+                if (tempCandidates1.containsKey(key)) {
+                  candidate = key;
+                  inCandidate = true;
+                  break;
+                }
               }
             }
-            if (!inPrf) {
-              candidate = spellchecker.correct(term);
-              System.out.println("asdf");
+
+            if (!inCandidate) {
+              // if no result with edit distance 1
+              // check candidates with edit distance 2
+              tempCandidates2 = spellchecker.correctCandidatesEdit2(term);
+              if (tempCandidates2 != null) {
+                for (String key : prfCandidates) {
+                  if (tempCandidates2.containsKey(key)) {
+                    candidate = key;
+                    inCandidate = true;
+                    break;
+                  }
+                }
+              }
+            }
+
+            if (!inCandidate) {
+              if (tempCandidates1 == null && tempCandidates2 == null) {
+                if (prfCandidates.size() > 0) {
+                  candidate = prfCandidates.get(0);
+                }
+              } else if (tempCandidates1 != null && tempCandidates2 == null) {
+                candidate = getMaxCandidate(tempCandidates1);
+              } else if (tempCandidates2 != null && tempCandidates1 == null) {
+                candidate = getMaxCandidate(tempCandidates2);
+              } else {
+                tempCandidates1.putAll(tempCandidates2);
+                candidate = getMaxCandidate(tempCandidates1);
+              }
+            }
+
+            // If successfully correct a word set to true
+            if (!term.equals(candidate)) {
+              hasCorrected = true;
             }
           }
           results.append(candidate);
@@ -295,10 +336,29 @@ class QueryHandler implements HttpHandler {
         }
       }
       System.out.println(System.nanoTime() - start);
-      return results.toString().trim();
+      // If correct some word, return the recommendation string
+      // Otherwise return empty, meaning cannot recommend any word if there are
+      // some unknown words
+      if (hasCorrected) {
+        return results.toString().trim();
+      } else {
+        return "";
+      }
     } else {
       return "";
     }
+  }
+
+  private String getMaxCandidate(Map<String, Integer> candidates) {
+    String candidate = "";
+    int count = 0;
+    for (String key : candidates.keySet()) {
+      if (candidates.get(key) > count) {
+        count = candidates.get(key);
+        candidate = key;
+      }
+    }
+    return candidate;
   }
 
   public void handle(HttpExchange exchange) throws IOException {

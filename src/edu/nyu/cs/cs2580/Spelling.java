@@ -8,24 +8,25 @@ import edu.nyu.cs.cs2580.SearchEngine.Options;
 
 /**
  * abstract class for spell corrector
+ * 
  * @author Ray
  *
  */
 public abstract class Spelling {
 
-  protected String _spellprefix="";
+  protected String _spellprefix = "";
   protected Set<String> _stopWords = new HashSet<String>();
 
   public Spelling() {
     buildStopWords();
   }
-  
+
   public Spelling(Options option) {
     _spellprefix = option._spellprefix;
     buildStopWords();
   }
-  
-  private void buildStopWords(){
+
+  private void buildStopWords() {
     _stopWords.add("the");
     _stopWords.add("of");
     _stopWords.add("and");
@@ -79,24 +80,26 @@ public abstract class Spelling {
     _stopWords.add("1");
     _stopWords.add("n/a");
     _stopWords.add("may");
-    _stopWords.add("wikipedia"); 
-    _stopWords.add("wikipedia"); 
-    _stopWords.add("up"); 
-    _stopWords.add("down"); 
+    _stopWords.add("wikipedia");
+    _stopWords.add("wikipedia");
+    _stopWords.add("up");
+    _stopWords.add("down");
     _stopWords.add("vote");
     _stopWords.add("stack");
-    _stopWords.add("overflow"); 
-    _stopWords.add("such"); 
-    _stopWords.add("so"); 
+    _stopWords.add("overflow");
+    _stopWords.add("such");
+    _stopWords.add("so");
   }
 
-  public Set<String> getStopWords(){
+  public Set<String> getStopWords() {
     return _stopWords;
   }
-  
+
   public abstract String correct(String word);
-  
-  public abstract Map<String, Integer> correctCandidates(String word);
-  
+
+  public abstract Map<String, Integer> correctCandidatesEdit1(String word);
+
+  public abstract Map<String, Integer> correctCandidatesEdit2(String word);
+
   public abstract boolean hasTerm(String word);
 }

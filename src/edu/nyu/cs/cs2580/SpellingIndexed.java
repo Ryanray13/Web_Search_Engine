@@ -8,6 +8,7 @@ import java.util.Map;
 
 /**
  * spell corrector using corpus as dictionary
+ * 
  * @author Ray
  *
  */
@@ -23,24 +24,24 @@ class SpellingIndexed extends Spelling {
   private final List<String> edits(String word) {
     List<String> result = new ArrayList<String>();
     // deletes
-    for (int i = 0; i < word.length(); ++i){
+    for (int i = 0; i < word.length(); ++i) {
       result.add(word.substring(0, i) + word.substring(i + 1));
     }
     // transpose
-    for (int i = 0; i < word.length() - 1; ++i){
+    for (int i = 0; i < word.length() - 1; ++i) {
       result.add(word.substring(0, i) + word.substring(i + 1, i + 2)
           + word.substring(i, i + 1) + word.substring(i + 2));
     }
     // replace
-    for (int i = 0; i < word.length(); ++i){
-      for (char c = 'a'; c <= 'z'; ++c){
+    for (int i = 0; i < word.length(); ++i) {
+      for (char c = 'a'; c <= 'z'; ++c) {
         result.add(word.substring(0, i) + String.valueOf(c)
             + word.substring(i + 1));
       }
     }
     // insert
-    for (int i = 0; i <= word.length(); ++i){
-      for (char c = 'a'; c <= 'z'; ++c){
+    for (int i = 0; i <= word.length(); ++i) {
+      for (char c = 'a'; c <= 'z'; ++c) {
         result.add(word.substring(0, i) + String.valueOf(c)
             + word.substring(i));
       }
@@ -49,12 +50,12 @@ class SpellingIndexed extends Spelling {
   }
 
   public final String correct(String word) {
-    if (_indexer.hasTerm(word)){
+    if (_indexer.hasTerm(word)) {
       return word;
     }
     List<String> list = edits(word);
     Map<Integer, String> candidates = new HashMap<Integer, String>();
-    for (String s : list){
+    for (String s : list) {
       if (_indexer.hasTerm(s) && !_stopWords.contains(s)) {
         candidates.put(_indexer.corpusDocFrequencyByTerm(s), s);
       }
@@ -62,11 +63,11 @@ class SpellingIndexed extends Spelling {
     if (candidates.size() > 0) {
       return candidates.get(Collections.max(candidates.keySet()));
     }
-    
-    //check with edit distance 2
+
+    // check with edit distance 2
     for (String s : list) {
       for (String w : edits(s)) {
-        if (_indexer.hasTerm(w)&& !_stopWords.contains(w)) {
+        if (_indexer.hasTerm(w) && !_stopWords.contains(w)) {
           candidates.put(_indexer.corpusDocFrequencyByTerm(w), w);
         }
       }
@@ -76,27 +77,37 @@ class SpellingIndexed extends Spelling {
   }
 
   @Override
-  public Map<String, Integer> correctCandidates(String word) {
-    if (_indexer.hasTerm(word)){     
+  public Map<String, Integer> correctCandidatesEdit1(String word) {
+    if (_indexer.hasTerm(word)) {
       return null;
     }
     List<String> list = edits(word);
     Map<String, Integer> candidates = new HashMap<String, Integer>();
-    for (String s : list){
+    for (String s : list) {
       if (_indexer.hasTerm(s) && !_stopWords.contains(s)) {
-        candidates.put(s,_indexer.corpusDocFrequencyByTerm(s));
+        candidates.put(s, _indexer.corpusDocFrequencyByTerm(s));
       }
     }
-    
-    //check with edit distance 2
+    return candidates.size() > 0 ? candidates : null;
+  }
+
+  @Override
+  public Map<String, Integer> correctCandidatesEdit2(String word) {
+    if (_indexer.hasTerm(word)) {
+      return null;
+    }
+    List<String> list = edits(word);
+    Map<String, Integer> candidates = new HashMap<String, Integer>();
+
+    // check with edit distance 2
     for (String s : list) {
       for (String w : edits(s)) {
-        if (_indexer.hasTerm(w)&& !_stopWords.contains(w)) {
-          candidates.put(w,_indexer.corpusDocFrequencyByTerm(w));
+        if (_indexer.hasTerm(w) && !_stopWords.contains(w)) {
+          candidates.put(w, _indexer.corpusDocFrequencyByTerm(w));
         }
       }
     }
-    
+
     return candidates.size() > 0 ? candidates : null;
   }
 
