@@ -30,7 +30,12 @@
         </div>
     </div>
     <div class="results" ng-show="haveResults">
-        <div ng-hide="knowledge==null">
+        <div ng-show="haveSpellcheck">
+            <section class="col-xs-12 col-sm-6 col-md-12">
+                <h3>Did you mean <a ng-click="correctSpell()">{{spellcheck}}</a></h3>
+            </section>
+        </div>
+        <div ng-show="haveKnowledge">
             <hgroup class="mb20">
                 <h1>Knowledge Results</h1>
             </hgroup>
