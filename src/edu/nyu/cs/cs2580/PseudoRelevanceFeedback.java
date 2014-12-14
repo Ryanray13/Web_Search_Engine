@@ -119,7 +119,7 @@ public class PseudoRelevanceFeedback {
   public StringBuffer compute() {
     Map<String, Integer> termMap = new HashMap<String, Integer>();
     Queue<FrequentTerm> rankQueue = new PriorityQueue<FrequentTerm>();
-    Vector<String> queryTerms = ((QueryPhrase) _query).getTermVector();
+    Vector<String> queryTerms = ((QueryPhrase) _query).getUniqTermVector();
     int totalTerms = 0;
     for (ScoredDocument doc : _docs) {
       int docid = doc.getDocid();

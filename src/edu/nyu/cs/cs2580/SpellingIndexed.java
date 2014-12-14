@@ -11,7 +11,7 @@ import java.util.Map;
  * @author Ray
  *
  */
-class SpellingIndexed extends Spell {
+class SpellingIndexed extends Spelling {
 
   private Indexer _indexer;
 

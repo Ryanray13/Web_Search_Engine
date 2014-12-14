@@ -117,7 +117,7 @@ public class SearchEngine {
       _stackOverFlowPrefix = options.get("stackoverflow_prefix");
       Check(_stackOverFlowPrefix!= null, "Missing option: stackoverflow_prefix!");    
       _spellprefix  = options.get("spell_prefix");
-      Check(_stackOverFlowPrefix!= null, "Missing option: spell_prefix!");
+     // Check(_spellprefix!= null, "Missing option: spell_prefix!");
       
       
       // Populate specific options.

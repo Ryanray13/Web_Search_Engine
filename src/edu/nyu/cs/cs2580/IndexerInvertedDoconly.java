@@ -438,7 +438,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
   private int getNextDocID(Query query, int docid, Boolean isEqual) {
     List<Integer> docids = new ArrayList<Integer>();
-    Vector<String> terms = ((QueryPhrase) query).getTermVector();
+    Vector<String> terms = ((QueryPhrase) query).getUniqTermVector();
     for (String term : terms) {
       int id = next(term, docid);
       if (id == -1) {
@@ -473,7 +473,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
 
   private void loadQueryList(Query query) {
     _postingLists.clear();
-    Vector<String> terms = ((QueryPhrase) query).getTermVector();
+    Vector<String> terms = ((QueryPhrase) query).getUniqTermVector();
     for (String term : terms) {
       if (_diskIndex.containsKey(term)) {
         if (!_postingLists.containsKey(_diskIndex.get(term))) {

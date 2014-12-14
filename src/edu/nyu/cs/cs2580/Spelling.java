@@ -7,13 +7,13 @@ import edu.nyu.cs.cs2580.SearchEngine.Options;
  * @author Ray
  *
  */
-public abstract class Spell {
+public abstract class Spelling {
 
   protected String _spellprefix="";
 
-  public Spell() {}
+  public Spelling() {}
   
-  public Spell(Options option) {
+  public Spelling(Options option) {
     _spellprefix = option._spellprefix;
   }
 

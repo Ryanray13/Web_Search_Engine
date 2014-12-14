@@ -468,7 +468,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
   private void loadQueryList(Query query) {
     _postingLists.clear();
     cacheIndex.clear();
-    Vector<String> terms = ((QueryPhrase) query).getTermVector();
+    Vector<String> terms = ((QueryPhrase) query).getUniqTermVector();
     for (String term : terms) {
       if (_diskIndex.containsKey(term)) {
         if (!_postingLists.containsKey(_diskIndex.get(term))) {
@@ -533,7 +533,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     while (true) {
       boolean isEqual = true;
       List<Integer> docids = new ArrayList<Integer>();
-      Vector<String> terms = ((QueryPhrase) query).getTermVector();
+      Vector<String> terms = ((QueryPhrase) query).getUniqTermVector();
 
       for (String term : terms) {
         int d = next(term, docid);

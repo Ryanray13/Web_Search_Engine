@@ -112,10 +112,18 @@ class QueryHandler implements HttpHandler {
   // care of thread-safety.
   private Indexer _indexer;
   private Indexer _stackIndexer;
+  private Spelling _spellChecker;
 
   public QueryHandler(Options options, Indexer indexer, Indexer stackIndexer) {
     _indexer = indexer;
     _stackIndexer = stackIndexer;
+    _spellChecker = new SpellingNormal(options);
+    try {
+      ((SpellingNormal)_spellChecker).train();
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      _spellChecker = new SpellingIndexed(indexer);
+    }
   }
 
   private void respondWithMsg(HttpExchange exchange, final String message)

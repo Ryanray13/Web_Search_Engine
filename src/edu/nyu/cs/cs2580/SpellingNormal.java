@@ -19,7 +19,7 @@ import edu.nyu.cs.cs2580.SearchEngine.Options;
  * @author Ray
  *
  */
-class SpellingNormal extends Spell{
+class SpellingNormal extends Spelling{
 
   public final Map<String, Integer> nWords = new HashMap<String, Integer>();
   

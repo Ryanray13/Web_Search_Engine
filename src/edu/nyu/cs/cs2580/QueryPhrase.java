@@ -89,16 +89,25 @@ public class QueryPhrase extends Query {
     _tokens.add(stemStr);
   }
   
-  public Vector<String> getTermVector(){
+  public Vector<String> getUniqTermVector(){
     Set<String> result = new HashSet<String>();
     for (String phrase : _tokens) {
       String[] terms = phrase.split(" +");
       for (String term : terms) {
-        if(!result.contains(term)){
           result.add(term);
-        }
       }
     }
     return new Vector<String>(result);
+  }
+  
+  public Vector<String> getTermVector(){
+    Vector<String> result = new Vector<String>();
+    for (String phrase : _tokens) {
+      String[] terms = phrase.split(" +");
+      for (String term : terms) {
+          result.add(term);
+      }
+    }
+    return result;
   }
 }
