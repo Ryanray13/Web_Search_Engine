@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="WebSearchEngine">
+  <description>
+    Web search engine Assignment
+  </description>
+
+  <property name="src" location="src"/>
+  <property name="bin" location="bin" />
+  <property name="dist" location="dist" />
+  <property name="conf" location="conf" />
+  <property name="lib" location="." />
+
+  <property name="main-class" value="edu.nyu.cs.cs2580.SearchEngine" />
+
+  <property name="mining" value="--mode=mining --options=conf/engine.conf" />
+  <property name="index" value="--mode=index --options=conf/engine.conf" />
+  <property name="serve" value="--mode=serve -port=25801 --options=conf/engine.conf" />
+
+  <path id="classpath">
+    <fileset dir="${lib}" includes="**/*.jar"/>
+  </path>
+
+  <!-- - - - - - - - - - - - - - - - - - 
+          target: init                      
+    - - - - - - - - - - - - - - - - - -->
+  <target name="init">
+    <mkdir dir="${bin}"/>
+      <mkdir dir="${dist}"/>
+  </target>
+
+  <!-- ================================= 
+           target: clean 
+    ================================= -->
+  <target name="clean" description="Clean uncessary parts">
+    <delete dir="${bin}" />
+      <delete dir="${dist}"/>
+    </target>
+
+  <!-- ================================= 
+          target: compile              
+    ================================= -->
+  <target name="compile" depends="clean, init" description="Compile the project">
+    <javac includeantruntime="false" srcdir="${src}" destdir="${bin}" classpathref="classpath" />
+  </target>
+
+
+  <!-- ================================= 
+          target: dist              
+    ================================= -->
+  <target name="dist" depends="clean, compile" description="Create the jar file">
+    <jar destfile="${dist}/${ant.project.name}.jar" basedir="${bin}">
+      <manifest>
+        <attribute name="Main-class" value="edu.nyu.cs.cs2580.SearchEngine"  />
+      </manifest>
+    </jar>
+  </target>
+
+
+  <!-- ================================= 
+          target: mining mode
+   ================================= -->
+  <target name="mining mode" depends="dist" description="run server mode">
+    <java jar="${dist}/${ant.project.name}.jar" fork="true">
+      <arg line="${mining}" />
+    </java>
+  </target>
+
+  <!-- ================================= 
+          target: index mode
+   ================================= -->
+  <target name="index mode" depends="dist" description="Run index mode">
+    <java classname="${main-class}" fork="true">
+      <classpath>
+        <path refid="classpath" />
+        <path location="${dist}/${ant.project.name}.jar" />
+      </classpath>
+      <arg line="${index}" />
+    </java>
+  </target>
+
+  <!-- ================================= 
+        target: server mode
+    ================================= -->
+  <target name="server mode" depends="dist" description="Run server mode">
+    <java classname="${main-class}" fork="true">
+      <classpath>
+        <path refid="classpath" />
+        <path location="${dist}/${ant.project.name}.jar" />	
+      </classpath>
+      <arg line="${serve}" />
+    </java>
+  </target>
+</project>
