@@ -9,10 +9,13 @@ import java.net.URLEncoder;
 class KnowledgeDocument {
   private DocumentStackOverFlow _doc;
   private String _knowledge = "";
+  private double _score;
 
-  public KnowledgeDocument(DocumentStackOverFlow doc, String knowledge) {
+  public KnowledgeDocument(DocumentStackOverFlow doc, String knowledge,
+      double score) {
     _doc = doc;
     _knowledge = knowledge;
+    _score = score;
   }
 
   public int getDocid() {
@@ -27,6 +30,7 @@ class KnowledgeDocument {
     StringBuffer buf = new StringBuffer();
     buf.append(_doc._docid).append("\t");
     buf.append(_doc.getTitle()).append("\t");
+    buf.append(_score).append("\t");
     buf.append("Vote:").append(_doc.getVote()).append("\t");
     buf.append("PR:").append(_doc.getPageRank()).append("\t");
     buf.append("NV:").append(_doc.getNumViews()).append("\t");
@@ -56,9 +60,10 @@ class KnowledgeDocument {
     } catch (UnsupportedEncodingException e) {
       buf.append("null");
     }
-    buf.append(", \"pagerank\": ").append(_doc.getPageRank())
-        .append(", \"numviews\": ").append(_doc.getNumViews())
-        .append(", \"vote\": ").append(_doc.getVote()).append("}");
+    buf.append(", \"score\": ").append(_score).append(", \"pagerank\": ")
+        .append(_doc.getPageRank()).append(", \"numviews\": ")
+        .append(_doc.getNumViews()).append(", \"vote\": ")
+        .append(_doc.getVote()).append("}");
 
     return buf.toString();
   }

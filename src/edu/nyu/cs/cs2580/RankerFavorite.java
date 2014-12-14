@@ -94,7 +94,7 @@ public class RankerFavorite extends Ranker {
           .getKnowledge(resultDocid);
       DocumentStackOverFlow document = (DocumentStackOverFlow) _stackIndexer
           .getDoc(resultDocid);
-      return new KnowledgeDocument(document, knowledge);
+      return new KnowledgeDocument(document, knowledge, results.getScore());
     } else {
       return null;
     }

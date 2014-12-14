@@ -161,6 +161,7 @@ class QueryHandler implements HttpHandler {
       KnowledgeDocument knoc, String spellCheckResult, StringBuffer response) {
     response.append("{\n\"results\":[ \n");
     for (ScoredDocument doc : docs) {
+      doc.parseSnippet();
       response.append(doc.asHtmlResult());
       response.append(",\n");
     }
