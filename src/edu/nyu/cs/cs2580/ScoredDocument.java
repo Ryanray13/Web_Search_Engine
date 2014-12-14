@@ -37,25 +37,26 @@ class ScoredDocument implements Comparable<ScoredDocument> {
    */
   public String asHtmlResult() {
     StringBuffer buf = new StringBuffer();
+    buf.append("{\"id\": ").append(_doc._docid).append(", \"title\": ");
     try {
-      buf.append("{\"id\": ").append(_doc._docid).append(", \"title\": \"")
-          .append(URLEncoder.encode(_doc.getTitle(),"UTF-8")).append("\", \"url\": \"")
-          .append(_doc.getBaseUrl() + _doc.getName())
-          .append("\", \"filePath\": \"")
-          .append(_doc.getPathPrefix() + "/" + _doc.getName())
-          .append("\", \"score\": ").append(_score).append(", \"pagerank\": ")
-          .append(_doc.getPageRank()).append(", \"numviews\": ")
-          .append(_doc.getNumViews()).append("}");
+      buf.append("\"").append(URLEncoder.encode(_doc.getTitle(), "UTF-8"))
+          .append("\"");
     } catch (UnsupportedEncodingException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      buf.append("null");
     }
+    buf.append(", \"url\": \"").append(_doc.getBaseUrl() + _doc.getName())
+        .append("\", \"filePath\": \"")
+        .append(_doc.getPathPrefix() + "/" + _doc.getName())
+        .append("\", \"score\": ").append(_score).append(", \"pagerank\": ")
+        .append(_doc.getPageRank()).append(", \"numviews\": ")
+        .append(_doc.getNumViews()).append("}");
+
     return buf.toString();
   }
 
   @Override
   public int compareTo(ScoredDocument o) {
-    if (o == null){
+    if (o == null) {
       return 1;
     }
     if (this._score == o._score) {

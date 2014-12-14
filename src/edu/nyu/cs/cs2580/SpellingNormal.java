@@ -13,21 +13,21 @@ import java.util.regex.Pattern;
 
 import edu.nyu.cs.cs2580.SearchEngine.Options;
 
-
 /**
  * spell corrector using big.txt as dictionay
+ * 
  * @author Ray
  *
  */
-class SpellingNormal extends Spelling{
+class SpellingNormal extends Spelling {
 
   public final Map<String, Integer> nWords = new HashMap<String, Integer>();
-  
-  public SpellingNormal(Options option){
+
+  public SpellingNormal(Options option) {
     super(option);
   }
-  
-  public SpellingNormal(){
+
+  public SpellingNormal() {
     super();
   }
 
@@ -42,9 +42,10 @@ class SpellingNormal extends Spelling{
     }
     in.close();
   }
-  
+
   public void train() throws IOException {
-    BufferedReader in = new BufferedReader(new FileReader(_spellprefix + "/big.txt"));
+    BufferedReader in = new BufferedReader(new FileReader(_spellprefix
+        + "/big.txt"));
     Pattern p = Pattern.compile("\\w+");
     for (String temp = ""; temp != null; temp = in.readLine()) {
       Matcher m = p.matcher(temp.toLowerCase());
@@ -78,25 +79,35 @@ class SpellingNormal extends Spelling{
   }
 
   public final String correct(String word) {
-    if (nWords.containsKey(word))
+    if (nWords.containsKey(word)){
       return word;
+    }
+    
     List<String> list = edits(word);
     Map<Integer, String> candidates = new HashMap<Integer, String>();
-    for (String s : list)
-      if (nWords.containsKey(s))
+    for (String s : list){
+      if (nWords.containsKey(s)){
         candidates.put(nWords.get(s), s);
-    if (candidates.size() > 0)
+      }
+    }
+    
+  //check with edit distance 2
+    if (candidates.size() > 0){
       return candidates.get(Collections.max(candidates.keySet()));
-    for (String s : list)
-      for (String w : edits(s))
-        if (nWords.containsKey(w))
+    }
+    for (String s : list){
+      for (String w : edits(s)){
+        if (nWords.containsKey(w)){
           candidates.put(nWords.get(w), w);
+        }
+      }
+    }
     return candidates.size() > 0 ? candidates.get(Collections.max(candidates
         .keySet())) : word;
   }
 
   public static void main(String args[]) throws IOException {
-    
+
     SpellingNormal spel = new SpellingNormal();
     spel.train("data/SpellTrainer/big.txt");
     long start = System.nanoTime();

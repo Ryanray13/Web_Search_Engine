@@ -2,6 +2,8 @@ package edu.nyu.cs.cs2580;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.Vector;
 
 import com.sun.net.httpserver.Headers;
@@ -119,7 +121,7 @@ class QueryHandler implements HttpHandler {
     _stackIndexer = stackIndexer;
     _spellChecker = new SpellingNormal(options);
     try {
-      ((SpellingNormal)_spellChecker).train();
+      ((SpellingNormal) _spellChecker).train();
     } catch (IOException e) {
       // TODO Auto-generated catch block
       _spellChecker = new SpellingIndexed(indexer);
@@ -137,7 +139,7 @@ class QueryHandler implements HttpHandler {
   }
 
   private void constructTextOutput(final Vector<ScoredDocument> docs,
-      KnowledgeDocument knoc, StringBuffer response) {
+      KnowledgeDocument knoc, String spellCheckResult, StringBuffer response) {
     for (ScoredDocument doc : docs) {
       response.append(response.length() > 0 ? "\n" : "");
       response.append(doc.asTextResult());
@@ -147,19 +149,22 @@ class QueryHandler implements HttpHandler {
     if (knoc != null) {
       response.append(knoc.asTextResult() + "\n");
     }
+    if(!spellCheckResult.equals("")){
+      response.append("Did you mean:" + spellCheckResult);
+    }
     if (response.length() == 0) {
       response.append("No results retrieved!");
     }
   }
 
   private void constructHtmlOutput(final Vector<ScoredDocument> docs,
-      KnowledgeDocument knoc, StringBuffer response) {
+      KnowledgeDocument knoc, String spellCheckResult, StringBuffer response) {
     response.append("{\n\"results\":[ \n");
     for (ScoredDocument doc : docs) {
       response.append(doc.asHtmlResult());
       response.append(",\n");
     }
-    if(docs.size()!=0){
+    if (docs.size() != 0) {
       response.deleteCharAt(response.length() - 2);
     }
     response.append("],\n");
@@ -169,7 +174,46 @@ class QueryHandler implements HttpHandler {
     } else {
       response.append("null");
     }
+    response.append(",\n\"spellcheck\": ");
+    if(!spellCheckResult.equals("")){
+      try {
+        response.append("\"" + URLEncoder.encode(spellCheckResult,"UTF-8") + "\"");
+      } catch (UnsupportedEncodingException e) {
+        response.append("null");
+      }
+    }else{
+      response.append("null");
+    }
     response.append("\n}");
+  }
+  
+  private String spellCheck(Query query, Spelling spellchecker) {
+    Vector<String> phraseVector = query._tokens;
+    StringBuffer results = new StringBuffer();
+    boolean hasCorrected = false;
+    for(String phrase : phraseVector){
+      String[] terms = phrase.split(" +");
+      if(terms.length!=1){
+        results.append("\"");
+      }
+      for (String term : terms) {
+        String candidate = spellchecker.correct(term);
+        if(!candidate.equals(term)){
+          hasCorrected = true;
+        }
+        results.append(candidate);
+        results.append(" ");
+      }    
+      if(terms.length!=1){
+        results.deleteCharAt(results.length() - 1);
+        results.append("\"");
+      }    
+    }
+    if(hasCorrected){
+      return results.toString().trim();
+    }else{
+      return "";
+    }
   }
 
   public void handle(HttpExchange exchange) throws IOException {
@@ -192,7 +236,8 @@ class QueryHandler implements HttpHandler {
     if (uriPath == null || uriQuery == null) {
       respondWithMsg(exchange, "Something wrong with the URI!");
     }
-    if (!uriPath.equals("/search") && !uriPath.equals("/prf") && !uriPath.equals("/know")) {
+    if (!uriPath.equals("/search") && !uriPath.equals("/prf")
+        && !uriPath.equals("/know")) {
       respondWithMsg(exchange, "Only /search or /prf is handled!");
     }
     System.out.println("Query: " + uriQuery);
@@ -214,44 +259,54 @@ class QueryHandler implements HttpHandler {
     // Processing the query.
     Query processedQuery = new QueryPhrase(cgiArgs._query);
     processedQuery.processQuery();
+
+    KnowledgeDocument knowledgeDoc = ranker
+        .getDocumentWithKnowledge(processedQuery);
     
-     KnowledgeDocument knowledgeDoc = ranker.getDocumentWithKnowledge(processedQuery);
-     if (uriPath.equals("/know")){
-       StringBuffer response = new StringBuffer();
-       switch (cgiArgs._outputFormat) {
-       case TEXT:
-         constructTextOutput(new Vector<ScoredDocument>(), knowledgeDoc, response);
-         break;
-       case HTML:
-         constructHtmlOutput(new Vector<ScoredDocument>(), knowledgeDoc, response);
-         break;
-       default:
-         // nothing
-       }
-       respondWithMsg(exchange, response.toString());
-       System.out.println("Finished Expansion: " + cgiArgs._query);
-       return;
-     }
+    String spellCheckResult = spellCheck(processedQuery, _spellChecker);    
+    
+    // handle knowledge
+    if (uriPath.equals("/know")) {
+      StringBuffer response = new StringBuffer();
+      switch (cgiArgs._outputFormat) {
+      case TEXT:
+        constructTextOutput(new Vector<ScoredDocument>(), knowledgeDoc,
+            spellCheckResult, response);
+        break;
+      case HTML:
+        constructHtmlOutput(new Vector<ScoredDocument>(), knowledgeDoc,
+            spellCheckResult, response);
+        break;
+      default:
+        // nothing
+      }
+      respondWithMsg(exchange, response.toString());
+      System.out.println("Finished Expansion: " + cgiArgs._query);
+      return;
+    }
+
     // Ranking.
     Vector<ScoredDocument> scoredDocs = ranker.runQuery(processedQuery,
         cgiArgs._numResults);
-    
+
     if (uriPath.equals("/search")) {
       StringBuffer response = new StringBuffer();
       switch (cgiArgs._outputFormat) {
       case TEXT:
-        constructTextOutput(scoredDocs, knowledgeDoc, response);
+        constructTextOutput(scoredDocs, knowledgeDoc, spellCheckResult,
+            response);
         break;
       case HTML:
         // @CS2580: Plug in your HTML output
-        constructHtmlOutput(scoredDocs, knowledgeDoc, response);
+        constructHtmlOutput(scoredDocs, knowledgeDoc, spellCheckResult,
+            response);
         break;
       default:
         // nothing
       }
       respondWithMsg(exchange, response.toString());
       System.out.println("Finished query: " + cgiArgs._query);
-    } else if(uriPath.equals("/prf")){
+    } else if (uriPath.equals("/prf")) {
       PseudoRelevanceFeedback prf = new PseudoRelevanceFeedback(scoredDocs,
           _indexer, cgiArgs._numTerms, cgiArgs._includeQueryTerms,
           processedQuery);

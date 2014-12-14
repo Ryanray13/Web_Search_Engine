@@ -47,10 +47,11 @@ class SpellingIndexed extends Spelling {
       return word;
     List<String> list = edits(word);
     Map<Integer, String> candidates = new HashMap<Integer, String>();
-    for (String s : list)
+    for (String s : list){
       if (_indexer.hasTerm(s)) {
         candidates.put(_indexer.corpusDocFrequencyByTerm(s), s);
       }
+    }
     if (candidates.size() > 0) {
       return candidates.get(Collections.max(candidates.keySet()));
     }

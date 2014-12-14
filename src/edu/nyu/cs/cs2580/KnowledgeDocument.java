@@ -39,22 +39,27 @@ class KnowledgeDocument {
    */
   public String asHtmlResult() {
     StringBuffer buf = new StringBuffer();
+    buf.append("{\"id\": ").append(_doc._docid).append(", \"title\": ");
     try {
-      buf.append("{\"id\": ").append(_doc._docid).append(", \"title\": \"")
-          .append(URLEncoder.encode(_doc.getTitle(), "UTF-8"))
-          .append("\", \"url\": \"")
-          .append(_doc.getBaseUrl() + _doc.getName())
-          .append("\", \"filePath\": \"")
-          .append(_doc.getPathPrefix() + "/" + _doc.getName())
-          .append("\", \"knowledge\": \"")
-          .append(URLEncoder.encode(_knowledge, "UTF-8"))
-          .append("\", \"pagerank\": ").append(_doc.getPageRank())
-          .append(", \"numviews\": ").append(_doc.getNumViews())
-          .append(", \"vote\": ").append(_doc.getVote()).append("}");
+      buf.append("\"").append(URLEncoder.encode(_doc.getTitle(), "UTF-8"))
+          .append("\"");
     } catch (UnsupportedEncodingException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      buf.append("null");
     }
+    buf.append(", \"url\": \"").append(_doc.getBaseUrl() + _doc.getName())
+        .append("\", \"filePath\": \"")
+        .append(_doc.getPathPrefix() + "/" + _doc.getName())
+        .append("\", \"knowledge\": ");
+    try {
+      buf.append("\"").append(URLEncoder.encode(_knowledge, "UTF-8"))
+          .append("\"");
+    } catch (UnsupportedEncodingException e) {
+      buf.append("null");
+    }
+    buf.append(", \"pagerank\": ").append(_doc.getPageRank())
+        .append(", \"numviews\": ").append(_doc.getNumViews())
+        .append(", \"vote\": ").append(_doc.getVote()).append("}");
+
     return buf.toString();
   }
 }

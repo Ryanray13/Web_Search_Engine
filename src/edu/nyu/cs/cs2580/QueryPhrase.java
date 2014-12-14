@@ -65,7 +65,7 @@ public class QueryPhrase extends Query {
 
   private void putTermIntoVector(String str) {
     Stemmer stemmer = new Stemmer();
-    stemmer.add(str.toCharArray(), str.length());
+    stemmer.add(str.toLowerCase().toCharArray(), str.length());
     stemmer.stemWithStep1();
     String stemStr = stemmer.toString();
     if (stemStr.isEmpty()) {
@@ -83,7 +83,7 @@ public class QueryPhrase extends Query {
   
   private void putPhraseIntoVector(String str){
     Stemmer stemmer = new Stemmer();
-    stemmer.addWithPunctuation(str.toCharArray(), str.length());
+    stemmer.addWithPunctuation(str.toLowerCase().toCharArray(), str.length());
     stemmer.stemWithStep1();
     String stemStr = stemmer.toString();
     _tokens.add(stemStr);

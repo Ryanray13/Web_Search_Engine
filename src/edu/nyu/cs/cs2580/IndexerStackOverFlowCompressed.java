@@ -132,11 +132,11 @@ public class IndexerStackOverFlowCompressed extends Indexer implements
       throws IOException {
     // Use jsoup to parse html
     org.jsoup.nodes.Document parsedDocument = Jsoup.parse(file, "UTF-8");
-    String documentText = parsedDocument.title().toLowerCase() ;
+    String documentText = parsedDocument.title() ;
     Element ele = parsedDocument.body().getElementsByClass("post-text").first();
     documentText += ele.text();
     Stemmer stemmer = new Stemmer();
-    stemmer.add(documentText.toCharArray(), documentText.length());
+    stemmer.add(documentText.toLowerCase().toCharArray(), documentText.length());
     stemmer.stemWithStep1();
     String stemedDocument = stemmer.toString();
 
