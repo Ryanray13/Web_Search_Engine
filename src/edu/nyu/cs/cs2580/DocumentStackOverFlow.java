@@ -1,7 +1,9 @@
 package edu.nyu.cs.cs2580;
 
 /**
- * Document for stackoverflow
+ * document for stackoverflow, mainly add vote for the document(question)
+ * @author Ray
+ *
  */
 public class DocumentStackOverFlow extends Document{
   

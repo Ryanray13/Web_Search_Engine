@@ -36,9 +36,10 @@ class SpellingNormal extends Spelling {
     Pattern p = Pattern.compile("\\w+");
     for (String temp = ""; temp != null; temp = in.readLine()) {
       Matcher m = p.matcher(temp.toLowerCase());
-      while (m.find())
+      while (m.find()){
         nWords.put((temp = m.group()),
             nWords.containsKey(temp) ? nWords.get(temp) + 1 : 1);
+      }
     }
     in.close();
   }
@@ -49,9 +50,10 @@ class SpellingNormal extends Spelling {
     Pattern p = Pattern.compile("\\w+");
     for (String temp = ""; temp != null; temp = in.readLine()) {
       Matcher m = p.matcher(temp.toLowerCase());
-      while (m.find())
+      while (m.find()){
         nWords.put((temp = m.group()),
             nWords.containsKey(temp) ? nWords.get(temp) + 1 : 1);
+      }
     }
     in.close();
   }
@@ -59,22 +61,28 @@ class SpellingNormal extends Spelling {
   private final List<String> edits(String word) {
     List<String> result = new ArrayList<String>();
     // deletes
-    for (int i = 0; i < word.length(); ++i)
+    for (int i = 0; i < word.length(); ++i){
       result.add(word.substring(0, i) + word.substring(i + 1));
+    }
     // transpose
-    for (int i = 0; i < word.length() - 1; ++i)
+    for (int i = 0; i < word.length() - 1; ++i){
       result.add(word.substring(0, i) + word.substring(i + 1, i + 2)
           + word.substring(i, i + 1) + word.substring(i + 2));
+    }
     // replace
-    for (int i = 0; i < word.length(); ++i)
-      for (char c = 'a'; c <= 'z'; ++c)
+    for (int i = 0; i < word.length(); ++i){
+      for (char c = 'a'; c <= 'z'; ++c){
         result.add(word.substring(0, i) + String.valueOf(c)
             + word.substring(i + 1));
+      }
+    }
     // insert
-    for (int i = 0; i <= word.length(); ++i)
-      for (char c = 'a'; c <= 'z'; ++c)
+    for (int i = 0; i <= word.length(); ++i){
+      for (char c = 'a'; c <= 'z'; ++c){
         result.add(word.substring(0, i) + String.valueOf(c)
             + word.substring(i));
+      }
+    }
     return result;
   }
 
@@ -113,6 +121,35 @@ class SpellingNormal extends Spelling {
     long start = System.nanoTime();
     System.out.println(spel.correct("exceptiosnssasd"));
     System.out.println(System.nanoTime() - start);
+  }
+
+  @Override
+  public Map<String, Integer> correctCandidates(String word) {
+    if (nWords.containsKey(word)){
+      return null;
+    }
+    
+    List<String> list = edits(word);
+    Map<String, Integer> candidates = new HashMap<String, Integer>();
+    for (String s : list){
+      if (nWords.containsKey(s) && !_stopWords.contains(s)){
+        candidates.put(s,nWords.get(s));
+      }
+    }
+    
+   for (String s : list){
+      for (String w : edits(s)){
+        if (nWords.containsKey(w) && !_stopWords.contains(w)){
+          candidates.put(w,nWords.get(w));
+        }
+      }
+    }
+    return candidates.size() > 0 ? candidates : null;
+  }
+
+  @Override
+  public boolean hasTerm(String word) {
+    return this.nWords.containsKey(word);
   }
 
 }

@@ -4,7 +4,9 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
 /**
- * Document with Knowledge
+ * Knowledge document class for document with knowledge
+ * @author Ray
+ *
  */
 class KnowledgeDocument {
   private DocumentStackOverFlow _doc;
@@ -39,7 +41,7 @@ class KnowledgeDocument {
   }
 
   /**
-   * @CS2580: Student should implement {@code asHtmlResult} for final project.
+   * Html output for knowledge Document
    */
   public String asHtmlResult() {
     StringBuffer buf = new StringBuffer();

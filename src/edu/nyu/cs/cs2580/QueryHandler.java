@@ -4,7 +4,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 
 import com.sun.net.httpserver.Headers;
@@ -189,29 +192,64 @@ class QueryHandler implements HttpHandler {
     response.append("\n}");
   }
   
-  private String spellCheck(Query query, Spelling spellchecker) {
+  private String spellCheck(Query query, Spelling spellchecker, Ranker ranker) {
+    long start = System.nanoTime();
     Vector<String> phraseVector = query._tokens;
+    String correctString = "";
     StringBuffer results = new StringBuffer();
     boolean hasCorrected = false;
     for(String phrase : phraseVector){
       String[] terms = phrase.split(" +");
-      if(terms.length!=1){
-        results.append("\"");
-      }
       for (String term : terms) {
-        String candidate = spellchecker.correct(term);
-        if(!candidate.equals(term)){
+        if(!spellchecker.hasTerm(term)){
           hasCorrected = true;
+        }else{
+          correctString += term + " ";
         }
-        results.append(candidate);
-        results.append(" ");
-      }    
-      if(terms.length!=1){
-        results.deleteCharAt(results.length() - 1);
-        results.append("\"");
-      }    
+      }
     }
     if(hasCorrected){
+      Query tempQuery = new QueryPhrase(correctString);
+      tempQuery.processQuery();
+      Vector<ScoredDocument> scoredDocs = ranker.runQuery(tempQuery,
+          20);
+      PseudoRelevanceFeedback tempPrf = new PseudoRelevanceFeedback(scoredDocs, _indexer, 10, false, tempQuery);
+      List<String> prfList = tempPrf.compute();
+      Set<String> prfCandidates = new HashSet<String>();
+      for(String str : prfList){
+        String[] strs = str.split("\t");
+        prfCandidates.add(strs[0]);
+      }
+      for(String phrase : phraseVector){
+        String[] terms = phrase.split(" +");
+        if(terms.length!=1){
+          results.append("\"");
+        }
+        for (String term : terms) {
+          Map<String, Integer> tempCandidates = spellchecker.correctCandidates(term);
+          String candidate = term;
+          boolean inPrf = false;
+          if(tempCandidates!=null){
+            for(String key : prfCandidates){
+              if(tempCandidates.containsKey(key)){
+                candidate = key;
+                inPrf = true;
+                break;
+              }
+            }
+            if(!inPrf){
+               candidate = spellchecker.correct(term);
+            }
+          }
+          results.append(candidate);
+          results.append(" ");
+        }    
+        if(terms.length!=1){
+          results.deleteCharAt(results.length() - 1);
+          results.append("\"");
+        }    
+      }
+      System.out.println(System.nanoTime() - start);
       return results.toString().trim();
     }else{
       return "";
@@ -266,7 +304,7 @@ class QueryHandler implements HttpHandler {
     KnowledgeDocument knowledgeDoc = ranker
         .getDocumentWithKnowledge(processedQuery);
     
-    String spellCheckResult = spellCheck(processedQuery, _spellChecker);    
+    String spellCheckResult = spellCheck(processedQuery, _spellChecker, ranker);    
     
     // handle knowledge
     if (uriPath.equals("/know")) {

@@ -117,6 +117,8 @@ public class PseudoRelevanceFeedback {
     stopWords.add("|");
     stopWords.add("►");
     stopWords.add("–");
+    stopWords.add("such"); 
+    stopWords.add("so"); 
   }
 
   public List<String> compute() {

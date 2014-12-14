@@ -27,7 +27,10 @@ import org.jsoup.nodes.Element;
 import edu.nyu.cs.cs2580.SearchEngine.Options;
 
 /**
- * Indexer for stackoverflow to get answers
+ * Indexer to index stack overflow corpus
+ * Mainly to index each questions and its best answers
+ * @author Ray
+ *
  */
 public class IndexerStackOverFlowCompressed extends Indexer implements
     Serializable {
