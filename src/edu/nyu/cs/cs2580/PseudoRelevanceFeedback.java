@@ -132,6 +132,11 @@ public class PseudoRelevanceFeedback {
     stopWords.add("3");
     stopWords.add("4");
     stopWords.add("5");
+    stopWords.add("{");
+    stopWords.add("}");
+    stopWords.add("one");
+    stopWords.add("two");
+    stopWords.add("if");
   }
 
   public List<String> compute() {

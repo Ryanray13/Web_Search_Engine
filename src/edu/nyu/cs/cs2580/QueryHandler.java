@@ -5,8 +5,10 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 
 import com.sun.net.httpserver.Headers;
@@ -235,6 +237,7 @@ class QueryHandler implements HttpHandler {
   private String spellCheck(Query query, Spelling spellchecker, Ranker ranker) {
     long start = System.nanoTime();
     Vector<String> phraseVector = query._tokens;
+    Set<String> queryTermSet = new HashSet<String>(((QueryPhrase) query).toOriginalString());
     String correctString = "";
     StringBuffer results = new StringBuffer();
     boolean hasCorrected = false;
@@ -319,13 +322,12 @@ class QueryHandler implements HttpHandler {
               } else if (tempCandidates2 != null && tempCandidates1 == null) {
                 candidate = getMaxCandidate(tempCandidates2);
               } else {
-                tempCandidates1.putAll(tempCandidates2);
                 candidate = getMaxCandidate(tempCandidates1);
               }
             }
 
             // If successfully correct a word set to true
-            if (!term.equals(candidate)) {
+            if (!term.equals(candidate) || !queryTermSet.contains(candidate)) {
               hasCorrected = true;
             }
           }

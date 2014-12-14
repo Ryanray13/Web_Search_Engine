@@ -93,7 +93,6 @@ public class QueryPhrase extends Query {
     if (str.equals("")) {
       return;
     }
-    System.out.println(str);
     Stemmer stemmer = new Stemmer();
     stemmer.addWithPunctuation(str.toLowerCase().toCharArray(), str.length());
     stemmer.stemWithStep1();
@@ -124,6 +123,18 @@ public class QueryPhrase extends Query {
       }
     }
     return result;
+  }
+  
+  public Vector<String> toOriginalString(){
+    Stemmer stemmer = new Stemmer();
+    stemmer.add(_query.toLowerCase().toCharArray(), _query.length());
+    String result = new String(stemmer.getResultBuffer(),0,stemmer.getResultBuffer().length);
+    String[] strs = result.toString().trim().split(" ");
+    Vector<String> results = new Vector<String>();
+    for(int i = 0; i<strs.length; i++){
+      results.add(strs[i]);
+    }
+    return results;
   }
 
   public String toString() {
