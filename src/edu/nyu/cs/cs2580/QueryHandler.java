@@ -44,6 +44,10 @@ class QueryHandler implements HttpHandler {
 
     private boolean _spellcheck = true;
 
+    private boolean _know = true;
+
+    private int _page = 1;
+
     // The type of the ranker we will be using.
     public enum RankerType {
       NONE, FULLSCAN, CONJUNCTIVE, FAVORITE, COSINE, PHRASE, QL, LINEAR, COMPREHENSIVE, NUMVIEW,
@@ -116,6 +120,22 @@ class QueryHandler implements HttpHandler {
             } else if (val.equalsIgnoreCase("false")) {
               _spellcheck = false;
             }
+          } catch (IllegalArgumentException e) {
+            // Ignored, search engine should never fail upon invalid user input.
+          }
+        } else if (key.equals("know")) {
+          try {
+            if (val.equalsIgnoreCase("true")) {
+              _know = true;
+            } else if (val.equalsIgnoreCase("false")) {
+              _know = false;
+            }
+          } catch (IllegalArgumentException e) {
+            // Ignored, search engine should never fail upon invalid user input.
+          }
+        } else if (key.equals("page")) {
+          try {
+            _page = Integer.parseInt(val);
           } catch (IllegalArgumentException e) {
             // Ignored, search engine should never fail upon invalid user input.
           }
@@ -223,7 +243,7 @@ class QueryHandler implements HttpHandler {
     if (hasCorrected) {
       Query tempQuery = new QueryPhrase(correctString);
       tempQuery.processQuery();
-      Vector<ScoredDocument> scoredDocs = ranker.runQuery(tempQuery, 20);
+      Vector<ScoredDocument> scoredDocs = ranker.runQuery(tempQuery, 20, 1);
       PseudoRelevanceFeedback tempPrf = new PseudoRelevanceFeedback(
           scoredDocs, _indexer, 20, false, tempQuery);
       List<String> prfList = tempPrf.compute();
@@ -314,8 +334,8 @@ class QueryHandler implements HttpHandler {
     processedQuery.setStopWords(_spellChecker.getStopWords());
     processedQuery.processQuery();
 
-    KnowledgeDocument knowledgeDoc = ranker
-        .getDocumentWithKnowledge(processedQuery);
+    KnowledgeDocument knowledgeDoc = cgiArgs._know ? ranker
+        .getDocumentWithKnowledge(processedQuery) : null;
 
     String spellCheckResult = cgiArgs._spellcheck ? spellCheck(processedQuery,
         _spellChecker, ranker) : "";
@@ -342,7 +362,7 @@ class QueryHandler implements HttpHandler {
 
     // Ranking.
     Vector<ScoredDocument> scoredDocs = ranker.runQuery(processedQuery,
-        cgiArgs._numResults);
+        cgiArgs._numResults, cgiArgs._page);
 
     if (uriPath.equals("/search")) {
       StringBuffer response = new StringBuffer();

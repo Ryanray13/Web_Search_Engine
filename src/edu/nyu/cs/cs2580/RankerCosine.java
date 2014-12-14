@@ -27,7 +27,7 @@ public class RankerCosine extends Ranker {
   }
 
   @Override
-  public Vector<ScoredDocument> runQuery(Query query, int numResults) {
+  public Vector<ScoredDocument> runQuery(Query query, int numResults, int page) {
     HashMap<String, Double> qvm = new HashMap<String, Double>();
     Vector<String> qv = ((QueryPhrase) query).getTermVector();
     for (String term : qv){ 
@@ -49,7 +49,7 @@ public class RankerCosine extends Ranker {
       
       if (sdoc != null) {
         rankQueue.add(sdoc);
-        if (rankQueue.size() > numResults) {
+        if (rankQueue.size() > numResults * page) {
           rankQueue.poll();
         }
       }
@@ -58,7 +58,8 @@ public class RankerCosine extends Ranker {
 
     Vector<ScoredDocument> results = new Vector<ScoredDocument>();
     ScoredDocument scoredDoc = null;
-    while ((scoredDoc = rankQueue.poll()) != null) {
+    int resultSize = rankQueue.size() - (numResults * (page - 1));
+    while ((scoredDoc = rankQueue.poll()) != null && results.size() < resultSize) {
       results.add(scoredDoc);
     }
     Collections.sort(results, Collections.reverseOrder());
