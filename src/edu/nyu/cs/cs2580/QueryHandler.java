@@ -237,7 +237,7 @@ class QueryHandler implements HttpHandler {
   private String spellCheck(Query query, Spelling spellchecker, Ranker ranker) {
     long start = System.nanoTime();
     Vector<String> phraseVector = query._tokens;
-    Set<String> queryTermSet = new HashSet<String>(((QueryPhrase) query).toOriginalString());
+    Set<String> queryTermSet = new HashSet<String>(query.toOriginalString());
     String correctString = "";
     StringBuffer results = new StringBuffer();
     boolean hasCorrected = false;

@@ -136,9 +136,13 @@ public class IndexerStackOverFlowCompressed extends Indexer implements
     // Use jsoup to parse html
     org.jsoup.nodes.Document parsedDocument = Jsoup.parse(file, "UTF-8");
     String documentText = parsedDocument.title();
+    // TODO Auto-generated catch block
     Element ele = parsedDocument.body().getElementsByClass("post-text")
         .first();
     documentText += ele.text();
+    //add answer
+    //ele = parsedDocument.body().getElementsByClass("post-text").get(1);
+    //documentText += ele.text();
     Stemmer stemmer = new Stemmer();
     stemmer.add(documentText.toLowerCase().toCharArray(),
         documentText.length());
@@ -158,7 +162,6 @@ public class IndexerStackOverFlowCompressed extends Indexer implements
         _docTermOffset.add(docTermWriter.size());
       }
     } catch (Exception e) {
-      // TODO Auto-generated catch block
       e.printStackTrace();
     }
     document.setBaseUrl("stackoverflow.com/questions/");

@@ -36,6 +36,18 @@ public class Query {
     s.close();
   }
   
+  public  Vector<String>  toOriginalString(){
+    Stemmer stemmer = new Stemmer();
+    stemmer.add(_query.toLowerCase().toCharArray(), _query.length());
+    String result = new String(stemmer.getResultBuffer(),0,stemmer.getResultBuffer().length);
+    String[] strs = result.toString().trim().split(" ");
+    Vector<String> results = new Vector<String>();
+    for(int i = 0; i<strs.length; i++){
+      results.add(strs[i]);
+    }
+    return results;
+  }
+  
   public void setStopWords(Set<String> stopWords){
     _stopWords = stopWords;
   }
