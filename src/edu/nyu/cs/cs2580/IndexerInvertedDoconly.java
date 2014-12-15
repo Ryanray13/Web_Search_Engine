@@ -169,18 +169,13 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     String title = s.next();
     String body = s.next();
     s.close();
-    Stemmer stemmer = new Stemmer();
-    stemmer.add((title + body).toLowerCase().toCharArray(), title.length()
-        + body.length());
-    stemmer.stemWithStep1();
-    String stemedDocument = stemmer.toString();
-
+    String documentText = (title + body).toLowerCase();
     int docid = _documents.size();
     DocumentIndexed document = new DocumentIndexed(docid);
     // Indexing.
-    indexDocument(stemedDocument, docid);
+    int documentLength = indexDocument(documentText, docid);
     document.setTitle(title);
-    document.setLength(stemedDocument.length());
+    document.setLength(documentLength);
     _documents.add(document);
     ++_numDocs;
   }
@@ -191,15 +186,11 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     // Use jsoup to parse html
     org.jsoup.nodes.Document parsedDocument = Jsoup.parse(file, "UTF-8");
     String documentText = parsedDocument.text().toLowerCase();
-    Stemmer stemmer = new Stemmer();
-    stemmer.add(documentText.toCharArray(), documentText.length());
-    stemmer.stemWithStep1();
-    String stemedDocument = stemmer.toString();
 
     int docid = _documents.size();
     DocumentIndexed document = new DocumentIndexed(docid);
     // Indexing.
-    indexDocument(stemedDocument, docid);
+    int documentLength = indexDocument(documentText, docid);
     if (pathPrefix.equals("data/corpus")) {
       document.setBaseUrl("en.wikipedia.org/wiki/");
     } else {
@@ -208,7 +199,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     document.setName(file.getName());
     document.setPathPrefix(pathPrefix);
     document.setTitle(parsedDocument.title());
-    document.setLength(stemedDocument.length());
+    document.setLength(documentLength);
     String fileName = file.getName();
     if (_numViews.containsKey(fileName)) {
       document.setNumViews(_numViews.get(fileName));
@@ -225,14 +216,19 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
   }
 
   // Constructing the posting list
-  private void indexDocument(String document, int docid) {
+  private int indexDocument(String document, int docid) {
     Scanner s = new Scanner(document);
     List<Integer> list = null;
+    Stemmer stemmer = new Stemmer();
+    int docLength = 0;
     while (s.hasNext()) {
       String term = s.next();
       if (term.startsWith("http")) {
         continue;
       }
+      stemmer.add(term.toCharArray(), term.length());
+      stemmer.stemWithStep1();
+      term = stemmer.toString();
       if (_diskIndex.containsKey(term)
           && _postingLists.containsKey(_diskIndex.get(term))) {
         list = _postingLists.get(_diskIndex.get(term));
@@ -258,6 +254,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
         _postingLists.put(_diskIndex.get(term), list);
       }
       totalTermFrequency++;
+      docLength++;
     }
     s.close();
     try {
@@ -275,6 +272,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
       e.printStackTrace();
     }
     docTermMap.clear();
+    return docLength;
   }
 
   private void writeMapToDisk() throws IOException {

@@ -100,15 +100,13 @@ public class QueryPhrase extends Query {
     }
     System.out.println("term: " + str);
     Stemmer stemmer = new Stemmer();
-    stemmer.add(str.toLowerCase().toCharArray(), str.length());
-    stemmer.stemWithStep1();
-    String stemStr = stemmer.toString();
-    if (stemStr.isEmpty()) {
-      return;
-    }
-    Scanner s = new Scanner(stemStr);
+
+    Scanner s = new Scanner(str);
     while (s.hasNext()) {
       String term = s.next();
+      stemmer.add(term.toLowerCase().toCharArray(), term.length());
+      stemmer.stemWithStep1();
+      term = stemmer.toString();
       if (!_stopWords.contains(term)) {
         _tokens.add(term);
       }
@@ -126,35 +124,37 @@ public class QueryPhrase extends Query {
     if(!str.endsWith("\"")){
       str += "\"";
     }
+
     Map<Integer, String> noStemWords = new HashMap<Integer, String>();
     Scanner s = new Scanner(str);
     int i = 0;
     while(s.hasNext()){
-      String string = s.next();
-      if(string.startsWith("\"") && string.endsWith("\"")){
-        if(string.length()>1){
-          noStemWords.put(i,string.substring(1,string.length() - 1));
+      String term = s.next();
+      if(term.startsWith("\"") && term.endsWith("\"")){
+        if(term.length()>1){
+          noStemWords.put(i,term.substring(1,term.length() - 1));
         }
       }
       i++;
     }
     s.close();
+  
     Stemmer stemmer = new Stemmer();
-    stemmer.add(str.toLowerCase().toCharArray(), str.length());
-    stemmer.stemWithStep1();
-    String stemStr = stemmer.toString();
-    
     if(noStemWords.size() == 0){
-      _tokens.add(stemStr);
-      System.out.println("phrase: " + stemStr);
+      _tokens.add(str);
+      System.out.println("phrase: " + str);
     }else{
-      s = new Scanner(stemStr);
+      s = new Scanner(str);
       i = 0;
       StringBuffer bf = new StringBuffer();
       while (s.hasNext()) {
         String term = s.next();
         if(noStemWords.containsKey(i)){
           term = noStemWords.get(i);
+        }else{
+          stemmer.add(term.toLowerCase().toCharArray(), term.length());
+          stemmer.stemWithStep1();
+          term = stemmer.toString();
         }
         bf.append(term).append(" ");
         i++;

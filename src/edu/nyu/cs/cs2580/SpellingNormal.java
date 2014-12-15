@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 import edu.nyu.cs.cs2580.SearchEngine.Options;
 
 /**
- * spell corrector using big.txt as dictionay
+ * spell corrector using big.txt as dictionary
  * 
  * @author Ray
  *
@@ -121,9 +121,7 @@ class SpellingNormal extends Spelling {
     
     spel.train("data/SpellTrainer/big.txt");
     long start = System.nanoTime();
-    System.out.println(spel.correct("new"));
-    System.out.println(spel.correct("yok"));
-    System.out.println(spel.correct("univertity"));
+    System.out.println(spel.correct("entuhsiatic"));
     System.out.println(System.nanoTime() - start);
     System.out.println(spel.correctCandidatesEdit1("aaa"));
     
