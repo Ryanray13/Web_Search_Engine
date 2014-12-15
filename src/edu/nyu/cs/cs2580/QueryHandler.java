@@ -1,12 +1,16 @@
 package edu.nyu.cs.cs2580;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 
 import com.sun.net.httpserver.Headers;
@@ -149,11 +153,14 @@ class QueryHandler implements HttpHandler {
   private Indexer _indexer;
   private Indexer _stackIndexer;
   private Spelling _spellChecker;
+  private Set<String> _stackTags;
 
   public QueryHandler(Options options, Indexer indexer, Indexer stackIndexer) {
     _indexer = indexer;
     _stackIndexer = stackIndexer;
     _spellChecker = new SpellingNormal(options);
+    _stackTags = new HashSet<String>();
+    loadTags(options._spellprefix);
     try {
       ((SpellingNormal) _spellChecker).train();
       System.out.println("Using normal spell checker");
@@ -161,6 +168,19 @@ class QueryHandler implements HttpHandler {
       _spellChecker = new SpellingIndexed(indexer);
       System.out.println("Using index spell checker");
     }
+  }
+
+  private void loadTags(String pathPrefix) {
+    try {
+      BufferedReader br = new BufferedReader(new FileReader(pathPrefix + "/tags.txt"));
+      String line = "";
+      while( (line = br.readLine())!=null){
+        _stackTags.add(line.toLowerCase().trim());
+      }
+      br.close();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }   
   }
 
   private void respondWithMsg(HttpExchange exchange, final String message)
@@ -421,8 +441,13 @@ class QueryHandler implements HttpHandler {
       return;
     }
     
-    KnowledgeDocument knowledgeDoc = cgiArgs._know ? ranker
+    KnowledgeDocument knowledgeDoc;
+    if(checkTags(processedQuery)){
+      knowledgeDoc = cgiArgs._know ? ranker
         .getDocumentWithKnowledge(processedQuery) : null;
+    }else{
+      knowledgeDoc = null;
+    }
 
     // Ranking.
     Vector<ScoredDocument> scoredDocs = ranker.runQuery(processedQuery,
@@ -457,5 +482,15 @@ class QueryHandler implements HttpHandler {
       respondWithMsg(exchange, response.toString());
       System.out.println("Finished Expansion: " + cgiArgs._query);
     }
+  }
+
+  private boolean checkTags(Query processedQuery) {
+    Vector<String> termVector = ((QueryPhrase)processedQuery).getUniqTermVector();
+    for(String term : termVector){
+      if(_stackTags.contains(term)){
+        return true;
+      }
+    }
+    return false;
   }
 }
