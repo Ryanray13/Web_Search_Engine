@@ -61,7 +61,7 @@ function appCtrl($scope, $http) {
                     know.title = decodeURIComponent(data.knowledge.title).replace(/\+/g, ' ');
                     know.url = data.knowledge.url;
                     know.knowledge = decodeURIComponent(data.knowledge.knowledge).replace(/\+/g, ' ');
-                    if (data.knowledge.knowledge.length > 300) {
+                    if (know.knowledge.length > 300) {
                         know.short = decodeURIComponent(data.knowledge.knowledge).replace(/\+/g, ' ').substring(0, 300);
                         $scope.knowledgeMore = true;
                     }
