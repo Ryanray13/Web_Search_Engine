@@ -362,10 +362,10 @@ public class IndexerStackOverFlowCompressed extends Indexer implements
     cacheIndex = new HashMap<Integer, Integer>();
     DataInputStream reader = new DataInputStream(new BufferedInputStream(
         new FileInputStream(diskIndexFile)));
-
     for (String str : _termList) {
       _diskIndex.put(str, reader.readInt());
     }
+    _termList = null;
     reader.close();
     // Loading each size of the term posting list.
     System.out.println(Integer.toString(_numDocs) + " documents loaded "

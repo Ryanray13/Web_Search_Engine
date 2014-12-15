@@ -138,7 +138,6 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
         }
         docTermWriter.close();
       }
-
     } else {
       throw new IOException("Corpus prefix is not a direcroty");
     }

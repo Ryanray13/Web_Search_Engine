@@ -95,6 +95,8 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     if (corpusDirectory.isDirectory()) {
       System.out.println("Construct index from: " + corpusDirectory);
       File[] allFiles = corpusDirectory.listFiles();
+      docTermWriter = new DataOutputStream(new BufferedOutputStream(
+          new FileOutputStream(docTermFile)));
       // If corpus is in the corpus tsv file
       if (allFiles.length == 1 && allFiles[0].getName() == "corpus.tsv") {
         BufferedReader reader = new BufferedReader(new FileReader(
@@ -108,8 +110,6 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
           reader.close();
         }
       } else {
-        docTermWriter = new DataOutputStream(new BufferedOutputStream(
-            new FileOutputStream(docTermFile)));
         for (File file : allFiles) {
           if (file.getName().startsWith(".")
               || file.getName().endsWith(".html")) {
@@ -121,25 +121,24 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
             _postingLists.clear();
           }
         }
-        docTermWriter.close();
-      }
-
-      // index stackoverFlow as normal corpus
-      File stackOverFlowDir = new File(_options._stackOverFlowPrefix);
-      if (stackOverFlowDir.isDirectory()) {
-        allFiles = stackOverFlowDir.listFiles();
-        for (File file : allFiles) {
-          if (file.getName().startsWith(".")) {
-            continue;
-          }
-          processDocument(file, _options._stackOverFlowPrefix);
-          if (_numDocs % PARTIAL_SIZE == 0) {
-            writeMapToDisk();
-            _postingLists.clear();
+        
+        // index stackoverFlow as normal corpus
+        File stackOverFlowDir = new File(_options._stackOverFlowPrefix);
+        if (stackOverFlowDir.isDirectory()) {
+          allFiles = stackOverFlowDir.listFiles();
+          for (File file : allFiles) {
+            if (file.getName().startsWith(".")) {
+              continue;
+            }
+            processDocument(file, _options._stackOverFlowPrefix);
+            if (_numDocs % PARTIAL_SIZE == 0) {
+              writeMapToDisk();
+              _postingLists.clear();
+            }
           }
         }
+        docTermWriter.close();
       }
-
     } else {
       throw new IOException("Corpus prefix is not a direcroty");
     }

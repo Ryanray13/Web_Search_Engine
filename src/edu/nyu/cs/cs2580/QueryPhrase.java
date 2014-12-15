@@ -28,7 +28,7 @@ public class QueryPhrase extends Query {
     this._tokens.clear();
     boolean quote = false;
     boolean word = false;
-    int quoteCount= 0;
+    int quoteCount = 0;
     int len = _query.length();
     int p1 = 0;
     int p2 = 0;
@@ -44,43 +44,47 @@ public class QueryPhrase extends Query {
           } else if (p2 == len - 1) {
             if (quote == true) {
               quoteCount--;
-              if(quoteCount==0 && word){
+              if (quoteCount == 0 && word) {
                 quote = false;
                 putPhraseIntoVector(_query.substring(p1, p2).trim());
                 p1 = p2 + 1;
                 word = false;
               }
-            }         
+            }
           } else {
             if (!quote) {
-              if( _query.charAt(p2 - 1) == ' ' ||  _query.charAt(p2 - 1) == '\"'){
+              if (_query.charAt(p2 - 1) == ' '
+                  || _query.charAt(p2 - 1) == '\"') {
                 quote = true;
                 putTermIntoVector(_query.substring(p1, p2).trim());
                 quote = true;
                 p1 = p2 + 1;
                 quoteCount++;
               }
-            }else{
-              if(word){
-                if(_query.charAt(p2 + 1) == ' ' ||  _query.charAt(p2 + 1) == '\"'){
+            } else {
+              if (word) {
+                if (_query.charAt(p2 + 1) == ' '
+                    || _query.charAt(p2 + 1) == '\"') {
                   quoteCount--;
-                  if(quoteCount == 0){
-                    quote=false;
+                  if (quoteCount == 0) {
+                    quote = false;
                     putPhraseIntoVector(_query.substring(p1, p2).trim());
                     p1 = p2 + 1;
                     word = false;
-                  }               
-                }else if(_query.charAt(p2 - 1) == ' ' ||  _query.charAt(p2 - 1) == '\"'){
+                  }
+                } else if (_query.charAt(p2 - 1) == ' '
+                    || _query.charAt(p2 - 1) == '\"') {
                   quoteCount++;
                 }
-              }else{
-                if( _query.charAt(p2 - 1) == ' ' ||  _query.charAt(p2 - 1) == '\"'){
+              } else {
+                if (_query.charAt(p2 - 1) == ' '
+                    || _query.charAt(p2 - 1) == '\"') {
                   quoteCount++;
                 }
               }
             }
           }
-        }else{
+        } else {
           word = true;
         }
         ++p2;
@@ -93,12 +97,11 @@ public class QueryPhrase extends Query {
       e.printStackTrace();
     }
   }
-  
+
   private void putTermIntoVector(String str) {
     if (str.equals("")) {
       return;
     }
-    System.out.println("term: " + str);
     Stemmer stemmer = new Stemmer();
 
     Scanner s = new Scanner(str);
@@ -118,51 +121,45 @@ public class QueryPhrase extends Query {
     if (str.equals("")) {
       return;
     }
-    if(!str.startsWith("\"")){
-      str = "\"" +str;
+    if (!str.startsWith("\"")) {
+      str = "\"" + str;
     }
-    if(!str.endsWith("\"")){
+    if (!str.endsWith("\"")) {
       str += "\"";
     }
 
     Map<Integer, String> noStemWords = new HashMap<Integer, String>();
     Scanner s = new Scanner(str);
     int i = 0;
-    while(s.hasNext()){
+    while (s.hasNext()) {
       String term = s.next();
-      if(term.startsWith("\"") && term.endsWith("\"")){
-        if(term.length()>1){
-          noStemWords.put(i,term.substring(1,term.length() - 1));
+      if (term.startsWith("\"") && term.endsWith("\"")) {
+        if (term.length() > 1) {
+          noStemWords.put(i, term.substring(1, term.length() - 1));
         }
       }
       i++;
     }
     s.close();
-  
+
     Stemmer stemmer = new Stemmer();
-    if(noStemWords.size() == 0){
-      _tokens.add(str);
-      System.out.println("phrase: " + str);
-    }else{
-      s = new Scanner(str);
-      i = 0;
-      StringBuffer bf = new StringBuffer();
-      while (s.hasNext()) {
-        String term = s.next();
-        if(noStemWords.containsKey(i)){
-          term = noStemWords.get(i);
-        }else{
-          stemmer.add(term.toLowerCase().toCharArray(), term.length());
-          stemmer.stemWithStep1();
-          term = stemmer.toString();
-        }
-        bf.append(term).append(" ");
-        i++;
+    s = new Scanner(str);
+    i = 0;
+    StringBuffer bf = new StringBuffer();
+    while (s.hasNext()) {
+      String term = s.next();
+      if (noStemWords.containsKey(i)) {
+        term = noStemWords.get(i);
+      } else {
+        stemmer.add(term.toLowerCase().toCharArray(), term.length());
+        stemmer.stemWithStep1();
+        term = stemmer.toString();
       }
-      _tokens.add(bf.toString().trim());
-      System.out.println("phrase: " + bf.toString());
-      s.close();
-    }    
+      bf.append(term).append(" ");
+      i++;
+    }
+    _tokens.add(bf.toString().trim());
+    s.close();
   }
 
   public Vector<String> getUniqTermVector() {
