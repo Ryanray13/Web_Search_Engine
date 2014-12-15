@@ -223,7 +223,7 @@ class QueryHandler implements HttpHandler {
       response.append("null");
     }
     response.append(",\n\"query\": ");
-    String queryString = ((QueryPhrase) query).toString();
+    String queryString = ((QueryPhrase) query).toOriginalString();
     try {
       response.append("\"" + URLEncoder.encode(queryString, "UTF-8") + "\"");
     } catch (UnsupportedEncodingException e) {
@@ -234,7 +234,7 @@ class QueryHandler implements HttpHandler {
 
   private String spellCheck(Query query, Spelling spellchecker, Ranker ranker) {
     long start = System.nanoTime();
-    Vector<String> termVector = query.toOriginalString();
+    Vector<String> termVector = query.originalTermVector();
     String correctString = "";
     StringBuffer results = new StringBuffer();
     boolean hasCorrected = false;

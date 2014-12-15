@@ -36,7 +36,7 @@ public class Query {
     s.close();
   }
   
-  public  Vector<String>  toOriginalString(){
+  public  Vector<String>  originalTermVector(){
     Stemmer stemmer = new Stemmer();
     stemmer.add(_query.toLowerCase().toCharArray(), _query.length());
     String result = new String(stemmer.getResultBuffer(),0,stemmer.getResultBuffer().length);

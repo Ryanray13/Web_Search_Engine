@@ -195,4 +195,13 @@ public class QueryPhrase extends Query {
     }
     return bf.toString().trim();
   }
+  
+  public String toOriginalString() {
+    Vector<String> result = originalTermVector();
+    StringBuffer bf = new StringBuffer();
+    for (String term : result) {
+      bf.append(term).append(" ");
+    }
+    return bf.toString().trim();
+  }
 }
