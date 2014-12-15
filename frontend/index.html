@@ -75,7 +75,7 @@
         </div>
         <nav style="margin-left: 30px">
             <ul class="pagination" style="">
-                <li style="margin:0 10px;font-weight: bold" ng-repeat="i in getNumber(totalItems)" ng-click="pageChanged(i)" ng-disabled="i == currentPage">{{i}}</li>
+                <li ng-class="{'current-page': i == currentPage}" style="margin:0 10px;" ng-repeat="i in getNumber(totalItems)" ng-click="pageChanged(i)" ng-disabled="i == currentPage">{{i}}</li>
             </ul>
         </nav>
     </div>
