@@ -6,6 +6,7 @@
 .know-section { margin-bottom: 20px; }
 .check-section { margin-bottom: 20px; }
 .current-page { font-weight: bold }
+.page-cursor { cursor: pointer}
 
 hgroup { padding-left: 15px; border-bottom: 1px solid #ccc; }
 hgroup h1 { font: 500 normal 1.625em "Roboto",Arial,Verdana,sans-serif; color: #2a3644; margin-top: 0; line-height: 1.15; }

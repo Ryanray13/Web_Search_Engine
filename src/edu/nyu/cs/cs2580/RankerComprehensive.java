@@ -19,10 +19,10 @@ public class RankerComprehensive extends Ranker {
   private static final double BASE_BETA = 0.65;
   private static final double PAGERANK_BETA = 0.2;
   private static final double NUMVIEW_BETA = 0.15;
-  private static final double STACK_BASE_BETA = 0.5;
+  private static final double STACK_BASE_BETA = 0.65;
   private static final double STACK_PAGERANK_BETA = 0.1;
   private static final double STACK_NUMVIEW_BETA = 0.05;
-  private static final double STACK_VOTE_BETA = 0.35;
+  private static final double STACK_VOTE_BETA = 0.3;
 
   public RankerComprehensive(Options options, CgiArguments arguments,
       Indexer indexer, Indexer stackIndexer) {

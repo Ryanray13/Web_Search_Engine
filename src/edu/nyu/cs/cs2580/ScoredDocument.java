@@ -7,6 +7,7 @@ import java.net.URLEncoder;
 import java.util.Vector;
 
 import org.jsoup.Jsoup;
+import org.jsoup.select.Elements;
 
 /**
  * Document with score.
@@ -47,20 +48,30 @@ class ScoredDocument implements Comparable<ScoredDocument> {
     if (file.exists()) {
       try {
         org.jsoup.nodes.Document parsedDocument = Jsoup.parse(file, "UTF-8");
-        String body = parsedDocument.body().text().toLowerCase();
+        Elements eles = parsedDocument.getElementsByClass("post-text");
+        StringBuffer postText = new StringBuffer();
+        String body = "";
+        if (eles != null && eles.size() > 0) {
+          for (org.jsoup.nodes.Element ele : eles) {
+            postText.append(ele.text()).append(" ");
+          }
+          body = postText.toString();
+        } else {
+          body = parsedDocument.text();
+        }
         int index = 0;
         for (String phrase : phrases) {
-          index = body.indexOf(phrase,index);
+          index = body.indexOf(phrase, index);
           if (index != -1) {
-            bf.append(body.substring(index, index+eachSize)).append("...");
+            bf.append(body.substring(index, index + eachSize)).append("...");
             index += index + eachSize;
-          }else{
+          } else {
             index = 0;
           }
         }
+
         _snippet = bf.toString();
       } catch (Exception e) {
-        // TODO Auto-generated catch block
         e.printStackTrace();
       }
     }
