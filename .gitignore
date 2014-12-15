@@ -16,3 +16,4 @@ data/*
 !data/SpellTrainer/
 /results/*
 /dist/*
+frontend/npm-debug.log

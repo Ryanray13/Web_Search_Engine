@@ -64,6 +64,8 @@ function appCtrl($scope, $http) {
                     if (know.knowledge.length > 300) {
                         know.short = decodeURIComponent(data.knowledge.knowledge).replace(/\+/g, ' ').substring(0, 300);
                         $scope.knowledgeMore = true;
+                    } else {
+                        $scope.knowledgeMore = false;
                     }
                     know.vote = data.knowledge.vote;
                     $scope.knowledge = know;

@@ -154,6 +154,7 @@ public class IndexerStackOverFlowCompressed extends Indexer implements
     // Indexing.
     indexDocument(stemedDocument, docid);
     try {
+      //TODO might not have answer
       ele = parsedDocument.body().getElementsByClass("post-text").get(1);
       if (ele != null) {
         String answer = ele.text();
