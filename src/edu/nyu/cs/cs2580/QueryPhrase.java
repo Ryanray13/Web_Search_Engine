@@ -1,11 +1,11 @@
 package edu.nyu.cs.cs2580;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.Vector;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * @CS2580: implement this class for HW2 to handle phrase. If the raw query is
@@ -33,59 +33,64 @@ public class QueryPhrase extends Query {
     int p1 = 0;
     int p2 = 0;
     char ch;
-    while (p2 < len) {
-      ch = _query.charAt(p2);
-      if (ch == '"') {
-        if (p2 == 0) {
-          p1 = 1;
-          quote = true;
-          quoteCount++;
-        } else if (p2 == len - 1) {
-          if (quote == true) {
-            quoteCount--;
-            if(quoteCount==0 && word){
-              quote = false;
-              putPhraseIntoVector(_query.substring(p1, p2).trim());
-              p1 = p2 + 1;
-              word = false;
-            }
-          }         
-        } else {
-          if (!quote) {
-            if( _query.charAt(p2 - 1) == ' ' ||  _query.charAt(p2 - 1) == '\"'){
-              quote = true;
-              putTermIntoVector(_query.substring(p1, p2).trim());
-              quote = true;
-              p1 = p2 + 1;
-              quoteCount++;
-            }
-          }else{
-            if(word){
-              if(_query.charAt(p2 + 1) == ' ' ||  _query.charAt(p2 + 1) == '\"'){
-                quoteCount--;
-                if(quoteCount == 0){
-                  quote=false;
-                  putPhraseIntoVector(_query.substring(p1, p2).trim());
-                  p1 = p2 + 1;
-                  word = false;
-                }               
-              }else if(_query.charAt(p2 - 1) == ' ' ||  _query.charAt(p2 - 1) == '\"'){
+    try {
+      while (p2 < len) {
+        ch = _query.charAt(p2);
+        if (ch == '"') {
+          if (p2 == 0) {
+            p1 = 1;
+            quote = true;
+            quoteCount++;
+          } else if (p2 == len - 1) {
+            if (quote == true) {
+              quoteCount--;
+              if(quoteCount==0 && word){
+                quote = false;
+                putPhraseIntoVector(_query.substring(p1, p2).trim());
+                p1 = p2 + 1;
+                word = false;
+              }
+            }         
+          } else {
+            if (!quote) {
+              if( _query.charAt(p2 - 1) == ' ' ||  _query.charAt(p2 - 1) == '\"'){
+                quote = true;
+                putTermIntoVector(_query.substring(p1, p2).trim());
+                quote = true;
+                p1 = p2 + 1;
                 quoteCount++;
               }
             }else{
-              if( _query.charAt(p2 - 1) == ' ' ||  _query.charAt(p2 - 1) == '\"'){
-                quoteCount++;
+              if(word){
+                if(_query.charAt(p2 + 1) == ' ' ||  _query.charAt(p2 + 1) == '\"'){
+                  quoteCount--;
+                  if(quoteCount == 0){
+                    quote=false;
+                    putPhraseIntoVector(_query.substring(p1, p2).trim());
+                    p1 = p2 + 1;
+                    word = false;
+                  }               
+                }else if(_query.charAt(p2 - 1) == ' ' ||  _query.charAt(p2 - 1) == '\"'){
+                  quoteCount++;
+                }
+              }else{
+                if( _query.charAt(p2 - 1) == ' ' ||  _query.charAt(p2 - 1) == '\"'){
+                  quoteCount++;
+                }
               }
             }
           }
+        }else{
+          word = true;
         }
-      }else{
-        word = true;
+        ++p2;
       }
-      ++p2;
-    }
-    if (p1 < p2) {
-      putTermIntoVector(_query.substring(p1, p2).trim());
+      if (p1 < p2) {
+        putTermIntoVector(_query.substring(p1, p2).trim());
+      }
+    } catch (Exception e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
     }
   }
   
@@ -115,12 +120,49 @@ public class QueryPhrase extends Query {
     if (str.equals("")) {
       return;
     }
-    System.out.println("phrase: " + str);
+    if(!str.startsWith("\"")){
+      str = "\"" +str;
+    }
+    if(!str.endsWith("\"")){
+      str += "\"";
+    }
+    Map<Integer, String> noStemWords = new HashMap<Integer, String>();
+    Scanner s = new Scanner(str);
+    int i = 0;
+    while(s.hasNext()){
+      String string = s.next();
+      if(string.startsWith("\"") && string.endsWith("\"")){
+        if(string.length()>1){
+          noStemWords.put(i,string.substring(1,string.length() - 1));
+        }
+      }
+      i++;
+    }
+    s.close();
     Stemmer stemmer = new Stemmer();
-    stemmer.addWithPunctuation(str.toLowerCase().toCharArray(), str.length());
+    stemmer.add(str.toLowerCase().toCharArray(), str.length());
     stemmer.stemWithStep1();
     String stemStr = stemmer.toString();
-    _tokens.add(stemStr);
+    
+    if(noStemWords.size() == 0){
+      _tokens.add(stemStr);
+      System.out.println("phrase: " + stemStr);
+    }else{
+      s = new Scanner(stemStr);
+      i = 0;
+      StringBuffer bf = new StringBuffer();
+      while (s.hasNext()) {
+        String term = s.next();
+        if(noStemWords.containsKey(i)){
+          term = noStemWords.get(i);
+        }
+        bf.append(term).append(" ");
+        i++;
+      }
+      _tokens.add(bf.toString().trim());
+      System.out.println("phrase: " + bf.toString());
+      s.close();
+    }    
   }
 
   public Vector<String> getUniqTermVector() {

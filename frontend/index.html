@@ -65,9 +65,9 @@
                 <article class="search-result row" ng-repeat="doc in documents">
                     <div class="col-xs-12 col-sm-12 col-md-12 excerpet">
                         <h3><a href="{{'http://' + doc.url}}" target="_blank">{{doc.title}}</a></h3>
-                        <div style="margin-bottom: 10px; font-weight: bold">{{'http://' + doc.url}}</div>
+                        <div style="margin-bottom: 10px; font-weight: bold">{{'http://' + doc.url}}<a class="pull-right" href="{{'/cached?path=' + doc.filePath}}" target="_blank">cached</a></div>
                         <p>{{doc.snippet}}</p>
-                        <a href="{{'/cached?path=' + doc.filePath}}" target="_blank">cached</a>
+                        
                     </div>
                     <span class="clearfix borda"></span>
                 </article>
