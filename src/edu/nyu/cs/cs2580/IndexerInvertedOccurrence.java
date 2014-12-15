@@ -95,8 +95,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     if (corpusDirectory.isDirectory()) {
       System.out.println("Construct index from: " + corpusDirectory);
       File[] allFiles = corpusDirectory.listFiles();
-      docTermWriter = new DataOutputStream(new BufferedOutputStream(
-          new FileOutputStream(docTermFile)));
+      
       // If corpus is in the corpus tsv file
       if (allFiles.length == 1 && allFiles[0].getName() == "corpus.tsv") {
         BufferedReader reader = new BufferedReader(new FileReader(
@@ -110,6 +109,8 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
           reader.close();
         }
       } else {
+        docTermWriter = new DataOutputStream(new BufferedOutputStream(
+            new FileOutputStream(docTermFile)));
         for (File file : allFiles) {
           if (file.getName().startsWith(".")
               || file.getName().endsWith(".html")) {
