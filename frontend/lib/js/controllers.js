@@ -12,13 +12,29 @@ function appCtrl($scope, $http) {
     $scope.knowledgeMore = false;
     $scope.queryWord = "";
     $scope.ranker = "favorite";
-    $scope.size = 10;
+    $scope.totalItems = 10;
+    $scope.currentPage = 1;
     $scope.start = 0;
 
-    $scope.go = function() {
+    $scope.getNumber = function(num) {
+        var array = [];
+        if ($scope.currentPage < 6) {
+            for (var i = 1; i <= 10; i++)
+                array.push(i);
+            return array;
+        } else  {
+            for (var i = $scope.currentPage - 4; i <= $scope.currentPage + 5; i++)
+                array.push(i);
+            return array;
+        }
+    }
+
+    $scope.go = function(spellcheck, pageNum, know) {
         $http.get('/search?query=' + $scope.queryWord + '&ranker=' + $scope.ranker
-        + '&format=html&numdocs=10').
+        + '&format=html&numdocs=10&spellcheck=' + spellcheck.toString() + '&know='
+        + know.toString() + '&page=' + pageNum).
             success(function(data) {
+                $scope.currentPage = pageNum;
                 $scope.haveResults = true;
                 var docs = data.results;
                 var docus = [];
@@ -52,7 +68,7 @@ function appCtrl($scope, $http) {
                     $scope.spellcheck = decodeURIComponent(data.spellcheck).replace(/\+/g, ' ');
                     $scope.correctSpell = function() {
                         $scope.queryWord = $scope.spellcheck;
-                        $scope.go();
+                        $scope.go(false, 1, true);
                     }
                 }
             });
@@ -61,4 +77,11 @@ function appCtrl($scope, $http) {
     $scope.showMore = function () {
         $scope.knowledgeMore = false;
     };
+
+    $scope.pageChanged = function (pageNum) {
+        if (pageNum == 1)
+            $scope.go(true, 1, true);
+        else
+            $scope.go(false, pageNum, false);
+    }
 }
