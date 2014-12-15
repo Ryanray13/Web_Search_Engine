@@ -1,4 +1,4 @@
-Homework 3 
+This is the final Project For NYU course Web Search Engine
 -------------------------------------------
 By : Group 01 
      Fei Guan, Jingxin Zhu, Wuping Lei
@@ -8,7 +8,7 @@ By : Group 01
 Change in the parent directory of src first and then, 
 1.1 To compile,
 
-  $ javac -cp jsoup.jar src/edu/nyu/cs/cs2580/*.java
+  $ javac [-encoding utf8] -cp jsoup.jar src/edu/nyu/cs/cs2580/*.java
   
 1.2.1 Run mining mode :
 
@@ -21,66 +21,24 @@ Change in the parent directory of src first and then,
 1.2.3 Run server mode:
 
   $ java -cp jsoup.jar:src edu/nyu/cs/cs2580/SearchEngine --mode=serve --port=25801 --options=conf/engine.conf
-  
+
+#FrontEnd:
+Repositories contain front end code which runs  on node.js, you need to install node.js and bower in order
+to run the front end. Once all library has been installed, go to fronen directory and run: node app.js
+Then go to browser enter localhost:3000.
+
+#For Your Infomation:
+The project contains some file with utf-8 encoding character, you may need to add -encoding utf8 to compile.
+Different system may require different delimiter between classpath you may need to change from ":" to ";"
+The word being searched is stemmed, and stopwords will be filtered, if you want word to as it is, double
+quote that single word.
      
-# Part 2: Computing Document Qualities
+#Intro：
+On one hand, when searching a question in computer programming, people are usually expecting to see
+a highly recommended answer and save the time clicking each results search engine returns. 
+On the other hand, platforms such as Stack Overflow have accumulated a huge amount of valuable answers
+on a wide range of topics in computer programming[1]. So, our team will try to leverage those answers 
+to provide a knowledge bar for programming questions.
+In this project, our team also takes efforts to check users’ spelling mistake and 
+provide suggestion query for possible mistake in the light of Pseduo-Relevance-Feedback.
 
-2.1.1
-
-# Part 3: Comparing PageRank and NumViews
-  
-  $ java -cp src edu.nyu.cs.cs2580.Spearman data/mining/pageRankResult data/mining/numViewsResult
-  
-3.1 The Spearman correlation is ...
-
-                        0.9                   0.1           Lambda
-         1      0.45473162218747987   0.45473158958754595
-         2      0.4507496821652745    0.4537042608511672
-     Iteration
-
-3.2 Best argument for pageRank:
-The Best lambda is 0.1 (for damping factor) and 2 iterations since more iteration will be more reflect 
-the theoretical true value of the document quality.
-
-# Part 4:
-4.1  To run pseudo-relevance feedback (server must be on): 
-  
-  curl "http://localhost:25801/prf?query=google&ranker=favorite&numdocs=10&numterms=5"
-  
-  By default, numdocs is 10 and numterms is 5. The expansion terms returned would include query itself, 
-  if we want expansion terms without query terms modify the query string as:
-  
-  curl "http://localhost:25801/prf?query=google&ranker=favorite&numdocs=10&numterms=5&includequery=false"
-  
-4.2 
-  #!/bin/bash
-  rm -f prf*.tsv
-  i=0
-  while read -r line
-  do
-  i=$(( i + 1 ))
-  prfout=data/prf/prf-$i.tsv
-  curl "http://localhost:25801/prf?query="${line}"&ranker=favorite&numdocs=$1&numterms=$2" > $prfout
-  echo $line:$prfout >> prf.tsv
-  done < queries.tsv
-
-  $ java -cp src edu.nyu.cs.cs2580.Bhattacharyya prf.tsv qsim.tsv
-  
-  Run above script as : ./prf 10 5. First argument is numdocs and second argument is numterms
-  All the expansion words will be store in $prfout directory (as data/prf/prf-$i.tsv in script). 
-
-Ranker:
-Implement comprehensive ranker. The Betas for each features are 0.65 for term feature(QL score) and 0.2 for pageRank
-and 0.15 for numViews. Notice that I do a squre root of pageRank and log for numViews other they will be dominant. And
-since 2 iterations the matrix will be close to equilibrium thus I do a squre root.
-
-Index:
-We modify the base class of Index adding a method in order to calculate PRF.  Given a docid, it returns all the uniq
-terms the document has and the corresponding frequency. 
-  
-  public abstract Map<String, Integer> getDocTermMap(int docid);
-
-
-Query Parse:
-When parsing phrase(words with quotes), I only parse phrase with space i.e. ["new york" city] will be parsed in to 
-two phrases, while ["new york"city] with no space after the second quote, will be parsed as new york"city.

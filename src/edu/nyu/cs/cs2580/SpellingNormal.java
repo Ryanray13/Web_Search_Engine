@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 import edu.nyu.cs.cs2580.SearchEngine.Options;
 
 /**
- * spell corrector using big.txt as dictionay
+ * spell corrector using big.txt as dictionary
  * 
  * @author Ray
  *
@@ -118,10 +118,13 @@ class SpellingNormal extends Spelling {
   public static void main(String args[]) throws IOException {
 
     SpellingNormal spel = new SpellingNormal();
+    
     spel.train("data/SpellTrainer/big.txt");
     long start = System.nanoTime();
-    System.out.println(spel.correctCandidatesEdit1("aaa"));
+    System.out.println(spel.correct("entuhsiatic"));
     System.out.println(System.nanoTime() - start);
+    System.out.println(spel.correctCandidatesEdit1("aaa"));
+    
   }
 
   @Override

@@ -5,10 +5,8 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Vector;
 
 import com.sun.net.httpserver.Headers;
@@ -225,7 +223,7 @@ class QueryHandler implements HttpHandler {
       response.append("null");
     }
     response.append(",\n\"query\": ");
-    String queryString = ((QueryPhrase) query).toString();
+    String queryString = ((QueryPhrase) query).toOriginalString();
     try {
       response.append("\"" + URLEncoder.encode(queryString, "UTF-8") + "\"");
     } catch (UnsupportedEncodingException e) {
@@ -236,8 +234,7 @@ class QueryHandler implements HttpHandler {
 
   private String spellCheck(Query query, Spelling spellchecker, Ranker ranker) {
     long start = System.nanoTime();
-    Vector<String> phraseVector = query._tokens;
-    Set<String> queryTermSet = new HashSet<String>(query.toOriginalString());
+    Vector<String> termVector = query.originalTermVector();
     String correctString = "";
     StringBuffer results = new StringBuffer();
     boolean hasCorrected = false;
@@ -245,14 +242,11 @@ class QueryHandler implements HttpHandler {
 
     // First loop all the word to test whether there is a incorrect word
     // And construct a string with all correct words
-    for (String phrase : phraseVector) {
-      String[] terms = phrase.split(" +");
-      for (String term : terms) {
-        if (!spellchecker.hasTerm(term)) {
-          hasFalse = true;
-        } else {
-          correctString += term + " ";
-        }
+    for (String term : termVector) {
+      if (!spellchecker.hasTerm(term)) {
+        hasFalse = true;
+      } else {
+        correctString += term + " ";
       }
     }
 
@@ -273,71 +267,62 @@ class QueryHandler implements HttpHandler {
           prfCandidates.add(strs[0]);
         }
       }
-      for (String phrase : phraseVector) {
-        String[] terms = phrase.split(" +");
-        if (terms.length != 1) {
-          results.append("\"");
-        }
-        for (String term : terms) {
-          String candidate = term;
-          boolean inCandidate = false;
-          Map<String, Integer> tempCandidates1 = null;
-          Map<String, Integer> tempCandidates2 = null;
-          if (!spellchecker.hasTerm(term)) {
-            tempCandidates1 = spellchecker.correctCandidatesEdit1(term);
-            // check candidates with edit distance1
-            if (tempCandidates1 != null) {
-              // If a word in prf is also in candidate then choose that word
+
+      for (String term : termVector) {
+        String candidate = term;
+        boolean inCandidate = false;
+        Map<String, Integer> tempCandidates1 = null;
+        Map<String, Integer> tempCandidates2 = null;
+        if (!spellchecker.hasTerm(term)) {
+          tempCandidates1 = spellchecker.correctCandidatesEdit1(term);
+          // check candidates with edit distance1
+          if (tempCandidates1 != null) {
+            // If a word in prf is also in candidate then choose that word
+            for (String key : prfCandidates) {
+              if (tempCandidates1.containsKey(key)) {
+                candidate = key;
+                inCandidate = true;
+                break;
+              }
+            }
+          }
+
+          if (!inCandidate) {
+            // if no result with edit distance 1
+            // check candidates with edit distance 2
+            tempCandidates2 = spellchecker.correctCandidatesEdit2(term);
+            if (tempCandidates2 != null) {
               for (String key : prfCandidates) {
-                if (tempCandidates1.containsKey(key)) {
+                if (tempCandidates2.containsKey(key)) {
                   candidate = key;
                   inCandidate = true;
                   break;
                 }
               }
             }
+          }
 
-            if (!inCandidate) {
-              // if no result with edit distance 1
-              // check candidates with edit distance 2
-              tempCandidates2 = spellchecker.correctCandidatesEdit2(term);
-              if (tempCandidates2 != null) {
-                for (String key : prfCandidates) {
-                  if (tempCandidates2.containsKey(key)) {
-                    candidate = key;
-                    inCandidate = true;
-                    break;
-                  }
-                }
+          if (!inCandidate) {
+            if (tempCandidates1 == null && tempCandidates2 == null) {
+              if (prfCandidates.size() > 0) {
+                candidate = prfCandidates.get(0);
               }
-            }
-
-            if (!inCandidate) {
-              if (tempCandidates1 == null && tempCandidates2 == null) {
-                if (prfCandidates.size() > 0) {
-                  candidate = prfCandidates.get(0);
-                }
-              } else if (tempCandidates1 != null && tempCandidates2 == null) {
-                candidate = getMaxCandidate(tempCandidates1);
-              } else if (tempCandidates2 != null && tempCandidates1 == null) {
-                candidate = getMaxCandidate(tempCandidates2);
-              } else {
-                candidate = getMaxCandidate(tempCandidates1);
-              }
-            }
-
-            // If successfully correct a word set to true
-            if (!term.equals(candidate) || !queryTermSet.contains(candidate)) {
-              hasCorrected = true;
+            } else if (tempCandidates1 != null && tempCandidates2 == null) {
+              candidate = getMaxCandidate(tempCandidates1);
+            } else if (tempCandidates2 != null && tempCandidates1 == null) {
+              candidate = getMaxCandidate(tempCandidates2);
+            } else {
+              candidate = getMaxCandidate(tempCandidates1);
             }
           }
-          results.append(candidate);
-          results.append(" ");
+
+          // If successfully correct a word set to true
+          if (!term.equals(candidate)) {
+            hasCorrected = true;
+          }
         }
-        if (terms.length != 1) {
-          results.deleteCharAt(results.length() - 1);
-          results.append("\" ");
-        }
+        results.append(candidate);
+        results.append(" ");
       }
       System.out.println(System.nanoTime() - start);
       // If correct some word, return the recommendation string
@@ -409,23 +394,23 @@ class QueryHandler implements HttpHandler {
     Query processedQuery = new QueryPhrase(cgiArgs._query);
     processedQuery.setStopWords(_spellChecker.getStopWords());
     processedQuery.processQuery();
-
-    KnowledgeDocument knowledgeDoc = cgiArgs._know ? ranker
-        .getDocumentWithKnowledge(processedQuery) : null;
+    System.out.println(processedQuery._tokens);
 
     String spellCheckResult = cgiArgs._spellcheck ? spellCheck(processedQuery,
         _spellChecker, ranker) : "";
 
     // handle knowledge
     if (uriPath.equals("/know")) {
+      KnowledgeDocument knowDoc = cgiArgs._know ? ranker
+          .getDocumentWithKnowledge(processedQuery) : null;
       StringBuffer response = new StringBuffer();
       switch (cgiArgs._outputFormat) {
       case TEXT:
-        constructTextOutput(new Vector<ScoredDocument>(), knowledgeDoc,
+        constructTextOutput(new Vector<ScoredDocument>(), knowDoc,
             spellCheckResult, response);
         break;
       case HTML:
-        constructHtmlOutput(new Vector<ScoredDocument>(), knowledgeDoc,
+        constructHtmlOutput(new Vector<ScoredDocument>(), knowDoc,
             spellCheckResult, processedQuery, response);
         break;
       default:
@@ -435,6 +420,9 @@ class QueryHandler implements HttpHandler {
       System.out.println("Finished Expansion: " + cgiArgs._query);
       return;
     }
+    
+    KnowledgeDocument knowledgeDoc = cgiArgs._know ? ranker
+        .getDocumentWithKnowledge(processedQuery) : null;
 
     // Ranking.
     Vector<ScoredDocument> scoredDocs = ranker.runQuery(processedQuery,

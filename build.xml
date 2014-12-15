@@ -40,7 +40,7 @@
           target: compile              
     ================================= -->
   <target name="compile" depends="clean, init" description="Compile the project">
-    <javac includeantruntime="false" srcdir="${src}" destdir="${bin}" classpathref="classpath" />
+    <javac encoding="UTF-8" includeantruntime="false" srcdir="${src}" destdir="${bin}" classpathref="classpath" />
   </target>
 
 

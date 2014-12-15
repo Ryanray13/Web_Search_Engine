@@ -4,7 +4,7 @@
 
 var app = angular.module('myApp', []);
 
-function appCtrl($scope, $http) {
+function appCtrl($scope, $http, $location, $anchorScroll) {
     $scope.haveResults = false;
     $scope.haveKnowledge = false;
     $scope.haveSpellcheck = false;
@@ -93,7 +93,9 @@ function appCtrl($scope, $http) {
     $scope.pageChanged = function (pageNum) {
         if (pageNum == 1)
             $scope.go(true, 1, true);
-        else
+        else {
+            $anchorScroll();
             $scope.go(false, pageNum, false);
+        }
     }
 }

@@ -95,6 +95,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     if (corpusDirectory.isDirectory()) {
       System.out.println("Construct index from: " + corpusDirectory);
       File[] allFiles = corpusDirectory.listFiles();
+      
       // If corpus is in the corpus tsv file
       if (allFiles.length == 1 && allFiles[0].getName() == "corpus.tsv") {
         BufferedReader reader = new BufferedReader(new FileReader(
@@ -121,25 +122,24 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
             _postingLists.clear();
           }
         }
-        docTermWriter.close();
-      }
-
-      // index stackoverFlow as normal corpus
-      File stackOverFlowDir = new File(_options._stackOverFlowPrefix);
-      if (stackOverFlowDir.isDirectory()) {
-        allFiles = stackOverFlowDir.listFiles();
-        for (File file : allFiles) {
-          if (file.getName().startsWith(".")) {
-            continue;
-          }
-          processDocument(file, _options._stackOverFlowPrefix);
-          if (_numDocs % PARTIAL_SIZE == 0) {
-            writeMapToDisk();
-            _postingLists.clear();
+        
+        // index stackoverFlow as normal corpus
+        File stackOverFlowDir = new File(_options._stackOverFlowPrefix);
+        if (stackOverFlowDir.isDirectory()) {
+          allFiles = stackOverFlowDir.listFiles();
+          for (File file : allFiles) {
+            if (file.getName().startsWith(".")) {
+              continue;
+            }
+            processDocument(file, _options._stackOverFlowPrefix);
+            if (_numDocs % PARTIAL_SIZE == 0) {
+              writeMapToDisk();
+              _postingLists.clear();
+            }
           }
         }
+        docTermWriter.close();
       }
-
     } else {
       throw new IOException("Corpus prefix is not a direcroty");
     }
@@ -172,18 +172,14 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     String title = s.next();
     String body = s.next();
     s.close();
-    Stemmer stemmer = new Stemmer();
-    stemmer.add((title + body).toLowerCase().toCharArray(), title.length()
-        + body.length());
-    stemmer.stemWithStep1();
-    String stemedDocument = stemmer.toString();
-
+    
+    String documentText = (title + body).toLowerCase();
     int docid = _documents.size();
     DocumentIndexed document = new DocumentIndexed(docid);
     // Indexing.
-    indexDocument(stemedDocument, docid);
+    int documentLength = indexDocument(documentText, docid);
     document.setTitle(title);
-    document.setLength(stemedDocument.length());
+    document.setLength(documentLength);
     _documents.add(document);
     ++_numDocs;
   }
@@ -194,15 +190,11 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     // Use jsoup to parse html
     org.jsoup.nodes.Document parsedDocument = Jsoup.parse(file, "UTF-8");
     String documentText = parsedDocument.text().toLowerCase();
-    Stemmer stemmer = new Stemmer();
-    stemmer.add(documentText.toCharArray(), documentText.length());
-    stemmer.stemWithStep1();
-    String stemedDocument = stemmer.toString();
 
     int docid = _documents.size();
     DocumentIndexed document = new DocumentIndexed(docid);
     // Indexing.
-    indexDocument(stemedDocument, docid);
+    int documentLength = indexDocument(documentText, docid);
     if (pathPrefix.equals("data/corpus")) {
       document.setBaseUrl("en.wikipedia.org/wiki/");
     } else {
@@ -211,7 +203,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     document.setName(file.getName());
     document.setPathPrefix(pathPrefix);
     document.setTitle(parsedDocument.title());
-    document.setLength(stemedDocument.length());
+    document.setLength(documentLength);
     String fileName = file.getName();
     if (_numViews.containsKey(fileName)) {
       document.setNumViews(_numViews.get(fileName));
@@ -229,15 +221,19 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
   }
 
   // Constructing the posting list
-  private void indexDocument(String document, int docid) {
+  private int indexDocument(String document, int docid) {
     int offset = 0;
     Scanner s = new Scanner(document);
     List<Integer> list = null;
+    Stemmer stemmer = new Stemmer();
     while (s.hasNext()) {
       String term = s.next();
       if (term.startsWith("http")) {
         continue;
       }
+      stemmer.add(term.toCharArray(), term.length());
+      stemmer.stemWithStep1();
+      term = stemmer.toString();
       if (_diskIndex.containsKey(term)
           && _postingLists.containsKey(_diskIndex.get(term))) {
         list = _postingLists.get(_diskIndex.get(term));
@@ -277,6 +273,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
       e.printStackTrace();
     }
     docTermMap.clear();
+    return offset;
   }
 
   private void writeMapToDisk() throws IOException {
@@ -402,8 +399,8 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     for (String str : _termList) {
       _diskIndex.put(str, reader.readInt());
     }
-
     reader.close();
+    
     // Loading each size of the term posting list.
     System.out.println(Integer.toString(_numDocs) + " documents loaded "
         + "with " + Long.toString(_totalTermFrequency) + " terms!");

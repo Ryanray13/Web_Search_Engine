@@ -143,16 +143,11 @@ public class IndexerStackOverFlowCompressed extends Indexer implements
     //add answer
     //ele = parsedDocument.body().getElementsByClass("post-text").get(1);
     //documentText += ele.text();
-    Stemmer stemmer = new Stemmer();
-    stemmer.add(documentText.toLowerCase().toCharArray(),
-        documentText.length());
-    stemmer.stemWithStep1();
-    String stemedDocument = stemmer.toString();
 
     int docid = _documents.size();
     DocumentStackOverFlow document = new DocumentStackOverFlow(docid);
     // Indexing.
-    indexDocument(stemedDocument, docid);
+    int documentLength = indexDocument(documentText.toLowerCase(), docid);
     try {
       //TODO might not have answer
       ele = parsedDocument.body().getElementsByClass("post-text").get(1);
@@ -169,7 +164,7 @@ public class IndexerStackOverFlowCompressed extends Indexer implements
     document.setName(file.getName());
     document.setPathPrefix("data/stack");
     document.setTitle(parsedDocument.title());
-    document.setLength(stemedDocument.length());
+    document.setLength(documentLength);
     String fileName = file.getName();
     ele = parsedDocument.body().getElementsByClass("vote-count-post").first();
     if (ele != null & !ele.text().equals("")) {
@@ -204,12 +199,19 @@ public class IndexerStackOverFlowCompressed extends Indexer implements
   }
 
   // Constructing the posting list
-  private void indexDocument(String document, int docid) {
+  private int indexDocument(String document, int docid) {
     int offset = 0;
     Scanner s = new Scanner(document);
     List<Integer> list = null;
+    Stemmer stemmer = new Stemmer();
     while (s.hasNext()) {
       String term = s.next();
+      if (term.startsWith("http")) {
+        continue;
+      }
+      stemmer.add(term.toCharArray(), term.length());
+      stemmer.stemWithStep1();
+      term = stemmer.toString();
       if (_diskIndex.containsKey(term)
           && _postingLists.containsKey(_diskIndex.get(term))) {
         list = _postingLists.get(_diskIndex.get(term));
@@ -228,6 +230,7 @@ public class IndexerStackOverFlowCompressed extends Indexer implements
       offset++;
     }
     s.close();
+    return offset;
   }
 
   private void writeMapToDisk() throws IOException {
@@ -359,10 +362,10 @@ public class IndexerStackOverFlowCompressed extends Indexer implements
     cacheIndex = new HashMap<Integer, Integer>();
     DataInputStream reader = new DataInputStream(new BufferedInputStream(
         new FileInputStream(diskIndexFile)));
-
     for (String str : _termList) {
       _diskIndex.put(str, reader.readInt());
     }
+    _termList = null;
     reader.close();
     // Loading each size of the term posting list.
     System.out.println(Integer.toString(_numDocs) + " documents loaded "
