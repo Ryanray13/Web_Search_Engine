@@ -16,6 +16,12 @@ function appCtrl($scope, $http) {
     $scope.currentPage = 1;
     $scope.start = 0;
 
+    $scope.onKeyPress = function ($event) {
+        if ($event.keyCode == 13 && $scope.queryWord != "") {
+            $scope.go(true, 1, true);
+        }
+    };
+
     $scope.getNumber = function(num) {
         var array = [];
         if ($scope.currentPage < 6) {

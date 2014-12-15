@@ -15,7 +15,7 @@
         </div>
         <div>
             <div class="input-group group-margin" style="margin: 50px 200px 20px 200px">
-                <input type="text" class="form-control" ng-model="queryWord" placeholder="Search for">
+                <input type="text" class="form-control" ng-keypress="onKeyPress($event)" ng-model="queryWord" placeholder="Search for">
                     <span class="input-group-btn">
                         <button class="btn btn-default" type="button" ng-click="go(true, 1, true)" ng-disabled="queryWord.length<1">Go!</button>
                     </span>
