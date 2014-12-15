@@ -8,7 +8,7 @@ By : Group 01
 Change in the parent directory of src first and then, 
 1.1 To compile,
 
-  $ javac -cp jsoup.jar src/edu/nyu/cs/cs2580/*.java
+  $ javac [-encoding utf8] -cp jsoup.jar src/edu/nyu/cs/cs2580/*.java
   
 1.2.1 Run mining mode :
 
@@ -22,10 +22,16 @@ Change in the parent directory of src first and then,
 
   $ java -cp jsoup.jar:src edu/nyu/cs/cs2580/SearchEngine --mode=serve --port=25801 --options=conf/engine.conf
 
-#For Your Infomation:
+#FrontEnd:
 Repositories contain front end code which runs  on node.js, you need to install node.js and bower in order
 to run the front end. Once all library has been installed, go to fronen directory and run: node app.js
 Then go to browser enter localhost:3000.
+
+#For Your Infomation:
+The project contains some file with utf-8 encoding character, you may need to add -encoding utf8 to compile.
+Different system may require different delimiter between classpath you may need to change from ":" to ";"
+The word being searched is stemmed, and stopwords will be filtered, if you want word to as it is, double
+quote that single word.
      
 #Intro：
 On one hand, when searching a question in computer programming, people are usually expecting to see

@@ -399,8 +399,8 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     for (String str : _termList) {
       _diskIndex.put(str, reader.readInt());
     }
-
     reader.close();
+    
     // Loading each size of the term posting list.
     System.out.println(Integer.toString(_numDocs) + " documents loaded "
         + "with " + Long.toString(_totalTermFrequency) + " terms!");
