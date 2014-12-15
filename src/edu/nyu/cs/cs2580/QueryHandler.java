@@ -396,22 +396,21 @@ class QueryHandler implements HttpHandler {
     processedQuery.processQuery();
     System.out.println(processedQuery._tokens);
 
-    KnowledgeDocument knowledgeDoc = cgiArgs._know ? ranker
-        .getDocumentWithKnowledge(processedQuery) : null;
-
     String spellCheckResult = cgiArgs._spellcheck ? spellCheck(processedQuery,
         _spellChecker, ranker) : "";
 
     // handle knowledge
     if (uriPath.equals("/know")) {
+      KnowledgeDocument knowDoc = cgiArgs._know ? ranker
+          .getDocumentWithKnowledge(processedQuery) : null;
       StringBuffer response = new StringBuffer();
       switch (cgiArgs._outputFormat) {
       case TEXT:
-        constructTextOutput(new Vector<ScoredDocument>(), knowledgeDoc,
+        constructTextOutput(new Vector<ScoredDocument>(), knowDoc,
             spellCheckResult, response);
         break;
       case HTML:
-        constructHtmlOutput(new Vector<ScoredDocument>(), knowledgeDoc,
+        constructHtmlOutput(new Vector<ScoredDocument>(), knowDoc,
             spellCheckResult, processedQuery, response);
         break;
       default:
@@ -421,6 +420,9 @@ class QueryHandler implements HttpHandler {
       System.out.println("Finished Expansion: " + cgiArgs._query);
       return;
     }
+    
+    KnowledgeDocument knowledgeDoc = cgiArgs._know ? ranker
+        .getDocumentWithKnowledge(processedQuery) : null;
 
     // Ranking.
     Vector<ScoredDocument> scoredDocs = ranker.runQuery(processedQuery,
