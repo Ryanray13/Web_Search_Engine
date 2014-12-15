@@ -63,14 +63,21 @@ class ScoredDocument implements Comparable<ScoredDocument> {
         for (String phrase : phrases) {
           index = body.indexOf(phrase, index);
           if (index != -1) {
-            bf.append(body.substring(index, index + eachSize)).append("...");
-            index += index + eachSize;
+            if((index + eachSize) < body.length()){
+              bf.append(body.substring(index, index + eachSize)).append("...");
+            }else{
+              bf.append(body.substring(index, body.length())).append("...");
+            }
+            index += eachSize;
           } else {
             index = 0;
           }
         }
-
+       
         _snippet = bf.toString();
+        if(_snippet.length() < 10){
+          parseSnippet();
+        }
       } catch (Exception e) {
         e.printStackTrace();
       }
