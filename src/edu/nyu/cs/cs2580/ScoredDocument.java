@@ -55,9 +55,9 @@ class ScoredDocument implements Comparable<ScoredDocument> {
           for (org.jsoup.nodes.Element ele : eles) {
             postText.append(ele.text()).append(" ");
           }
-          body = postText.toString();
+          body = postText.toString().toLowerCase();
         } else {
-          body = parsedDocument.text();
+          body = parsedDocument.body().text().toLowerCase();
         }
         int index = 0;
         for (String phrase : phrases) {

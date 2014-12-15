@@ -83,6 +83,10 @@ function appCtrl($scope, $http) {
     $scope.showMore = function () {
         $scope.knowledgeMore = false;
     };
+    
+    $scope.showLess = function () {
+        $scope.knowledgeMore = true;
+    };
 
     $scope.pageChanged = function (pageNum) {
         if (pageNum == 1)
