@@ -17,7 +17,7 @@
             <div class="input-group group-margin" style="margin: 50px 200px 20px 200px">
                 <input type="text" class="form-control" ng-model="queryWord" placeholder="Search for">
                     <span class="input-group-btn">
-                        <button class="btn btn-default" type="button" ng-click="go()" ng-disabled="queryWord.length<1">Go!</button>
+                        <button class="btn btn-default" type="button" ng-click="go(true, 1, true)" ng-disabled="queryWord.length<1">Go!</button>
                     </span>
             </div>
         </div>
@@ -35,7 +35,6 @@
             </section>
         </div>
         <div ng-show="haveKnowledge">
-
             <section class="col-xs-12 col-sm-6 col-md-12 know-section">
                 <article class="search-result row">
                     <div class="col-xs-12 col-sm-12 col-md-12 excerpet">
@@ -66,13 +65,18 @@
                 <article class="search-result row" ng-repeat="doc in documents">
                     <div class="col-xs-12 col-sm-12 col-md-12 excerpet">
                         <h3><a href="{{'http://' + doc.url}}" target="_blank">{{doc.title}}</a></h3>
-                        <p>{{doc.snippet}}...</p>
+                        <p>{{doc.snippet}}</p>
                         <a href="{{'/cached?path=' + doc.filePath}}" target="_blank">cached</a>
                     </div>
                     <span class="clearfix borda"></span>
                 </article>
             </section>
         </div>
+        <nav>
+            <ul class="pagination">
+                <li ng-repeat="i in getNumber(totalItems)" ng-click="pageChanged(i)" ng-disabled="i == currentPage">{{i}}</li>
+            </ul>
+        </nav>
     </div>
 </body>
 </html>
