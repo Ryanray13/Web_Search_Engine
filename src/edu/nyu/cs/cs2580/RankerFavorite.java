@@ -82,6 +82,7 @@ public class RankerFavorite extends Ranker {
     while ((doc = _stackIndexer.nextDoc(query, docid)) != null) {
       ScoredDocument sdoc = scoreStackDocument(query, doc);
       if (sdoc != null) {
+      //only need the best results
         if (sdoc.compareTo(results) == 1) {
           results = sdoc;
         }
@@ -108,7 +109,8 @@ public class RankerFavorite extends Ranker {
     if (length == 0) {
       return null;
     }
-
+    
+    //Using QL to calculate the score
     Vector<String> phrases = ((QueryPhrase) query).getTermVector();
     for (String term : phrases) {
       probability = (1 - LAMBDA)

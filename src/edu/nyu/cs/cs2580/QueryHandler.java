@@ -151,8 +151,15 @@ class QueryHandler implements HttpHandler {
   // we are not worried about thread-safety here, the Indexer class must take
   // care of thread-safety.
   private Indexer _indexer;
+
+  // Indexer for stackoverflow
   private Indexer _stackIndexer;
+
+  // spell checker to correct word
   private Spelling _spellChecker;
+
+  // A set of stackoverflow hot tags to detect whether the query worth showing
+  // the knowledge
   private Set<String> _stackTags;
 
   public QueryHandler(Options options, Indexer indexer, Indexer stackIndexer) {
@@ -170,17 +177,19 @@ class QueryHandler implements HttpHandler {
     }
   }
 
+  /* loading tags from tags.txt */
   private void loadTags(String pathPrefix) {
     try {
-      BufferedReader br = new BufferedReader(new FileReader(pathPrefix + "/tags.txt"));
+      BufferedReader br = new BufferedReader(new FileReader(pathPrefix
+          + "/tags.txt"));
       String line = "";
-      while( (line = br.readLine())!=null){
+      while ((line = br.readLine()) != null) {
         _stackTags.add(line.toLowerCase().trim());
       }
       br.close();
     } catch (IOException e) {
       e.printStackTrace();
-    }   
+    }
   }
 
   private void respondWithMsg(HttpExchange exchange, final String message)
@@ -212,6 +221,7 @@ class QueryHandler implements HttpHandler {
     }
   }
 
+  /* construct json format for frontend */
   private void constructHtmlOutput(final Vector<ScoredDocument> docs,
       KnowledgeDocument knoc, String spellCheckResult, Query query,
       StringBuffer response) {
@@ -323,6 +333,10 @@ class QueryHandler implements HttpHandler {
           }
 
           if (!inCandidate) {
+            // If no edit distance candidates and prf is not null
+            // choose the hightest ranking prf word
+            // Otherwise choose the word with max count in edit distance
+            // candidate
             if (tempCandidates1 == null && tempCandidates2 == null) {
               if (prfCandidates.size() > 0) {
                 candidate = prfCandidates.get(0);
@@ -346,8 +360,8 @@ class QueryHandler implements HttpHandler {
       }
       System.out.println(System.nanoTime() - start);
       // If correct some word, return the recommendation string
-      // Otherwise return empty, meaning cannot recommend any word if there are
-      // some unknown words
+      // Otherwise return empty, meaning cannot recommend any words
+      // This happens when there are some unknown words
       if (hasCorrected) {
         return results.toString().trim();
       } else {
@@ -440,12 +454,14 @@ class QueryHandler implements HttpHandler {
       System.out.println("Finished Expansion: " + cgiArgs._query);
       return;
     }
-    
+
+    // check whether query contains stack overflow hot tags
+    // if so, return a knowledge, otherwise null
     KnowledgeDocument knowledgeDoc;
-    if(checkTags(processedQuery)){
+    if (checkTags(processedQuery)) {
       knowledgeDoc = cgiArgs._know ? ranker
-        .getDocumentWithKnowledge(processedQuery) : null;
-    }else{
+          .getDocumentWithKnowledge(processedQuery) : null;
+    } else {
       knowledgeDoc = null;
     }
 
@@ -485,9 +501,10 @@ class QueryHandler implements HttpHandler {
   }
 
   private boolean checkTags(Query processedQuery) {
-    Vector<String> termVector = ((QueryPhrase)processedQuery).getUniqTermVector();
-    for(String term : termVector){
-      if(_stackTags.contains(term)){
+    Vector<String> termVector = ((QueryPhrase) processedQuery)
+        .originalTermVector();
+    for (String term : termVector) {
+      if (_stackTags.contains(term)) {
         return true;
       }
     }

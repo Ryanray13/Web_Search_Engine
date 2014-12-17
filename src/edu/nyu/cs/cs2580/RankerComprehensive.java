@@ -93,6 +93,7 @@ public class RankerComprehensive extends Ranker {
     while ((doc = _stackIndexer.nextDoc(query, docid)) != null) {
       ScoredDocument sdoc = scoreStackDocument(query, doc);
       if (sdoc != null) {
+        //only need the best results
         if (sdoc.compareTo(results) == 1) {
           results = sdoc;
         }

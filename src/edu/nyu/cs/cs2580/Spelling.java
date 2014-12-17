@@ -97,9 +97,24 @@ public abstract class Spelling {
 
   public abstract String correct(String word);
 
+  /**
+   * Given a word, return all the correct words within edit distance 1
+   * @param word
+   * @return
+   */
   public abstract Map<String, Integer> correctCandidatesEdit1(String word);
 
+  /**
+   * Given a word, return all the correct words within edit distance 2
+   * @param word
+   * @return
+   */
   public abstract Map<String, Integer> correctCandidatesEdit2(String word);
 
+  /**
+   * Check whether the dictionary has the word
+   * @param word
+   * @return
+   */
   public abstract boolean hasTerm(String word);
 }

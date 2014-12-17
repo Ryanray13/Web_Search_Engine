@@ -41,6 +41,7 @@ import java.util.Set;
  * The Stemmer class transforms a word into its root form. The input word can be
  * provided a character at time (by calling add()), or at once by calling one of
  * the various stem(something) methods.
+ * 
  */
 
 class Stemmer {
@@ -53,7 +54,9 @@ class Stemmer {
 
   private Set<Character> punctuation = new HashSet<Character>();
 
-  /* unit of size whereby b is increased */
+  /* unit of size whereby b is increased 
+   * add punctuation 
+   */
   public Stemmer() {
     b = new char[INC];
     i = 0;
@@ -90,7 +93,7 @@ class Stemmer {
 
   /**
    * Add a character to the word being stemmed. When you are finished adding
-   * characters, you can call stem(void) to stem the word.
+   * characters, you can call stem(void) to stem the word. filter punctuation
    */
 
   public void add(char ch) {

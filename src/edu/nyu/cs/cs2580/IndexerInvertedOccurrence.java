@@ -95,7 +95,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     if (corpusDirectory.isDirectory()) {
       System.out.println("Construct index from: " + corpusDirectory);
       File[] allFiles = corpusDirectory.listFiles();
-      
+
       // If corpus is in the corpus tsv file
       if (allFiles.length == 1 && allFiles[0].getName() == "corpus.tsv") {
         BufferedReader reader = new BufferedReader(new FileReader(
@@ -122,7 +122,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
             _postingLists.clear();
           }
         }
-        
+
         // index stackoverFlow as normal corpus
         File stackOverFlowDir = new File(_options._stackOverFlowPrefix);
         if (stackOverFlowDir.isDirectory()) {
@@ -172,7 +172,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     String title = s.next();
     String body = s.next();
     s.close();
-    
+
     String documentText = (title + body).toLowerCase();
     int docid = _documents.size();
     DocumentIndexed document = new DocumentIndexed(docid);
@@ -195,6 +195,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     DocumentIndexed document = new DocumentIndexed(docid);
     // Indexing.
     int documentLength = indexDocument(documentText, docid);
+    // set corresponding values
     if (pathPrefix.equals("data/corpus")) {
       document.setBaseUrl("en.wikipedia.org/wiki/");
     } else {
@@ -234,6 +235,8 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
       stemmer.add(term.toCharArray(), term.length());
       stemmer.stemWithStep1();
       term = stemmer.toString();
+
+      // using _diskIndex as a dictionary, conver string to integer
       if (_diskIndex.containsKey(term)
           && _postingLists.containsKey(_diskIndex.get(term))) {
         list = _postingLists.get(_diskIndex.get(term));
@@ -247,6 +250,8 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
         }
         _postingLists.put(_diskIndex.get(term), list);
       }
+
+      // calculate each term frequency in document
       if (docTermMap.containsKey(_diskIndex.get(term))) {
         docTermMap.put(_diskIndex.get(term),
             docTermMap.get(_diskIndex.get(term)) + 1);
@@ -276,6 +281,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     return offset;
   }
 
+  /* write part of the postingslist in to disk free memory */
   private void writeMapToDisk() throws IOException {
     String outputFile = _options._indexPrefix + "/corpuspart"
         + String.valueOf(partNumber) + ".list";
@@ -284,8 +290,10 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     Collections.sort(keyList);
     DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
         new FileOutputStream(outputFile)));
+
     for (Integer key : keyList) {
       List<Integer> termList = _postingLists.get(key);
+      // write the size of postings list
       writer.writeInt(key);
       writer.writeInt(termList.size());
       for (Integer value : termList) {
@@ -297,6 +305,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     partNumber++;
   }
 
+  /* merge all the parts of postings lists into one */
   private void writeIndexToDisk() throws FileNotFoundException, IOException {
 
     int[] dictionaryList = new int[_diskIndex.size()];
@@ -400,7 +409,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
       _diskIndex.put(str, reader.readInt());
     }
     reader.close();
-    
+
     // Loading each size of the term posting list.
     System.out.println(Integer.toString(_numDocs) + " documents loaded "
         + "with " + Long.toString(_totalTermFrequency) + " terms!");
@@ -420,17 +429,22 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     if (query == null) {
       return null;
     }
+
+    // If enconter a new query, load all the postings list into memory
+    // of the term in query
     if (!currentQuery.equals(query._query)) {
       currentQuery = query._query;
       loadQueryList(query);
     }
     while (true) {
       boolean found = true;
+      // get next document contain all terms
       int docCandidate = nextContainAllDocument(query, docid);
       if (docCandidate == -1) {
         return null;
       }
 
+      // check whether meet phrase restrain
       Vector<String> phrases = query._tokens;
       for (String phrase : phrases) {
         String[] terms = phrase.trim().split(" +");
@@ -448,6 +462,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     }
   }
 
+  /* load all the postings lists into memory */
   private void loadQueryList(Query query) {
     _postingLists.clear();
     cacheIndex.clear();
@@ -563,6 +578,7 @@ public class IndexerInvertedOccurrence extends Indexer implements Serializable {
     if (list == null) {
       return -1;
     }
+    // get cache position of the list
     int cache = cacheIndex.get(_diskIndex.get(term));
     if (list.size() == 0 || list.get(list.size() - 2) <= docid) {
       return -1;

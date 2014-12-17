@@ -42,9 +42,10 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   private transient Map<String, Integer> _numViews = new HashMap<String, Integer>();
   private transient Map<String, Float> _pageRanks = new HashMap<String, Float>();
   private transient List<Integer> _diskLength = new ArrayList<Integer>();
-  // disk list offset
+
+  // disk postings lists offset
   private transient Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
-  // doc terms and frequencys
+  // doc terms and frequency
   private transient Map<Integer, Integer> docTermMap = new HashMap<Integer, Integer>();
 
   // Cache current running query
@@ -57,6 +58,8 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
   private transient int cacheTermListIndex = 0;
   private transient int partNumber = 0;
   private transient List<Integer> cacheTermList;
+
+  // outputstream to write uniq terms of a doc to disk
   private transient DataOutputStream docTermWriter;
 
   // doc term list offset
@@ -170,7 +173,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     String title = s.next();
     String body = s.next();
     s.close();
-   
+
     String documentText = (title + body).toLowerCase();
     int docid = _documents.size();
     DocumentIndexed document = new DocumentIndexed(docid);
@@ -194,6 +197,8 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     DocumentIndexed document = new DocumentIndexed(docid);
     // Indexing.
     int documentLength = indexDocument(documentText, docid);
+
+    // set corresponding values
     if (pathPrefix.equals("data/corpus")) {
       document.setBaseUrl("en.wikipedia.org/wiki/");
     } else {
@@ -232,6 +237,8 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
       stemmer.add(term.toCharArray(), term.length());
       stemmer.stemWithStep1();
       term = stemmer.toString();
+
+      // using _diskIndex as a dictionary, conver string to integer
       if (_diskIndex.containsKey(term)
           && _postingLists.containsKey(_diskIndex.get(term))) {
         list = _postingLists.get(_diskIndex.get(term));
@@ -245,6 +252,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
         }
         _postingLists.put(_diskIndex.get(term), list);
       }
+      // calculate each term frequency in document
       if (docTermMap.containsKey(_diskIndex.get(term))) {
         docTermMap.put(_diskIndex.get(term),
             docTermMap.get(_diskIndex.get(term)) + 1);
@@ -256,6 +264,8 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
       offset++;
     }
     s.close();
+
+    // compressed terms of document and write into disk
     try {
       List<Byte> docTermList = new ArrayList<Byte>();
       for (Integer key : docTermMap.keySet()) {
@@ -280,6 +290,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     return offset;
   }
 
+  /* write part of the postingslist in to disk free memory */
   private void writeMapToDisk() throws IOException {
     String outputFile = _options._indexPrefix + "/corpuspart"
         + String.valueOf(partNumber) + ".list";
@@ -288,10 +299,13 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     Collections.sort(keyList);
     DataOutputStream writer = new DataOutputStream(new BufferedOutputStream(
         new FileOutputStream(outputFile)));
+
     List<Byte> byteList = new ArrayList<Byte>();
     for (Integer key : keyList) {
       byteList.clear();
       List<Integer> termList = _postingLists.get(key);
+
+      // write the size of postings list
       writer.writeInt(key);
       for (int k = 0; k < termList.size(); k++) {
         byte[] values = vByte(termList.get(k));
@@ -380,6 +394,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     }
   }
 
+  /* merge all the parts of postings lists into one */
   private void writeIndexToDisk() throws FileNotFoundException, IOException {
     int[] dictionaryList = new int[_diskIndex.size()];
     for (int i = 0; i < dictionaryList.length; i++) {
@@ -505,17 +520,22 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     if (query == null) {
       return null;
     }
+
+    // If enconter a new query, load all the postings list into memory
+    // of the term in query
     if (!currentQuery.equals(query._query)) {
       currentQuery = query._query;
       loadQueryList(query);
     }
     while (true) {
       boolean found = true;
+      // get next document contain all terms
       int docCandidate = nextContainAllDocument(query, docid);
       if (docCandidate == -1) {
         return null;
       }
 
+      // check whether meet phrase restrain
       Vector<String> phrases = query._tokens;
       for (String phrase : phrases) {
         String[] terms = phrase.trim().split(" +");
@@ -533,6 +553,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     }
   }
 
+  /* load all the postings lists into memory */
   private void loadQueryList(Query query) {
     _postingLists.clear();
     cacheIndex.clear();
@@ -650,6 +671,7 @@ public class IndexerInvertedCompressed extends Indexer implements Serializable {
     if (list == null) {
       return -1;
     }
+    // get cache position of the list
     int cache = cacheIndex.get(_diskIndex.get(term));
     if (list.size() == 0 || list.get(list.size() - 2) <= docid) {
       return -1;
