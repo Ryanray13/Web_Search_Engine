@@ -21,10 +21,19 @@ Change in the parent directory of src first and then,
 1.2.3 Run server mode:
 
   $ java -cp jsoup.jar:src edu/nyu/cs/cs2580/SearchEngine --mode=serve --port=25801 --options=conf/engine.conf
+  
+1.2.4 Run front-end server:
+
+  install node.js first
 
 #FrontEnd:
-Repositories contain front end code which runs  on node.js, you need to install node.js and bower in order
-to run the front end. Once all library has been installed, go to fronen directory and run: node app.js
+Repositories contain front end code which runs  on node.js, you need to install node.js and under directory of /frontend
+
+  $ sudo npm install
+  
+  $ bower install
+  
+Once all library has been installed, go to fronen directory and run: node app.js
 Then go to browser enter localhost:3000.
 
 #For Your Infomation:
