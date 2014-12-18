@@ -19,10 +19,10 @@ public class Query {
   public String _query = null;
   public Vector<String> _tokens = new Vector<String>();
   protected Set<String> _stopWords = new HashSet<String>();
-  
+
   public Query(String query) {
     _query = query;
-   
+
   }
 
   public void processQuery() {
@@ -35,20 +35,31 @@ public class Query {
     }
     s.close();
   }
-  
-  public  Vector<String>  originalTermVector(){
+
+  /**
+   * Return a vector of original query words without punctuations and words are
+   * not stemmed
+   * 
+   * @return vector of original word
+   */
+  public Vector<String> originalTermVector() {
     Stemmer stemmer = new Stemmer();
     stemmer.add(_query.toLowerCase().toCharArray(), _query.length());
-    String result = new String(stemmer.getResultBuffer(),0,stemmer.getResultBuffer().length);
+    String result = new String(stemmer.getResultBuffer(), 0,
+        stemmer.getResultBuffer().length);
     String[] strs = result.toString().trim().split(" +");
     Vector<String> results = new Vector<String>();
-    for(int i = 0; i<strs.length; i++){
+    for (int i = 0; i < strs.length; i++) {
       results.add(strs[i]);
     }
     return results;
   }
-  
-  public void setStopWords(Set<String> stopWords){
+
+  /**
+   * Adding stopwords to the query using for parse query
+   * @param stopWords
+   */
+  public void setStopWords(Set<String> stopWords) {
     _stopWords = stopWords;
   }
 

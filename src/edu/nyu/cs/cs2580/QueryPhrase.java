@@ -1,8 +1,6 @@
 package edu.nyu.cs.cs2580;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.Vector;
@@ -14,12 +12,18 @@ import java.util.Vector;
  */
 public class QueryPhrase extends Query {
 
+  //uniq term vector
   private Vector<String> _uniqTermVector = null;
 
   public QueryPhrase(String query) {
     super(query);
   }
-
+  
+ /**
+  * Parse the query, single word in double quote will not be stemmed
+  * words in double quote will not be treated as stop words
+  * normal query will be stemmed and stopwords will be filtered
+  */
   @Override
   public void processQuery() {
     if (_query == null) {
@@ -117,6 +121,7 @@ public class QueryPhrase extends Query {
     s.close();
   }
 
+  /* parse phrase into vector */
   private void putPhraseIntoVector(String str) {
     if (str.equals("")) {
       return;
@@ -127,41 +132,32 @@ public class QueryPhrase extends Query {
     if (!str.endsWith("\"")) {
       str += "\"";
     }
-
-    Map<Integer, String> noStemWords = new HashMap<Integer, String>();
+    
+    StringBuffer bf = new StringBuffer();
+    Stemmer stemmer = new Stemmer();
     Scanner s = new Scanner(str);
-    int i = 0;
     while (s.hasNext()) {
-      String term = s.next();
+      String term = s.next();   
       if (term.startsWith("\"") && term.endsWith("\"")) {
         if (term.length() > 1) {
-          noStemWords.put(i, term.substring(1, term.length() - 1));
+          term = term.substring(1, term.length() - 1);
+          bf.append(term).append(" ");
+          continue;
         }
       }
-      i++;
-    }
-    s.close();
-
-    Stemmer stemmer = new Stemmer();
-    s = new Scanner(str);
-    i = 0;
-    StringBuffer bf = new StringBuffer();
-    while (s.hasNext()) {
-      String term = s.next();
-      if (noStemWords.containsKey(i)) {
-        term = noStemWords.get(i);
-      } else {
-        stemmer.add(term.toLowerCase().toCharArray(), term.length());
-        stemmer.stemWithStep1();
-        term = stemmer.toString();
-      }
+      stemmer.add(term.toLowerCase().toCharArray(), term.length());
+      stemmer.stemWithStep1();
+      term = stemmer.toString();
       bf.append(term).append(" ");
-      i++;
     }
     _tokens.add(bf.toString().trim());
     s.close();
   }
 
+  /**
+   * Get unique term vector of the query.  
+   *  @return
+   */
   public Vector<String> getUniqTermVector() {
     if (this._uniqTermVector == null) {
       Set<String> result = new HashSet<String>();
@@ -176,6 +172,10 @@ public class QueryPhrase extends Query {
     return this._uniqTermVector;
   }
 
+  /**
+   * Get term vector, term might appear more than once
+   * @return
+   */
   public Vector<String> getTermVector() {
     Vector<String> result = new Vector<String>();
     for (String phrase : _tokens) {
@@ -187,6 +187,9 @@ public class QueryPhrase extends Query {
     return result;
   }
 
+  /**
+   * parse unique term vector to string format
+   */
   public String toString() {
     Vector<String> result = getUniqTermVector();
     StringBuffer bf = new StringBuffer();
@@ -196,6 +199,10 @@ public class QueryPhrase extends Query {
     return bf.toString().trim();
   }
   
+  /**
+   * parse original term to string format
+   * @return string
+   */
   public String toOriginalString() {
     Vector<String> result = originalTermVector();
     StringBuffer bf = new StringBuffer();

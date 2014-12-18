@@ -191,6 +191,7 @@ public class IndexerInvertedDoconly extends Indexer implements Serializable {
     DocumentIndexed document = new DocumentIndexed(docid);
     // Indexing.
     int documentLength = indexDocument(documentText, docid);
+    // set corresponding values
     if (pathPrefix.equals("data/corpus")) {
       document.setBaseUrl("en.wikipedia.org/wiki/");
     } else {

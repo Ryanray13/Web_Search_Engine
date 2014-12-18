@@ -27,8 +27,8 @@ import org.jsoup.nodes.Element;
 import edu.nyu.cs.cs2580.SearchEngine.Options;
 
 /**
- * Indexer to index stack overflow corpus Mainly to index each questions and its
- * best answers
+ * Indexer to index stack overflow corpus Mainly to index each question and its
+ * best answer
  * 
  * @author Ray
  *
@@ -44,7 +44,7 @@ public class IndexerStackOverFlowCompressed extends Indexer implements
   private transient Map<Integer, Integer> cacheIndex = null;
   private transient Map<String, Float> _pageRanks = new HashMap<String, Float>();
   private transient List<Integer> _diskLength = new ArrayList<Integer>();
-  // disk list offset
+  // disk postings lists offset
   private transient Map<String, Integer> _diskIndex = new HashMap<String, Integer>();
 
   // Cache current running query
@@ -57,6 +57,8 @@ public class IndexerStackOverFlowCompressed extends Indexer implements
   private transient int cacheTermListIndex = 0;
   private transient int partNumber = 0;
   private transient List<Integer> cacheTermList;
+
+  // outputstream to write uniq terms of a doc to disks
   private transient DataOutputStream docTermWriter;
 
   // doc term list offset
@@ -140,16 +142,16 @@ public class IndexerStackOverFlowCompressed extends Indexer implements
     Element ele = parsedDocument.body().getElementsByClass("post-text")
         .first();
     documentText += ele.text();
-    //add answer
-    //ele = parsedDocument.body().getElementsByClass("post-text").get(1);
-    //documentText += ele.text();
+    // add answer
+    // ele = parsedDocument.body().getElementsByClass("post-text").get(1);
+    // documentText += ele.text();
 
     int docid = _documents.size();
     DocumentStackOverFlow document = new DocumentStackOverFlow(docid);
     // Indexing.
     int documentLength = indexDocument(documentText.toLowerCase(), docid);
+    // get answers and write into disk
     try {
-      //TODO might not have answer
       ele = parsedDocument.body().getElementsByClass("post-text").get(1);
       if (ele != null) {
         String answer = ele.text();
@@ -166,6 +168,8 @@ public class IndexerStackOverFlowCompressed extends Indexer implements
     document.setTitle(parsedDocument.title());
     document.setLength(documentLength);
     String fileName = file.getName();
+
+    // get votes
     ele = parsedDocument.body().getElementsByClass("vote-count-post").first();
     if (ele != null & !ele.text().equals("")) {
       try {
@@ -177,6 +181,8 @@ public class IndexerStackOverFlowCompressed extends Indexer implements
     } else {
       document.setVote(0);
     }
+
+    // get numviews
     ele = parsedDocument.body().getElementsByClass("label-key").get(3);
     if (ele != null & !ele.text().equals("")) {
       try {
@@ -212,6 +218,8 @@ public class IndexerStackOverFlowCompressed extends Indexer implements
       stemmer.add(term.toCharArray(), term.length());
       stemmer.stemWithStep1();
       term = stemmer.toString();
+
+      // using _diskIndex as a dictionary, conver string to integer
       if (_diskIndex.containsKey(term)
           && _postingLists.containsKey(_diskIndex.get(term))) {
         list = _postingLists.get(_diskIndex.get(term));

@@ -31,6 +31,7 @@ class SpellingNormal extends Spelling {
     super();
   }
 
+
   public void train(String file) throws IOException {
     BufferedReader in = new BufferedReader(new FileReader(file));
     Pattern p = Pattern.compile("\\w+");
@@ -44,6 +45,9 @@ class SpellingNormal extends Spelling {
     in.close();
   }
 
+  /**
+   * Using the big.txt file to train a dictionary
+   */
   public void train() throws IOException {
     BufferedReader in = new BufferedReader(new FileReader(_spellprefix
         + "/big.txt"));
@@ -58,6 +62,7 @@ class SpellingNormal extends Spelling {
     in.close();
   }
 
+  /* Generate candidates word within one edit distance to parameter word */
   private final List<String> edits(String word) {
     List<String> result = new ArrayList<String>();
     // deletes
@@ -86,6 +91,9 @@ class SpellingNormal extends Spelling {
     return result;
   }
 
+  /**
+   * correct a single word
+   */
   public final String correct(String word) {
     if (nWords.containsKey(word)) {
       return word;
